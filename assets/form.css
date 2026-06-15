@@ -63,10 +63,13 @@ textarea.tf-input { resize: vertical; }
 /* Honeypot: hidden from humans, off-screen (not display:none, so bots still fill it) */
 .tf-hp { position: absolute !important; left: -9999px !important; top: auto; width: 1px; height: 1px; overflow: hidden; }
 
-/* Date range (start + end) */
-.tf-daterange { display: flex; gap: 12px; }
-.tf-dr-col { flex: 1 1 0; min-width: 0; }
-.tf-dr-sub { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+/* Builder live preview: show every step stacked, hide step navigation + honeypot */
+.tf-preview .tf-step { display: block !important; animation: none !important; }
+.tf-preview .tf-step + .tf-step { border-top: 1px dashed rgba(0,0,0,.12); margin-top: 18px; padding-top: 18px; }
+.tf-preview .tf-back, .tf-preview .tf-next { display: none; }
+.tf-preview .tf-progress { display: none; }
+
+/* Date range (single flatpickr input → hidden start/end) */
+.tf-daterange .tf-dr-input { width: 100%; cursor: pointer; background: #fff; }
 .tf-dr-duration { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; color: #2e7d5b; }
-.tf-field.tf-has-error .tf-daterange .tf-input { border-color: #c0392b; }
-@media (max-width: 600px) { .tf-daterange { flex-direction: column; } }
+.tf-field.tf-has-error .tf-daterange .tf-dr-input { border-color: #c0392b; }

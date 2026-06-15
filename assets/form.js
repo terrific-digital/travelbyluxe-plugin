@@ -207,32 +207,35 @@
 		return ymd(d);
 	}
 
-	// Wire a date-range group: dynamic min/max on the inputs + live duration readout.
+	// Wire a date-range group: a single flatpickr range input writing to hidden
+	// start/end fields, with a live duration readout.
 	function setupDateRange(group) {
-		var s = group.querySelector('.tf-dr-start');
-		var e = group.querySelector('.tf-dr-end');
-		if (!s || !e) { return; }
-		var mft = parseInt(group.getAttribute('data-min-from-today'), 10);
-		var mnd = parseInt(group.getAttribute('data-min-days'), 10);
-		var mxd = parseInt(group.getAttribute('data-max-days'), 10);
+		var input = group.querySelector('.tf-dr-input');
+		var startHidden = group.querySelector('.tf-dr-start');
+		var endHidden = group.querySelector('.tf-dr-end');
 		var durEl = group.parentNode ? group.parentNode.querySelector('.tf-dr-duration') : null;
-		if (!isNaN(mft)) { s.min = startMinDate(mft); }
-		function refresh() {
-			if (s.value) {
-				var endMin = (!isNaN(mnd) && mnd > 0) ? addDays(s.value, mnd) : s.value;
-				e.min = endMin;
-				if (!isNaN(mxd) && mxd > 0) { e.max = addDays(s.value, mxd); }
-				if (e.value && Date.parse(e.value) < Date.parse(endMin)) { e.value = endMin; }
-			}
-			var dur = durationDays(s.value, e.value);
+		if (!input || !startHidden || !endHidden || typeof flatpickr === 'undefined') { return; }
+		var mft = parseInt(group.getAttribute('data-min-from-today'), 10);
+
+		function setVals(s, e) {
+			startHidden.value = s || '';
+			endHidden.value = e || '';
+			var dur = durationDays(s, e);
 			if (durEl) {
 				if (dur !== '') { durEl.textContent = dur + (dur === 1 ? ' day' : ' days'); durEl.hidden = false; }
 				else { durEl.hidden = true; }
 			}
 		}
-		s.addEventListener('change', refresh);
-		e.addEventListener('change', refresh);
-		refresh();
+
+		flatpickr(input, {
+			mode: 'range',
+			dateFormat: 'Y-m-d',
+			minDate: !isNaN(mft) ? startMinDate(mft) : null,
+			onChange: function (sel) {
+				if (sel.length === 2) { setVals(ymd(sel[0]), ymd(sel[1])); }
+				else { setVals('', ''); }
+			}
+		});
 	}
 
 	function init(form) {

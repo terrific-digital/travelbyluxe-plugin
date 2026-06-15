@@ -98,13 +98,23 @@ select (dropdown), radio, checkbox, heading, **paragraph**, **separator**, **cus
 - **slider** — `<input type="range">` with `min`/`max`/`step`/`default` (default value falls back
   to `min`); live value readout via `.tf-range-val`; submits the chosen number under its `key`.
 
-**Date range field** (`daterange`) — start + end `<input type="date">`. Edit options:
-`min_from_today` (earliest start in days from today; **0** = today/blocks past, blank = no
-limit), `min_days` / `max_days` (allowed length of the range, in days). Submits a value
-**object** `{ start_date, end_date, duration }` (duration = whole days between the two dates).
-Rendered as a `.tf-daterange[data-key]` group; collected/validated specially in form.js
-(dynamic min/max on the inputs + live duration readout). Stored as a nested object in the
+**Date range field** (`daterange`) — a **single** `<input>` powered by **flatpickr** range mode
+(vendored `assets/flatpickr.min.{js,css}`, no runtime CDN; enqueued as a dependency of `tf-form`
+so Breeze keeps the load order). Pick start→end in one calendar; the picker writes hidden
+`.tf-dr-start`/`.tf-dr-end` fields and a live duration readout. Edit options: `min_from_today`
+(earliest start in days from today; **0** = today/blocks past, blank = no limit → flatpickr
+`minDate`), `min_days` / `max_days` (allowed length of the range, in days → validated in form.js).
+Submits a value **object** `{ start_date, end_date, duration }`. Stored as a nested object in the
 submission `data`; CSV/detail flatten it to `start → end (N days)` via `flatten_value()`.
+
+**Single `date` field** — also supports `min_from_today` / `max_from_today` (earliest/latest in
+days from today; 0 = today, blank = no limit); converted to the input's `min`/`max` client-side
+(cache-safe) with matching validation.
+
+**Live preview** (builder) — a "Live Preview" meta box renders the real form server-side via the
+`tf_preview` AJAX action (admin-only, nonce'd) into an iframe, updating ~400ms after each edit.
+`TF_Render::markup($def, $post_id, $preview=true)` adds a `tf-preview` class (all steps shown
+stacked, nav hidden, `onsubmit` disabled) reusing the exact frontend renderer for WYSIWYG accuracy.
 
 **Submissions table `{prefix}tf_submissions`**
 `id, form_post_id, form_id, form_name, data (JSON of fields), page_url, user_ip,

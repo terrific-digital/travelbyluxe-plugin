@@ -72,6 +72,32 @@
 		def.type = currentType();
 		def.steps = steps.length ? steps : [{ title: '', fields: [] }];
 		hidden.value = JSON.stringify({ type: def.type, steps: def.steps });
+		schedulePreview();
+	}
+
+	// ---- Live preview (renders the real form server-side into an iframe) ----
+	var previewTimer;
+	function schedulePreview() { clearTimeout(previewTimer); previewTimer = setTimeout(updatePreview, 400); }
+	function updatePreview() {
+		var frame = document.getElementById('tf-preview-frame');
+		if (!frame || typeof TF_BUILD === 'undefined') { return; }
+		var submitEl = document.getElementById('tf_submit_text');
+		var body = new URLSearchParams();
+		body.append('action', 'tf_preview');
+		body.append('nonce', TF_BUILD.nonce);
+		body.append('definition', hidden.value);
+		body.append('submit_text', submitEl ? submitEl.value : 'Submit');
+		fetch(TF_BUILD.previewAjax, { method: 'POST', body: body, credentials: 'same-origin' })
+			.then(function (r) { return r.json(); })
+			.then(function (res) {
+				if (!res || !res.success) { return; }
+				var links = (TF_BUILD.css || []).map(function (u) { return '<link rel="stylesheet" href="' + u + '">'; }).join('');
+				frame.onload = function () { try { frame.style.height = (frame.contentDocument.body.scrollHeight + 28) + 'px'; } catch (e) {} };
+				frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8">' + links +
+					'<style>body{margin:0;padding:18px;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#1d2327;background:#fff}</style>' +
+					'</head><body>' + res.data.html + '</body></html>';
+			})
+			.catch(function () {});
 	}
 
 	function fieldCard(f) {
@@ -361,6 +387,9 @@
 		document.querySelectorAll('input[name="tf_type"]').forEach(function (r) {
 			r.addEventListener('change', function () { sync(); render(); });
 		});
+		// Refresh the live preview when the submit-button text changes.
+		var submitText = document.getElementById('tf_submit_text');
+		if (submitText) { submitText.addEventListener('input', schedulePreview); }
 		// Safety: sync right before the post form submits
 		var postForm = document.getElementById('post');
 		if (postForm) { postForm.addEventListener('submit', sync); }

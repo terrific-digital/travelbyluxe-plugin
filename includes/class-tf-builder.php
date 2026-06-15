@@ -31,6 +31,16 @@ class TF_Builder {
 			'settingsUrl'   => admin_url( 'admin.php?page=tf-settings' ),
 			'pages'         => $plist,
 		) );
+
+		// Live preview config (renders the real form via AJAX into an iframe).
+		wp_localize_script( 'tf-builder', 'TF_BUILD', array(
+			'previewAjax' => admin_url( 'admin-ajax.php' ),
+			'nonce'       => wp_create_nonce( 'tf_preview' ),
+			'css'         => array(
+				TF_URL . 'assets/flatpickr.min.css?ver=4.6.13',
+				TF_URL . 'assets/form.css?ver=' . TF_VERSION,
+			),
+		) );
 	}
 
 	public static function meta_boxes() {
@@ -38,6 +48,14 @@ class TF_Builder {
 		add_meta_box( 'tf-settings-box', 'Form Settings', array( __CLASS__, 'render_settings' ), TF_CPT, 'side', 'default' );
 		add_meta_box( 'tf-usage-box', 'Submissions & Usage', array( __CLASS__, 'render_usage' ), TF_CPT, 'side', 'high' );
 		add_meta_box( 'tf-actions-box', 'Actions', array( __CLASS__, 'render_actions' ), TF_CPT, 'normal', 'default' );
+		add_meta_box( 'tf-preview-box', 'Live Preview', array( __CLASS__, 'render_preview' ), TF_CPT, 'normal', 'low' );
+	}
+
+	public static function render_preview( $post ) {
+		?>
+		<p class="description" style="margin-top:0">A live, non-interactive preview — it updates as you edit the form above (all steps shown stacked).</p>
+		<iframe id="tf-preview-frame" title="Form preview" style="width:100%;border:1px solid #dcdcde;border-radius:6px;background:#fff;min-height:260px"></iframe>
+		<?php
 	}
 
 	public static function render_actions( $post ) {

@@ -12,11 +12,41 @@ class TF_Render {
 	public static function init() {
 		add_shortcode( 'terrific_form', array( __CLASS__, 'shortcode' ) );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
+		add_action( 'wp_ajax_tf_preview', array( __CLASS__, 'ajax_preview' ) ); // admin-only live preview
+	}
+
+	/**
+	 * Render a non-interactive preview of a (possibly unsaved) definition for the
+	 * builder. Reuses the real renderer so it's WYSIWYG-accurate.
+	 */
+	public static function preview_markup( $def ) {
+		self::$instances++;
+		return self::markup( $def, 0, true );
+	}
+
+	/** AJAX: build a form definition from the builder's posted JSON and return preview HTML. */
+	public static function ajax_preview() {
+		check_ajax_referer( 'tf_preview', 'nonce' );
+		if ( ! current_user_can( 'edit_posts' ) ) { wp_send_json_error( array( 'message' => 'Not allowed' ), 403 ); }
+
+		$decoded = isset( $_POST['definition'] ) ? json_decode( wp_unslash( $_POST['definition'] ), true ) : array();
+		$def     = TF_Builder::sanitize_def( is_array( $decoded ) ? $decoded : array() );
+		$def['form_id']         = 'preview';
+		$def['form_name']       = 'Preview';
+		$def['post_id']         = 0;
+		$def['submit_text']     = isset( $_POST['submit_text'] ) ? sanitize_text_field( wp_unslash( $_POST['submit_text'] ) ) : 'Submit';
+		$def['success_message'] = '';
+
+		wp_send_json_success( array( 'html' => self::preview_markup( $def ) ) );
 	}
 
 	public static function register_assets() {
-		wp_register_style( 'tf-form', TF_URL . 'assets/form.css', array(), TF_VERSION );
-		wp_register_script( 'tf-form', TF_URL . 'assets/form.js', array(), TF_VERSION, true );
+		// flatpickr (vendored, no runtime CDN) powers the single-input date-range picker.
+		// Declared as a dependency so order survives Breeze's JS/CSS combining.
+		wp_register_style( 'tf-flatpickr', TF_URL . 'assets/flatpickr.min.css', array(), '4.6.13' );
+		wp_register_script( 'tf-flatpickr', TF_URL . 'assets/flatpickr.min.js', array(), '4.6.13', true );
+		wp_register_style( 'tf-form', TF_URL . 'assets/form.css', array( 'tf-flatpickr' ), TF_VERSION );
+		wp_register_script( 'tf-form', TF_URL . 'assets/form.js', array( 'tf-flatpickr' ), TF_VERSION, true );
 		wp_localize_script( 'tf-form', 'TF_FORM', array(
 			'ajax'  => admin_url( 'admin-ajax.php' ),
 			'nonce' => wp_create_nonce( 'tf_submit' ),
@@ -41,16 +71,17 @@ class TF_Render {
 		return self::markup( $def, $post_id );
 	}
 
-	protected static function markup( $def, $post_id ) {
+	protected static function markup( $def, $post_id, $preview = false ) {
 		$is_multi     = ( 'multistep' === $def['type'] && count( $def['steps'] ) > 1 );
 		$total        = count( $def['steps'] );
 		$uid          = 'tf-' . $post_id . '-' . self::$instances;
-		$intent       = tf_form_intent_param( $post_id );
-		$step_webhook = $is_multi && tf_form_has_step_webhook( $post_id );
+		$intent       = $preview ? '' : tf_form_intent_param( $post_id );
+		$step_webhook = ! $preview && $is_multi && tf_form_has_step_webhook( $post_id );
 
 		ob_start();
 		?>
-		<form class="tf-form<?php echo $is_multi ? ' tf-multistep' : ''; ?>"
+		<form class="tf-form<?php echo $is_multi ? ' tf-multistep' : ''; ?><?php echo $preview ? ' tf-preview' : ''; ?>"
+			<?php if ( $preview ) : ?>onsubmit="return false"<?php endif; ?>
 			id="<?php echo esc_attr( $uid ); ?>"
 			data-form-id="<?php echo esc_attr( $def['form_id'] ); ?>"
 			data-form-name="<?php echo esc_attr( $def['form_name'] ); ?>"
@@ -236,8 +267,9 @@ class TF_Render {
 				if ( '' !== $mnd ) { $g .= ' data-min-days="' . esc_attr( $mnd ) . '"'; }
 				if ( '' !== $mxd ) { $g .= ' data-max-days="' . esc_attr( $mxd ) . '"'; }
 				echo '<div class="tf-daterange" ' . $g . '>'; // phpcs:ignore
-				echo '<div class="tf-dr-col"><span class="tf-dr-sub">Start date</span><input type="date" class="tf-input tf-dr-start" id="' . esc_attr( $id ) . '-start"></div>';
-				echo '<div class="tf-dr-col"><span class="tf-dr-sub">End date</span><input type="date" class="tf-input tf-dr-end" id="' . esc_attr( $id ) . '-end"></div>';
+				echo '<input type="text" class="tf-input tf-dr-input" id="' . esc_attr( $id ) . '" placeholder="' . esc_attr( $ph ? $ph : 'Select start &amp; end date…' ) . '" autocomplete="off" readonly>';
+				echo '<input type="hidden" class="tf-dr-start">';
+				echo '<input type="hidden" class="tf-dr-end">';
 				echo '</div>';
 				echo '<span class="tf-dr-duration" hidden></span>';
 				break;
