@@ -208,7 +208,9 @@
 	}
 
 	// Wire a date-range group: a single flatpickr range input writing to hidden
-	// start/end fields, with a live duration readout.
+	// start/end fields, with a live duration readout. Min/max length is enforced
+	// IN the calendar — once a start is picked, dates that would break the rules
+	// are disabled so an invalid range can't be selected at all.
 	function setupDateRange(group) {
 		var input = group.querySelector('.tf-dr-input');
 		var startHidden = group.querySelector('.tf-dr-start');
@@ -216,6 +218,12 @@
 		var durEl = group.parentNode ? group.parentNode.querySelector('.tf-dr-duration') : null;
 		if (!input || !startHidden || !endHidden || typeof flatpickr === 'undefined') { return; }
 		var mft = parseInt(group.getAttribute('data-min-from-today'), 10);
+		var mnd = parseInt(group.getAttribute('data-min-days'), 10);
+		var mxd = parseInt(group.getAttribute('data-max-days'), 10);
+
+		function todayPlus(n) { var d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+		function dAdd(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+		var baseMin = !isNaN(mft) ? todayPlus(mft) : null;
 
 		function setVals(s, e) {
 			startHidden.value = s || '';
@@ -226,14 +234,40 @@
 				else { durEl.hidden = true; }
 			}
 		}
+		function resetBounds(fp) {
+			fp.set('minDate', baseMin);
+			fp.set('maxDate', null);
+			fp.set('disable', []);
+		}
 
 		flatpickr(input, {
 			mode: 'range',
 			dateFormat: 'Y-m-d',
-			minDate: !isNaN(mft) ? startMinDate(mft) : null,
-			onChange: function (sel) {
-				if (sel.length === 2) { setVals(ymd(sel[0]), ymd(sel[1])); }
-				else { setVals('', ''); }
+			minDate: baseMin,
+			onChange: function (sel, str, fp) {
+				if (sel.length === 1) {
+					var start = sel[0];
+					// Max length: cap how far the range can extend (either direction).
+					if (!isNaN(mxd) && mxd > 0) {
+						fp.set('maxDate', dAdd(start, mxd));
+						var bmin = dAdd(start, -mxd);
+						if (baseMin && bmin.getTime() < baseMin.getTime()) { bmin = baseMin; }
+						fp.set('minDate', bmin);
+					}
+					// Min length: disable the dates too close to the start (start stays selectable).
+					if (!isNaN(mnd) && mnd > 1) {
+						fp.set('disable', [
+							{ from: dAdd(start, -(mnd - 1)), to: dAdd(start, -1) },
+							{ from: dAdd(start, 1), to: dAdd(start, mnd - 1) }
+						]);
+					}
+				} else if (sel.length === 2) {
+					setVals(ymd(sel[0]), ymd(sel[1]));
+					resetBounds(fp);
+				} else {
+					setVals('', '');
+					resetBounds(fp);
+				}
 			}
 		});
 	}
