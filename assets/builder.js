@@ -7,15 +7,22 @@
 		{ type: 'email', label: 'Email' },
 		{ type: 'tel', label: 'Phone' },
 		{ type: 'number', label: 'Number' },
+		{ type: 'slider', label: 'Slider' },
 		{ type: 'date', label: 'Date' },
+		{ type: 'daterange', label: 'Date range' },
 		{ type: 'textarea', label: 'Textarea' },
 		{ type: 'select', label: 'Dropdown' },
 		{ type: 'radio', label: 'Radio' },
 		{ type: 'checkbox', label: 'Checkboxes' },
 		{ type: 'heading', label: 'Heading' },
+		{ type: 'paragraph', label: 'Paragraph' },
+		{ type: 'separator', label: 'Separator' },
+		{ type: 'custom_html', label: 'Custom HTML' },
 		{ type: 'hidden', label: 'Hidden' }
 	];
 	var HAS_OPTIONS = { select: 1, radio: 1, checkbox: 1 };
+	// Static/display fields that carry no submitted value (and thus no data-layer key).
+	var STATIC_TYPES = { heading: 1, paragraph: 1, separator: 1, custom_html: 1 };
 
 	var root, hidden, def, fieldMap = {};
 
@@ -52,12 +59,13 @@
 		var steps = [];
 		root.querySelectorAll('.tf-b-step').forEach(function (stepEl) {
 			var title = stepEl.querySelector('.tf-b-step-title').value;
+			var nextEl = stepEl.querySelector('.tf-b-step-next');
 			var fields = [];
 			stepEl.querySelectorAll('.tf-b-field').forEach(function (card) {
 				var id = card.getAttribute('data-id');
 				if (fieldMap[id]) { fields.push(fieldMap[id]); }
 			});
-			steps.push({ title: title, fields: fields });
+			steps.push({ title: title, next_text: nextEl ? nextEl.value : '', fields: fields });
 		});
 		def.type = currentType();
 		def.steps = steps.length ? steps : [{ title: '', fields: [] }];
@@ -84,12 +92,26 @@
 		var numberRow = (f.type === 'number') ?
 			'<div class="tf-b-row2"><label class="tf-b-row">Min value<input type="number" class="tf-b-min" value="' + esc(f.min) + '"></label>' +
 			'<label class="tf-b-row">Max value<input type="number" class="tf-b-max" value="' + esc(f.max) + '"></label></div>' : '';
+		var sliderRow = (f.type === 'slider') ?
+			'<div class="tf-b-row2"><label class="tf-b-row">Minimum<input type="number" class="tf-b-min" value="' + esc(f.min) + '" placeholder="0"></label>' +
+			'<label class="tf-b-row">Maximum<input type="number" class="tf-b-max" value="' + esc(f.max) + '" placeholder="100"></label></div>' +
+			'<div class="tf-b-row2"><label class="tf-b-row">Step<input type="number" min="0" step="any" class="tf-b-step" value="' + esc(f.step) + '" placeholder="1"></label>' +
+			'<label class="tf-b-row">Default value<input type="number" class="tf-b-default" value="' + esc(f.default) + '" placeholder="(min)"></label></div>' : '';
+		var htmlRow = (f.type === 'custom_html') ?
+			'<label class="tf-b-row">Custom HTML<textarea class="tf-b-html" rows="6" spellcheck="false" placeholder="&lt;div&gt;…&lt;/div&gt;" style="font-family:monospace">' + escArea(f.html) + '</textarea></label>' : '';
 		var lengthRow = ( ['text', 'email', 'tel', 'textarea'].indexOf(f.type) >= 0 ) ?
 			'<div class="tf-b-row2"><label class="tf-b-row">Min length<input type="number" min="0" class="tf-b-minlen" value="' + esc(f.minlength) + '"></label>' +
 			'<label class="tf-b-row">Max length<input type="number" min="0" class="tf-b-maxlen" value="' + esc(f.maxlength) + '"></label></div>' : '';
-		var placeRow = (f.type === 'heading' || f.type === 'hidden') ? '' :
+		var dateRangeRow = (f.type === 'daterange') ?
+			'<label class="tf-b-row">Earliest start date<input type="number" min="0" class="tf-b-minfromtoday" value="' + esc(f.min_from_today) + '" placeholder="(no limit)"></label>' +
+			'<p class="tf-b-hint" style="margin-top:-6px">Days from today the visitor can first pick. <strong>0</strong> = today (blocks past dates); blank = no limit.</p>' +
+			'<div class="tf-b-row2"><label class="tf-b-row">Min length (days)<input type="number" min="0" class="tf-b-mindays" value="' + esc(f.min_days) + '"></label>' +
+			'<label class="tf-b-row">Max length (days)<input type="number" min="0" class="tf-b-maxdays" value="' + esc(f.max_days) + '"></label></div>' : '';
+		var noPlace = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, daterange: 1, slider: 1 };
+		var placeRow = noPlace[f.type] ? '' :
 			'<label class="tf-b-row">Placeholder<input type="text" class="tf-b-ph" value="' + esc(f.placeholder) + '"></label>';
-		var reqRow = (f.type === 'heading' || f.type === 'hidden') ? '' :
+		var noReq = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, slider: 1 };
+		var reqRow = noReq[f.type] ? '' :
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-req"' + (f.required ? ' checked' : '') + '> Required</label>';
 		var widthRow = (f.type === 'hidden') ? '' :
 			'<label class="tf-b-row">Width<select class="tf-b-width">' +
@@ -97,8 +119,20 @@
 				'<option value="half"' + ('half' === f.width ? ' selected' : '') + '>Half (1/2)</option>' +
 				'<option value="third"' + ('third' === f.width ? ' selected' : '') + '>Third (1/3)</option>' +
 			'</select></label>';
-		var showLabelRow = (f.type === 'heading' || f.type === 'hidden') ? '' :
+		var noShowLabel = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1 };
+		var showLabelRow = noShowLabel[f.type] ? '' :
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-showlabel"' + ((f.show_label !== false) ? ' checked' : '') + '> Show label</label>';
+		// Label/Key rows: static fields have no key; paragraph edits multi-line text; html/separator have no label.
+		var labelRow;
+		if (f.type === 'paragraph') {
+			labelRow = '<label class="tf-b-row">Text<textarea class="tf-b-label" rows="3">' + escArea(f.label) + '</textarea></label>';
+		} else if (f.type === 'custom_html' || f.type === 'separator') {
+			labelRow = '';
+		} else {
+			labelRow = '<label class="tf-b-row">Label<input type="text" class="tf-b-label" value="' + esc(f.label) + '"></label>';
+		}
+		var keyRow = STATIC_TYPES[f.type] ? '' :
+			'<label class="tf-b-row">Key (data layer)<input type="text" class="tf-b-key" value="' + esc(f.key) + '"></label>';
 		var widthBadge = ('full' !== f.width) ? '<span class="tf-b-wbadge">' + (f.width === 'half' ? '½' : '⅓') + '</span>' : '';
 		card.innerHTML =
 			'<div class="tf-b-field-head">' +
@@ -110,10 +144,10 @@
 				'<button type="button" class="tf-b-del button-link">Delete</button>' +
 			'</div>' +
 			'<div class="tf-b-field-body" hidden>' +
-				'<label class="tf-b-row">Label<input type="text" class="tf-b-label" value="' + esc(f.label) + '"></label>' +
+				labelRow +
 				showLabelRow +
-				'<label class="tf-b-row">Key (data layer)<input type="text" class="tf-b-key" value="' + esc(f.key) + '"></label>' +
-				placeRow + numberRow + lengthRow + optionsRow + widthRow + reqRow +
+				keyRow +
+				placeRow + numberRow + sliderRow + lengthRow + dateRangeRow + htmlRow + optionsRow + widthRow + reqRow +
 			'</div>';
 
 		var editBtn = card.querySelector('.tf-b-edit');
@@ -147,13 +181,20 @@
 		});
 		var lbl = card.querySelector('.tf-b-label');
 		var keyEl = card.querySelector('.tf-b-key');
-		lbl.addEventListener('input', function () {
-			f.label = lbl.value;
-			card.querySelector('.tf-b-field-label').textContent = f.label || '(no label)';
-			if (!keyEl.value || keyEl.getAttribute('data-auto') !== '0') { keyEl.value = slug(f.label); f.key = keyEl.value; }
-			sync();
-		});
-		keyEl.addEventListener('input', function () { f.key = slug(keyEl.value); keyEl.setAttribute('data-auto', '0'); sync(); });
+		if (lbl) {
+			lbl.addEventListener('input', function () {
+				f.label = lbl.value;
+				card.querySelector('.tf-b-field-label').textContent = (f.label || '').slice(0, 40) || '(no label)';
+				if (keyEl && (!keyEl.value || keyEl.getAttribute('data-auto') !== '0')) { keyEl.value = slug(f.label); f.key = keyEl.value; }
+				sync();
+			});
+		}
+		if (keyEl) { keyEl.addEventListener('input', function () { f.key = slug(keyEl.value); keyEl.setAttribute('data-auto', '0'); sync(); }); }
+		// slider step / default value
+		var stp = card.querySelector('.tf-b-step'); if (stp) { stp.addEventListener('input', function () { f.step = stp.value; sync(); }); }
+		var dft = card.querySelector('.tf-b-default'); if (dft) { dft.addEventListener('input', function () { f.default = dft.value; sync(); }); }
+		// custom HTML content
+		var htmlEl = card.querySelector('.tf-b-html'); if (htmlEl) { htmlEl.addEventListener('input', function () { f.html = htmlEl.value; sync(); }); }
 		var ph = card.querySelector('.tf-b-ph'); if (ph) { ph.addEventListener('input', function () { f.placeholder = ph.value; sync(); }); }
 		var req = card.querySelector('.tf-b-req'); if (req) { req.addEventListener('change', function () { f.required = req.checked; sync(); }); }
 		var sl = card.querySelector('.tf-b-showlabel'); if (sl) { sl.addEventListener('change', function () { f.show_label = sl.checked; sync(); }); }
@@ -171,6 +212,10 @@
 		// text length
 		var minL = card.querySelector('.tf-b-minlen'); if (minL) { minL.addEventListener('input', function () { f.minlength = minL.value; sync(); }); }
 		var maxL = card.querySelector('.tf-b-maxlen'); if (maxL) { maxL.addEventListener('input', function () { f.maxlength = maxL.value; sync(); }); }
+		// date range constraints
+		var mft = card.querySelector('.tf-b-minfromtoday'); if (mft) { mft.addEventListener('input', function () { f.min_from_today = mft.value; sync(); }); }
+		var mnd = card.querySelector('.tf-b-mindays'); if (mnd) { mnd.addEventListener('input', function () { f.min_days = mnd.value; sync(); }); }
+		var mxd = card.querySelector('.tf-b-maxdays'); if (mxd) { mxd.addEventListener('input', function () { f.max_days = mxd.value; sync(); }); }
 		// dropdown: multiple toggle
 		var mult = card.querySelector('.tf-b-multiple'); if (mult) { mult.addEventListener('change', function () { f.multiple = mult.checked; sync(); }); }
 		// dropdown: label/value options table
@@ -202,12 +247,14 @@
 			'<div class="tf-b-step-head">' +
 				'<span class="tf-b-step-n">' + (multi ? 'Step ' + (idx + 1) : 'Fields') + '</span>' +
 				(multi ? '<input type="text" class="tf-b-step-title" placeholder="Step title (optional)" value="' + esc(step.title) + '">' : '<input type="hidden" class="tf-b-step-title" value="">') +
+				(multi ? '<input type="text" class="tf-b-step-next" placeholder="Next button: Next →" title="Next button text for this step" value="' + esc(step.next_text) + '">' : '') +
 				(multi ? '<button type="button" class="tf-b-del-step button-link">Remove step</button>' : '') +
 			'</div>' +
 			'<div class="tf-b-fields"></div>';
 		var list = el.querySelector('.tf-b-fields');
 		(step.fields || []).forEach(function (f) { list.appendChild(fieldCard(f)); });
 		var t = el.querySelector('.tf-b-step-title'); if (t) { t.addEventListener('input', sync); }
+		var nx = el.querySelector('.tf-b-step-next'); if (nx) { nx.addEventListener('input', sync); }
 		var ds = el.querySelector('.tf-b-del-step'); if (ds) { ds.addEventListener('click', function () { el.remove(); sync(); }); }
 		makeSortable(list);
 		return el;
@@ -228,6 +275,8 @@
 						id: uid(), type: newType, label: defaultLabel(newType), key: '', placeholder: '',
 						required: false, show_label: true, width: 'full',
 						min: '', max: '', minlength: '', maxlength: '', multiple: false,
+						min_from_today: '', min_days: '', max_days: '',
+						step: '', default: '', html: '',
 						options: HAS_OPTIONS[newType] ? [ { label: 'Option 1', value: 'Option 1' }, { label: 'Option 2', value: 'Option 2' } ] : []
 					};
 					f.key = slug(f.label);
@@ -243,7 +292,7 @@
 	}
 
 	function defaultLabel(t) {
-		var m = { text: 'Text', email: 'Email Address', tel: 'Phone', number: 'Number', date: 'Date', textarea: 'Message', select: 'Select', radio: 'Choose one', checkbox: 'Select all that apply', heading: 'Section heading', hidden: 'Hidden value' };
+		var m = { text: 'Text', email: 'Email Address', tel: 'Phone', number: 'Number', slider: 'Slider', date: 'Date', daterange: 'Dates', textarea: 'Message', select: 'Select', radio: 'Choose one', checkbox: 'Select all that apply', heading: 'Section heading', paragraph: 'Your paragraph text…', separator: 'Separator', custom_html: 'Custom HTML', hidden: 'Hidden value' };
 		return m[t] || 'Field';
 	}
 
@@ -292,6 +341,8 @@
 	}
 
 	function esc(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+	// For <textarea> bodies: escape < and & (no need to escape quotes inside element content).
+	function escArea(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
 	document.addEventListener('DOMContentLoaded', function () {
 		root = document.getElementById('tf-builder');

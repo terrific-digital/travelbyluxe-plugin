@@ -36,9 +36,11 @@ class TF_Settings {
 	public static function screen() {
 		?>
 		<div class="wrap">
-			<h1>Terrific Forms — Settings</h1>
+			<h1>Terrific Digital — Settings</h1>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'tf_settings_group' ); ?>
+
+				<h2 class="title">Terrific Forms</h2>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><label for="tf_global_webhook">Global webhook URL</label></th>
@@ -51,6 +53,15 @@ class TF_Settings {
 						</td>
 					</tr>
 				</table>
+
+				<?php
+				/**
+				 * Other Terrific Digital features render their own settings sections here.
+				 * Fields must belong to an option registered under the 'tf_settings_group'.
+				 */
+				do_action( 'terrific_digital/settings_fields' );
+				?>
+
 				<?php submit_button(); ?>
 			</form>
 		</div>

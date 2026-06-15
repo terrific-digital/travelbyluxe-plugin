@@ -9,20 +9,55 @@ class TD_Menu {
 
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 9 );
+		add_action( 'admin_head', array( __CLASS__, 'icon_css' ) );
 		add_filter( 'parent_file', array( __CLASS__, 'parent_file' ) );
 		add_filter( 'submenu_file', array( __CLASS__, 'submenu_file' ) );
+	}
+
+	/** The Terrific Digital "t" brand mark (mosaic), single-colour so it can be masked white. */
+	public static function icon_svg() {
+		return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24.33 33.95" fill="#fff">'
+			. '<rect x="8.109" y="0.758" width="8.109" height="8.109"/>'
+			. '<rect x="0" y="8.867" width="8.109" height="8.109"/>'
+			. '<rect x="8.109" y="8.867" width="8.109" height="8.109"/>'
+			. '<rect x="16.217" y="8.867" width="8.109" height="8.109"/>'
+			. '<rect x="8.109" y="16.975" width="8.109" height="8.109"/>'
+			. '<rect x="8.109" y="25.084" width="8.109" height="8.109"/>'
+			. '<rect x="16.217" y="25.084" width="8.109" height="8.109"/>'
+			. '</svg>';
+	}
+
+	public static function icon_data_uri() {
+		return 'data:image/svg+xml;base64,' . base64_encode( self::icon_svg() );
+	}
+
+	/**
+	 * Recolour the menu icon to match native WordPress icons: a grey mask in the
+	 * resting state that turns white when the menu is hovered or current.
+	 */
+	public static function icon_css() {
+		$uri = self::icon_data_uri();
+		echo '<style id="td-menu-icon">'
+			. '#adminmenu #toplevel_page_' . TD_MENU . ' .wp-menu-image.svg{'
+			. 'background-image:none !important;background-color:#a7aaad;'
+			. '-webkit-mask:url(\'' . $uri . '\') no-repeat center;mask:url(\'' . $uri . '\') no-repeat center;'
+			. '-webkit-mask-size:auto 18px;mask-size:auto 18px;}'
+			. '#adminmenu #toplevel_page_' . TD_MENU . ':hover .wp-menu-image.svg,'
+			. '#adminmenu #toplevel_page_' . TD_MENU . '.wp-has-current-submenu .wp-menu-image.svg,'
+			. '#adminmenu #toplevel_page_' . TD_MENU . '.current .wp-menu-image.svg,'
+			. '#adminmenu #toplevel_page_' . TD_MENU . '.wp-menu-open .wp-menu-image.svg{background-color:#fff;}'
+			. '</style>';
 	}
 
 	public static function menu() {
 		add_menu_page(
 			'Terrific Digital', 'Terrific Digital', 'edit_pages',
-			TD_MENU, array( __CLASS__, 'dashboard' ), 'dashicons-screenoptions', 26
+			TD_MENU, array( __CLASS__, 'dashboard' ), self::icon_data_uri(), 26
 		);
 		// Rename the auto-created first submenu (defaults to "Terrific Digital").
 		add_submenu_page( TD_MENU, 'Dashboard', 'Dashboard', 'edit_pages', TD_MENU, array( __CLASS__, 'dashboard' ) );
-		// Forms feature.
+		// Forms feature. (No "Add New" link — create forms from the Forms list screen.)
 		add_submenu_page( TD_MENU, 'Forms', 'Forms', 'edit_pages', 'edit.php?post_type=' . TF_CPT );
-		add_submenu_page( TD_MENU, 'Add New Form', 'Add New', 'edit_pages', 'post-new.php?post_type=' . TF_CPT );
 		// (TF_Submissions adds "Submissions" under TD_MENU at a later priority.)
 	}
 

@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific.co.il
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.12.2
+ * Version:           2.15.1
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -11,7 +11,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.12.2' );
+define( 'TD_VERSION', '2.15.1' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -22,27 +22,33 @@ define( 'TF_URL', plugin_dir_url( __FILE__ ) );
 define( 'TF_CPT', 'terrific_form' );
 
 require_once TF_DIR . 'includes/class-td-menu.php';
+require_once TF_DIR . 'includes/class-td-session.php';
 require_once TF_DIR . 'includes/class-tf-settings.php';
 require_once TF_DIR . 'includes/class-tf-cpt.php';
 require_once TF_DIR . 'includes/class-tf-builder.php';
 require_once TF_DIR . 'includes/class-tf-render.php';
 require_once TF_DIR . 'includes/class-tf-submissions.php';
+require_once TF_DIR . 'includes/class-tf-revisions.php';
 require_once TF_DIR . 'includes/class-tf-block.php';
 
 add_action( 'plugins_loaded', function () {
 	TD_Menu::init();
+	TD_Session::init();
 	TF_Settings::init();
 	TF_CPT_Manager::init();
 	TF_Builder::init();
 	TF_Render::init();
 	TF_Submissions::init();
+	TF_Revisions::init();
 	TF_Block::init();
 } );
 
 register_activation_hook( __FILE__, function () {
 	require_once TF_DIR . 'includes/class-tf-submissions.php';
+	require_once TF_DIR . 'includes/class-tf-revisions.php';
 	require_once TF_DIR . 'includes/class-tf-cpt.php';
 	TF_Submissions::create_table();
+	TF_Revisions::create_table();
 	TF_CPT_Manager::register();
 	flush_rewrite_rules();
 } );

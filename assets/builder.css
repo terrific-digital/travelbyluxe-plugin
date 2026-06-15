@@ -13,8 +13,9 @@
 .tf-b-step { border: 1px solid #dcdcde; border-radius: 6px; margin-bottom: 14px; background: #fff; }
 .tf-b-step-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0f0f1; border-bottom: 1px solid #dcdcde; border-radius: 6px 6px 0 0; }
 .tf-b-step-n { font-weight: 600; white-space: nowrap; }
-.tf-b-step-title { flex: 1; }
-.tf-b-del-step { color: #b32d2e !important; }
+.tf-b-step-title { flex: 1 1 50%; min-width: 0; }
+.tf-b-step-next { flex: 1 1 40%; min-width: 0; }
+.tf-b-del-step { color: #b32d2e !important; white-space: nowrap; }
 .tf-b-fields { min-height: 60px; padding: 10px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
 .tf-b-fields:empty::after { content: 'Drop fields here'; flex: 0 0 100%; text-align: center; color: #aaa; padding: 18px; border: 2px dashed #dcdcde; border-radius: 4px; }
 

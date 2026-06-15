@@ -20,6 +20,11 @@ class TF_Submissions {
 		add_action( 'admin_post_tf_delete', array( __CLASS__, 'delete_single' ) );
 	}
 
+	/** Honeypot tripped? Bots fill the hidden tf_hp field; humans never see it. */
+	protected static function is_spam() {
+		return isset( $_POST['hp'] ) && '' !== trim( (string) wp_unslash( $_POST['hp'] ) );
+	}
+
 	/** Public: return the visitor's country code (for phone-field auto-select). Not page-cached. */
 	public static function handle_geo() {
 		nocache_headers();
@@ -27,16 +32,58 @@ class TF_Submissions {
 		wp_send_json_success( array( 'country_code' => $geo['country_code'] ) );
 	}
 
-	/** Sanitize a posted fields JSON blob into a flat key=>value array. */
+	/**
+	 * Sanitize a posted fields JSON blob into a key=>value array. List values
+	 * (multi-select/checkbox) collapse to a comma string; associative values
+	 * (e.g. a date range's { start_date, end_date, duration }) keep their shape.
+	 */
 	protected static function clean_fields() {
 		$raw    = isset( $_POST['fields'] ) ? json_decode( wp_unslash( $_POST['fields'] ), true ) : array();
 		$fields = array();
 		if ( is_array( $raw ) ) {
 			foreach ( $raw as $k => $v ) {
-				$fields[ sanitize_key( $k ) ] = is_array( $v ) ? implode( ', ', array_map( 'sanitize_text_field', $v ) ) : sanitize_textarea_field( $v );
+				$fields[ sanitize_key( $k ) ] = self::clean_field_value( $v );
 			}
 		}
 		return $fields;
+	}
+
+	/** Sanitize one field value (scalar, list, or associative object). */
+	protected static function clean_field_value( $v ) {
+		if ( ! is_array( $v ) ) {
+			return sanitize_textarea_field( $v );
+		}
+		// Numeric-keyed list (multi-select / checkboxes) → comma string, as before.
+		if ( array_keys( $v ) === range( 0, count( $v ) - 1 ) ) {
+			return implode( ', ', array_map( 'sanitize_text_field', $v ) );
+		}
+		// Associative object (date range, etc.) → keep keys, sanitize scalars.
+		$out = array();
+		foreach ( $v as $sk => $sv ) {
+			$out[ sanitize_key( $sk ) ] = is_scalar( $sv ) ? sanitize_text_field( (string) $sv ) : '';
+		}
+		return $out;
+	}
+
+	/** Flatten a stored field value to a readable string (for CSV / detail tables). */
+	protected static function flatten_value( $v ) {
+		if ( ! is_array( $v ) ) { return (string) $v; }
+		// Date-range shape.
+		if ( isset( $v['start_date'] ) || isset( $v['end_date'] ) ) {
+			$s   = isset( $v['start_date'] ) ? $v['start_date'] : '';
+			$e   = isset( $v['end_date'] ) ? $v['end_date'] : '';
+			$d   = isset( $v['duration'] ) ? $v['duration'] : '';
+			$out = trim( $s . ' → ' . $e, ' →' );
+			if ( '' !== (string) $d ) { $out .= ' (' . $d . ' days)'; }
+			return $out;
+		}
+		// Generic list / assoc fallback.
+		$parts = array();
+		foreach ( $v as $k => $vv ) {
+			$vv      = is_array( $vv ) ? implode( ' ', $vv ) : $vv;
+			$parts[] = is_int( $k ) ? (string) $vv : ( $k . ': ' . $vv );
+		}
+		return implode( ', ', $parts );
 	}
 
 	/** Build the request context (page meta, device, geo, cookies, intent). */
@@ -190,7 +237,13 @@ class TF_Submissions {
 		if ( ! $post_id || get_post_type( $post_id ) !== TF_CPT ) {
 			wp_send_json_error( array( 'message' => 'Invalid form' ), 400 );
 		}
-		$def    = tf_get_form( $post_id );
+		$def = tf_get_form( $post_id );
+
+		// Honeypot: pretend success but store nothing and fire no actions.
+		if ( self::is_spam() ) {
+			wp_send_json_success( array( 'submission_id' => 0, 'message' => $def['success_message'], 'redirect' => '' ) );
+		}
+
 		$fields = self::clean_fields();
 		$ctx    = self::request_context( $post_id );
 		$token  = isset( $_POST['submission_token'] ) ? sanitize_text_field( wp_unslash( $_POST['submission_token'] ) ) : '';
@@ -242,6 +295,7 @@ class TF_Submissions {
 		if ( ! $post_id || get_post_type( $post_id ) !== TF_CPT ) {
 			wp_send_json_error( array( 'message' => 'Invalid form' ), 400 );
 		}
+		if ( self::is_spam() ) { wp_send_json_success( array( 'skipped' => 'hp' ) ); }
 		$def = tf_get_form( $post_id );
 		if ( 'multistep' !== $def['type'] || count( $def['steps'] ) < 2 ) {
 			wp_send_json_success( array( 'skipped' => 'not_multistep' ) );
@@ -364,7 +418,7 @@ class TF_Submissions {
 				$g( $dev, 'category' ), $g( $dev, 'os' ), $g( $dev, 'browser' ), $g( $dev, 'platform' ), $g( $dev, 'language' ),
 				$r->user_agent,
 			);
-			foreach ( $keys as $k ) { $row[] = isset( $d[ $k ] ) ? $d[ $k ] : ''; }
+			foreach ( $keys as $k ) { $row[] = isset( $d[ $k ] ) ? self::flatten_value( $d[ $k ] ) : ''; }
 			fputcsv( $out, $row );
 		}
 		fclose( $out );
@@ -412,7 +466,7 @@ class TF_Submissions {
 		echo '<table class="widefat striped" style="max-width:760px"><tbody>';
 		foreach ( $rows as $k => $v ) {
 			if ( ! $keep_empty && ( '' === $v || null === $v ) ) { continue; }
-			if ( is_array( $v ) ) { $v = implode( ', ', $v ); }
+			if ( is_array( $v ) ) { $v = self::flatten_value( $v ); }
 			echo '<tr><th style="width:200px">' . esc_html( $k ) . '</th><td>' . esc_html( (string) $v ) . '</td></tr>';
 		}
 		echo '</tbody></table>';

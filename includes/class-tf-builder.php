@@ -262,8 +262,9 @@ class TF_Builder {
 		$steps = isset( $def['steps'] ) && is_array( $def['steps'] ) ? $def['steps'] : array();
 		foreach ( $steps as $step ) {
 			$s = array(
-				'title'  => isset( $step['title'] ) ? sanitize_text_field( $step['title'] ) : '',
-				'fields' => array(),
+				'title'     => isset( $step['title'] ) ? sanitize_text_field( $step['title'] ) : '',
+				'next_text' => isset( $step['next_text'] ) ? sanitize_text_field( $step['next_text'] ) : '',
+				'fields'    => array(),
 			);
 			$fields = isset( $step['fields'] ) && is_array( $step['fields'] ) ? $step['fields'] : array();
 			foreach ( $fields as $f ) {
@@ -271,11 +272,19 @@ class TF_Builder {
 				$width = isset( $f['width'] ) && in_array( $f['width'], array( 'full', 'half', 'third' ), true ) ? $f['width'] : 'full';
 				$num_or_blank = function ( $v ) { return ( isset( $v ) && '' !== $v && is_numeric( $v ) ) ? $v + 0 : ''; };
 				$int_or_blank = function ( $v ) { return ( isset( $v ) && '' !== $v && ctype_digit( (string) $v ) ) ? (int) $v : ''; };
+				$is_static = in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html' ), true );
+				// Paragraph keeps line breaks; other labels are single-line.
+				$label = isset( $f['label'] ) ? ( 'paragraph' === $type ? sanitize_textarea_field( $f['label'] ) : sanitize_text_field( $f['label'] ) ) : '';
+				// Custom HTML: trusted authors keep it raw; others get the post-content allowlist.
+				$html = isset( $f['html'] ) ? (string) $f['html'] : '';
+				if ( 'custom_html' === $type && '' !== $html && ! current_user_can( 'unfiltered_html' ) ) {
+					$html = wp_kses_post( $html );
+				}
 				$field = array(
 					'id'          => isset( $f['id'] ) ? sanitize_text_field( $f['id'] ) : ( 'f_' . wp_generate_password( 6, false ) ),
 					'type'        => $type,
-					'label'       => isset( $f['label'] ) ? sanitize_text_field( $f['label'] ) : '',
-					'key'         => isset( $f['key'] ) ? sanitize_key( $f['key'] ) : '',
+					'label'       => $label,
+					'key'         => $is_static ? '' : ( isset( $f['key'] ) ? sanitize_key( $f['key'] ) : '' ),
 					'placeholder' => isset( $f['placeholder'] ) ? sanitize_text_field( $f['placeholder'] ) : '',
 					'required'    => ! empty( $f['required'] ),
 					'show_label'  => ! array_key_exists( 'show_label', $f ) || ! empty( $f['show_label'] ), // default true
@@ -285,6 +294,15 @@ class TF_Builder {
 					'minlength'   => $int_or_blank( isset( $f['minlength'] ) ? $f['minlength'] : '' ),
 					'maxlength'   => $int_or_blank( isset( $f['maxlength'] ) ? $f['maxlength'] : '' ),
 					'multiple'    => ! empty( $f['multiple'] ), // dropdown: multi-choice
+					// Date range constraints (0 is valid for min_from_today = today / no past).
+					'min_from_today' => $int_or_blank( isset( $f['min_from_today'] ) ? $f['min_from_today'] : '' ),
+					'min_days'       => $int_or_blank( isset( $f['min_days'] ) ? $f['min_days'] : '' ),
+					'max_days'       => $int_or_blank( isset( $f['max_days'] ) ? $f['max_days'] : '' ),
+					// Slider range.
+					'step'        => $num_or_blank( isset( $f['step'] ) ? $f['step'] : '' ),
+					'default'     => $num_or_blank( isset( $f['default'] ) ? $f['default'] : '' ),
+					// Custom HTML content.
+					'html'        => $html,
 					'options'     => array(),
 				);
 				if ( in_array( $type, array( 'select', 'radio', 'checkbox' ), true ) && ! empty( $f['options'] ) && is_array( $f['options'] ) ) {
@@ -301,7 +319,7 @@ class TF_Builder {
 						}
 					}
 				}
-				if ( empty( $field['key'] ) ) {
+				if ( ! $is_static && empty( $field['key'] ) ) {
 					$field['key'] = sanitize_key( $field['label'] ?: $field['type'] . '_' . substr( $field['id'], 2 ) );
 				}
 				$s['fields'][] = $field;

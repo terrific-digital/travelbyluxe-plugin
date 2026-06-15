@@ -87,14 +87,20 @@ class TF_Render {
 						<?php if ( $is_multi && $n > 1 ) : ?>
 							<button type="button" class="tf-btn tf-back" data-step="<?php echo (int) $n; ?>">&larr; Back</button>
 						<?php endif; ?>
-						<?php if ( $is_multi && $n < $total ) : ?>
-							<button type="button" class="tf-btn tf-next" data-step="<?php echo (int) $n; ?>">Next &rarr;</button>
+						<?php if ( $is_multi && $n < $total ) :
+							$next_label = ( isset( $step['next_text'] ) && '' !== trim( $step['next_text'] ) ) ? $step['next_text'] : 'Next →'; ?>
+							<button type="button" class="tf-btn tf-next" data-step="<?php echo (int) $n; ?>"><?php echo esc_html( $next_label ); ?></button>
 						<?php else : ?>
 							<button type="submit" class="tf-btn tf-submit"><?php echo esc_html( $def['submit_text'] ); ?></button>
 						<?php endif; ?>
 					</div>
 				</div>
 			<?php endforeach; ?>
+
+			<?php // Honeypot: hidden from people; bots that fill it get their submission silently dropped. ?>
+			<div class="tf-hp" aria-hidden="true">
+				<label>Email<input type="text" name="tf_hp" tabindex="-1" autocomplete="off" value=""></label>
+			</div>
 
 			<div class="tf-thankyou" hidden>
 				<div class="tf-check">&#10003;</div>
@@ -151,13 +157,34 @@ class TF_Render {
 			return ob_get_clean();
 		}
 
-		if ( $label && $show_label && ! in_array( $type, array( 'heading' ), true ) ) {
+		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html' ), true ) ) {
 			echo '<label class="tf-label" for="' . esc_attr( $id ) . '">' . esc_html( $label ) . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</label>';
 		}
 
 		switch ( $type ) {
 			case 'heading':
 				echo '<h4 class="tf-heading">' . esc_html( $label ) . '</h4>';
+				break;
+			case 'paragraph':
+				echo '<p class="tf-paragraph">' . nl2br( esc_html( $label ) ) . '</p>';
+				break;
+			case 'separator':
+				echo '<hr class="tf-separator">';
+				break;
+			case 'custom_html':
+				// Stored sanitized at save time (raw only for unfiltered_html authors).
+				echo isset( $f['html'] ) ? $f['html'] : ''; // phpcs:ignore WordPress.Security.EscapeOutput
+				break;
+			case 'slider':
+				$smin  = ( isset( $f['min'] ) && '' !== $f['min'] ) ? $f['min'] : 0;
+				$smax  = ( isset( $f['max'] ) && '' !== $f['max'] ) ? $f['max'] : 100;
+				$sstep = ( isset( $f['step'] ) && '' !== $f['step'] ) ? $f['step'] : 1;
+				$sval  = ( isset( $f['default'] ) && '' !== $f['default'] ) ? $f['default'] : $smin;
+				echo '<div class="tf-slider">';
+				echo '<input type="range" class="tf-input tf-range" ' . $attrs // phpcs:ignore
+					. ' min="' . esc_attr( $smin ) . '" max="' . esc_attr( $smax ) . '" step="' . esc_attr( $sstep ) . '" value="' . esc_attr( $sval ) . '">';
+				echo '<output class="tf-range-val">' . esc_html( $sval ) . '</output>';
+				echo '</div>';
 				break;
 			case 'textarea':
 				echo '<textarea class="tf-input" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '" rows="4"></textarea>'; // phpcs:ignore
@@ -193,6 +220,21 @@ class TF_Render {
 					echo '<label class="tf-opt"><input type="' . esc_attr( $input_type ) . '" name="' . esc_attr( $key ) . ( 'checkbox' === $type ? '[]' : '' ) . '" id="' . esc_attr( $oid ) . '" value="' . esc_attr( $opt['value'] ) . '"> <span>' . esc_html( '' !== $opt['label'] ? $opt['label'] : $opt['value'] ) . '</span></label>';
 				}
 				echo '</div>';
+				break;
+			case 'daterange':
+				$mft = ( isset( $f['min_from_today'] ) && '' !== $f['min_from_today'] ) ? (int) $f['min_from_today'] : '';
+				$mnd = ( isset( $f['min_days'] ) && '' !== $f['min_days'] ) ? (int) $f['min_days'] : '';
+				$mxd = ( isset( $f['max_days'] ) && '' !== $f['max_days'] ) ? (int) $f['max_days'] : '';
+				$g = 'data-key="' . esc_attr( $key ) . '" data-daterange="1"';
+				if ( $req ) { $g .= ' data-required="1"'; }
+				if ( '' !== $mft ) { $g .= ' data-min-from-today="' . esc_attr( $mft ) . '"'; }
+				if ( '' !== $mnd ) { $g .= ' data-min-days="' . esc_attr( $mnd ) . '"'; }
+				if ( '' !== $mxd ) { $g .= ' data-max-days="' . esc_attr( $mxd ) . '"'; }
+				echo '<div class="tf-daterange" ' . $g . '>'; // phpcs:ignore
+				echo '<div class="tf-dr-col"><span class="tf-dr-sub">Start date</span><input type="date" class="tf-input tf-dr-start" id="' . esc_attr( $id ) . '-start"></div>';
+				echo '<div class="tf-dr-col"><span class="tf-dr-sub">End date</span><input type="date" class="tf-input tf-dr-end" id="' . esc_attr( $id ) . '-end"></div>';
+				echo '</div>';
+				echo '<span class="tf-dr-duration" hidden></span>';
 				break;
 			case 'email':
 			case 'number':
