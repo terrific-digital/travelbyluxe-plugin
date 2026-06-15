@@ -222,8 +222,11 @@
 		var mxd = parseInt(group.getAttribute('data-max-days'), 10);
 
 		function todayPlus(n) { var d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
-		function dAdd(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+		function dayDiff(a, b) {
+			return Math.round((new Date(a.getFullYear(), a.getMonth(), a.getDate()) - new Date(b.getFullYear(), b.getMonth(), b.getDate())) / 86400000);
+		}
 		var baseMin = !isNaN(mft) ? todayPlus(mft) : null;
+		var fp; // assigned below; referenced by the disable callback once the range starts
 
 		function setVals(s, e) {
 			startHidden.value = s || '';
@@ -234,32 +237,30 @@
 				else { durEl.hidden = true; }
 			}
 		}
-		function resetBounds(fp) {
-			fp.set('minDate', baseMin);
-			fp.set('maxDate', null);
-			fp.set('disable', []);
-		}
 
-		flatpickr(input, {
+		fp = flatpickr(input, {
 			mode: 'range',
 			dateFormat: 'Y-m-d',
 			minDate: baseMin,
-			onChange: function (sel, str, fp) {
+			// While the end date is being chosen (one date selected), forbid dates that
+			// would make an invalid range. Implemented as a disable *function* so we never
+			// mutate the picker mid-selection (which would break the two-click range).
+			disable: [ function (date) {
+				var sel = fp ? fp.selectedDates : [];
+				if (sel.length !== 1) { return false; } // unconstrained until a start is chosen
+				var diff = dayDiff(date, sel[0]);
+				if (diff <= 0) { return diff < 0; }                      // start stays; no backward
+				if (!isNaN(mnd) && mnd > 1 && diff < mnd) { return true; } // too short
+				if (!isNaN(mxd) && mxd > 0 && diff > mxd) { return true; } // too long
+				return false;
+			} ],
+			onChange: function (sel) {
 				if (sel.length === 1) {
-					// Forward-only selection: lock the calendar to start..start+max so the
-					// view stays put and an out-of-range end can't be picked. Start stays
-					// selectable because minDate == start (inclusive).
-					var start = sel[0];
-					fp.set('minDate', start);
-					fp.set('maxDate', ( !isNaN( mxd ) && mxd > 0 ) ? dAdd( start, mxd ) : null);
-					// Min length: disable the end dates that would be too close to the start.
-					fp.set('disable', ( !isNaN( mnd ) && mnd > 1 ) ? [ { from: dAdd( start, 1 ), to: dAdd( start, mnd - 1 ) } ] : []);
+					fp.redraw(); // re-evaluate the disable fn so invalid end dates grey out
 				} else if (sel.length === 2) {
 					setVals(ymd(sel[0]), ymd(sel[1]));
-					resetBounds(fp);
 				} else {
 					setVals('', '');
-					resetBounds(fp);
 				}
 			}
 		});
