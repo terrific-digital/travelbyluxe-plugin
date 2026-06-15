@@ -69,7 +69,3 @@ textarea.tf-input { resize: vertical; }
 .tf-preview .tf-back, .tf-preview .tf-next { display: none; }
 .tf-preview .tf-progress { display: none; }
 
-/* Date range (single flatpickr input → hidden start/end) */
-.tf-daterange .tf-dr-input { width: 100%; cursor: pointer; background: #fff; }
-.tf-dr-duration { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; color: #2e7d5b; }
-.tf-field.tf-has-error .tf-daterange .tf-dr-input { border-color: #c0392b; }

@@ -22,12 +22,6 @@
 		var m = d.getMonth() + 1, day = d.getDate();
 		return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day);
 	}
-	function durationDays(s, e) {
-		if (!s || !e) { return ''; }
-		var d = (Date.parse(e) - Date.parse(s)) / 86400000;
-		return isNaN(d) ? '' : Math.round(d);
-	}
-
 	// Honeypot value (a hidden field only bots fill).
 	function honeypot(form) {
 		var h = form.querySelector('.tf-hp input');
@@ -37,8 +31,7 @@
 	function collect(form) {
 		var out = {};
 		form.querySelectorAll('[data-key]').forEach(function (el) {
-			if (el.classList.contains('tf-options')) { return; }   // option groups handled below
-			if (el.classList.contains('tf-daterange')) { return; } // date-range groups handled below
+			if (el.classList.contains('tf-options')) { return; } // option groups handled below
 			var key = el.getAttribute('data-key');
 			if (!key) { return; }
 			out[key] = readValue(el);
@@ -52,14 +45,6 @@
 			} else {
 				out[key] = Array.prototype.map.call(checked, function (c) { return c.value; });
 			}
-		});
-		form.querySelectorAll('.tf-daterange[data-key]').forEach(function (group) {
-			var key = group.getAttribute('data-key');
-			var s = group.querySelector('.tf-dr-start');
-			var e = group.querySelector('.tf-dr-end');
-			var sv = s ? s.value : '';
-			var ev = e ? e.value : '';
-			out[key] = { start_date: sv, end_date: ev, duration: durationDays(sv, ev) };
 		});
 		return out;
 	}
@@ -83,40 +68,9 @@
 		stepEl.querySelectorAll('.tf-options[data-required="1"]').forEach(function (g) {
 			if (setError(g, g.querySelectorAll('input:checked').length === 0 ? 'Please select an option.' : '')) { ok = false; }
 		});
-		// Date-range groups.
-		stepEl.querySelectorAll('.tf-daterange[data-key]').forEach(function (group) {
-			var s = group.querySelector('.tf-dr-start');
-			var e = group.querySelector('.tf-dr-end');
-			var sv = s ? s.value : '';
-			var ev = e ? e.value : '';
-			var req = group.getAttribute('data-required') === '1';
-			var msg = '';
-			if (req && (!sv || !ev)) {
-				msg = 'Please choose a start and end date.';
-			} else if (sv || ev) {
-				if (!sv || !ev) {
-					msg = 'Please choose both a start and end date.';
-				} else if (Date.parse(ev) < Date.parse(sv)) {
-					msg = 'End date must be on or after the start date.';
-				} else {
-					var mft = parseInt(group.getAttribute('data-min-from-today'), 10);
-					if (!isNaN(mft)) {
-						var min = startMinDate(mft);
-						if (sv < min) { msg = mft === 0 ? 'Start date can’t be in the past.' : 'Start date must be at least ' + mft + ' day(s) from today.'; }
-					}
-					var dur = durationDays(sv, ev);
-					var mnd = parseInt(group.getAttribute('data-min-days'), 10);
-					var mxd = parseInt(group.getAttribute('data-max-days'), 10);
-					if (!msg && !isNaN(mnd) && dur < mnd) { msg = 'Please choose at least ' + mnd + ' day(s).'; }
-					if (!msg && !isNaN(mxd) && dur > mxd) { msg = 'Please choose at most ' + mxd + ' day(s).'; }
-				}
-			}
-			if (setError(group, msg)) { ok = false; }
-		});
 		// Inputs / selects / textareas.
 		stepEl.querySelectorAll('[data-key]').forEach(function (el) {
 			if (el.classList.contains('tf-options')) { return; }
-			if (el.classList.contains('tf-daterange')) { return; }
 			var raw = (el.value || '');
 			var has = (el.tagName === 'SELECT' && el.multiple) ? el.selectedOptions.length > 0 : raw.trim() !== '';
 			var req = el.getAttribute('data-required') === '1';
@@ -201,76 +155,10 @@
 		d.setDate(d.getDate() + daysFromToday);
 		return ymd(d);
 	}
-	function addDays(ymdStr, n) {
-		var d = new Date(ymdStr + 'T00:00:00');
-		d.setDate(d.getDate() + n);
-		return ymd(d);
-	}
-
-	// Wire a date-range group: a single flatpickr range input writing to hidden
-	// start/end fields, with a live duration readout. Min/max length is enforced
-	// IN the calendar — once a start is picked, dates that would break the rules
-	// are disabled so an invalid range can't be selected at all.
-	function setupDateRange(group) {
-		var input = group.querySelector('.tf-dr-input');
-		var startHidden = group.querySelector('.tf-dr-start');
-		var endHidden = group.querySelector('.tf-dr-end');
-		var durEl = group.parentNode ? group.parentNode.querySelector('.tf-dr-duration') : null;
-		if (!input || !startHidden || !endHidden || typeof flatpickr === 'undefined') { return; }
-		var mft = parseInt(group.getAttribute('data-min-from-today'), 10);
-		var mnd = parseInt(group.getAttribute('data-min-days'), 10);
-		var mxd = parseInt(group.getAttribute('data-max-days'), 10);
-
-		function todayPlus(n) { var d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
-		function dayDiff(a, b) {
-			return Math.round((new Date(a.getFullYear(), a.getMonth(), a.getDate()) - new Date(b.getFullYear(), b.getMonth(), b.getDate())) / 86400000);
-		}
-		var baseMin = !isNaN(mft) ? todayPlus(mft) : null;
-		var fp; // assigned below; referenced by the disable callback once the range starts
-
-		function setVals(s, e) {
-			startHidden.value = s || '';
-			endHidden.value = e || '';
-			var dur = durationDays(s, e);
-			if (durEl) {
-				if (dur !== '') { durEl.textContent = dur + (dur === 1 ? ' day' : ' days'); durEl.hidden = false; }
-				else { durEl.hidden = true; }
-			}
-		}
-
-		fp = flatpickr(input, {
-			mode: 'range',
-			dateFormat: 'Y-m-d',
-			minDate: baseMin,
-			// While the end date is being chosen (one date selected), forbid dates that
-			// would make an invalid range. Implemented as a disable *function* so we never
-			// mutate the picker mid-selection (which would break the two-click range).
-			disable: [ function (date) {
-				var sel = fp ? fp.selectedDates : [];
-				if (sel.length !== 1) { return false; } // unconstrained until a start is chosen
-				var diff = dayDiff(date, sel[0]);
-				if (diff <= 0) { return diff < 0; }                      // start stays; no backward
-				if (!isNaN(mnd) && mnd > 1 && diff < mnd) { return true; } // too short
-				if (!isNaN(mxd) && mxd > 0 && diff > mxd) { return true; } // too long
-				return false;
-			} ],
-			onChange: function (sel) {
-				if (sel.length === 1) {
-					fp.redraw(); // re-evaluate the disable fn so invalid end dates grey out
-				} else if (sel.length === 2) {
-					setVals(ymd(sel[0]), ymd(sel[1]));
-				} else {
-					setVals('', '');
-				}
-			}
-		});
-	}
-
 	function init(form) {
 		if (form.__tfInit) { return; }
 		form.__tfInit = true;
 		var multi = form.getAttribute('data-multistep') === '1';
-		form.querySelectorAll('.tf-daterange').forEach(setupDateRange);
 		// Slider: live value readout.
 		form.querySelectorAll('.tf-range').forEach(function (r) {
 			var out = r.parentNode ? r.parentNode.querySelector('.tf-range-val') : null;

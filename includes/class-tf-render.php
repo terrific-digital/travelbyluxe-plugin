@@ -42,21 +42,14 @@ class TF_Render {
 
 	/**
 	 * Register the form's style/script handles (idempotent). Called from both
-	 * wp_enqueue_scripts and the block's init so whichever fires first registers
-	 * tf-form WITH its flatpickr dependency — otherwise the block's early, bare
-	 * registration would win and flatpickr's CSS would never load.
-	 *
-	 * flatpickr (vendored, no runtime CDN) powers the single-input date-range
-	 * picker; it's a dependency so load order survives Breeze's JS/CSS combining.
+	 * wp_enqueue_scripts and the block's init.
 	 */
 	public static function register_handles() {
 		if ( ! wp_style_is( 'tf-form', 'registered' ) ) {
-			wp_register_style( 'tf-flatpickr', TF_URL . 'assets/flatpickr.min.css', array(), '4.6.13' );
-			wp_register_style( 'tf-form', TF_URL . 'assets/form.css', array( 'tf-flatpickr' ), TF_VERSION );
+			wp_register_style( 'tf-form', TF_URL . 'assets/form.css', array(), TF_VERSION );
 		}
 		if ( ! wp_script_is( 'tf-form', 'registered' ) ) {
-			wp_register_script( 'tf-flatpickr', TF_URL . 'assets/flatpickr.min.js', array(), '4.6.13', true );
-			wp_register_script( 'tf-form', TF_URL . 'assets/form.js', array( 'tf-flatpickr' ), TF_VERSION, true );
+			wp_register_script( 'tf-form', TF_URL . 'assets/form.js', array(), TF_VERSION, true );
 		}
 	}
 
@@ -162,6 +155,7 @@ class TF_Render {
 	 */
 	protected static function field( $f ) {
 		$type  = $f['type'];
+		if ( 'daterange' === $type ) { return ''; } // field type removed; skip any leftover instances
 		$key   = $f['key'];
 		$label = $f['label'];
 		$req   = ! empty( $f['required'] );
@@ -276,22 +270,6 @@ class TF_Render {
 					echo '<label class="tf-opt"><input type="' . esc_attr( $input_type ) . '" name="' . esc_attr( $key ) . ( 'checkbox' === $type ? '[]' : '' ) . '" id="' . esc_attr( $oid ) . '" value="' . esc_attr( $opt['value'] ) . '"> <span>' . esc_html( '' !== $opt['label'] ? $opt['label'] : $opt['value'] ) . '</span></label>';
 				}
 				echo '</div>';
-				break;
-			case 'daterange':
-				$mft = ( isset( $f['min_from_today'] ) && '' !== $f['min_from_today'] ) ? (int) $f['min_from_today'] : '';
-				$mnd = ( isset( $f['min_days'] ) && '' !== $f['min_days'] ) ? (int) $f['min_days'] : '';
-				$mxd = ( isset( $f['max_days'] ) && '' !== $f['max_days'] ) ? (int) $f['max_days'] : '';
-				$g = 'data-key="' . esc_attr( $key ) . '" data-daterange="1"';
-				if ( $req ) { $g .= ' data-required="1"'; }
-				if ( '' !== $mft ) { $g .= ' data-min-from-today="' . esc_attr( $mft ) . '"'; }
-				if ( '' !== $mnd ) { $g .= ' data-min-days="' . esc_attr( $mnd ) . '"'; }
-				if ( '' !== $mxd ) { $g .= ' data-max-days="' . esc_attr( $mxd ) . '"'; }
-				echo '<div class="tf-daterange" ' . $g . '>'; // phpcs:ignore
-				echo '<input type="text" class="tf-input tf-dr-input" id="' . esc_attr( $id ) . '" placeholder="' . esc_attr( $ph ? $ph : 'Select start &amp; end date…' ) . '" autocomplete="off" readonly>';
-				echo '<input type="hidden" class="tf-dr-start">';
-				echo '<input type="hidden" class="tf-dr-end">';
-				echo '</div>';
-				echo '<span class="tf-dr-duration" hidden></span>';
 				break;
 			case 'email':
 			case 'number':

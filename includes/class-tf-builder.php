@@ -37,7 +37,6 @@ class TF_Builder {
 			'previewAjax' => admin_url( 'admin-ajax.php' ),
 			'nonce'       => wp_create_nonce( 'tf_preview' ),
 			'css'         => array(
-				TF_URL . 'assets/flatpickr.min.css?ver=4.6.13',
 				TF_URL . 'assets/form.css?ver=' . TF_VERSION,
 			),
 		) );
@@ -314,11 +313,9 @@ class TF_Builder {
 					'multiple'    => ! empty( $f['multiple'] ), // dropdown: multi-choice
 					'country_code' => ! array_key_exists( 'country_code', $f ) || ! empty( $f['country_code'] ), // phone: default on
 
-					// Date bounds (days from today; 0 = today). Used by `date` and `daterange`.
+					// Date bounds for the `date` field (days from today; 0 = today).
 					'min_from_today' => $int_or_blank( isset( $f['min_from_today'] ) ? $f['min_from_today'] : '' ),
 					'max_from_today' => $int_or_blank( isset( $f['max_from_today'] ) ? $f['max_from_today'] : '' ),
-					'min_days'       => $int_or_blank( isset( $f['min_days'] ) ? $f['min_days'] : '' ),
-					'max_days'       => $int_or_blank( isset( $f['max_days'] ) ? $f['max_days'] : '' ),
 					// Slider range.
 					'step'        => $num_or_blank( isset( $f['step'] ) ? $f['step'] : '' ),
 					'default'     => $num_or_blank( isset( $f['default'] ) ? $f['default'] : '' ),

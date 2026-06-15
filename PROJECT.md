@@ -83,13 +83,16 @@ terrific-digital/
 { id, type, label, key, placeholder, required, show_label,
   width: full|half|third, min, max, minlength, maxlength,
   multiple,                       // dropdown multi-select
-  min_from_today, min_days, max_days,   // daterange constraints (days; 0 valid)
+  min_from_today, max_from_today,  // date field bounds (days from today; 0 valid)
   step, default,                  // slider
   html,                           // custom_html content
   options: [ {label, value} ] }   // select/radio/checkbox
 ```
-**Field types:** text, email, tel (phone), number, **slider**, date, **daterange**, textarea,
+**Field types:** text, email, tel (phone), number, **slider**, date, textarea,
 select (dropdown), radio, checkbox, heading, **paragraph**, **separator**, **custom_html**, hidden.
+
+> The **date range** field was removed in 2.17.0 (flatpickr range UX wasn't reliable enough). The
+> renderer skips any leftover `daterange` fields. To re-introduce, revert the removal commit.
 
 - **Static/display fields** (no submitted value, no `key`): `heading` (`<h4>`), `paragraph`
   (multi-line `<p>`, text kept in `label`), `separator` (`<hr>`), `custom_html` (raw HTML in
@@ -97,15 +100,6 @@ select (dropdown), radio, checkbox, heading, **paragraph**, **separator**, **cus
   Key field for all of these.
 - **slider** — `<input type="range">` with `min`/`max`/`step`/`default` (default value falls back
   to `min`); live value readout via `.tf-range-val`; submits the chosen number under its `key`.
-
-**Date range field** (`daterange`) — a **single** `<input>` powered by **flatpickr** range mode
-(vendored `assets/flatpickr.min.{js,css}`, no runtime CDN; enqueued as a dependency of `tf-form`
-so Breeze keeps the load order). Pick start→end in one calendar; the picker writes hidden
-`.tf-dr-start`/`.tf-dr-end` fields and a live duration readout. Edit options: `min_from_today`
-(earliest start in days from today; **0** = today/blocks past, blank = no limit → flatpickr
-`minDate`), `min_days` / `max_days` (allowed length of the range, in days → validated in form.js).
-Submits a value **object** `{ start_date, end_date, duration }`. Stored as a nested object in the
-submission `data`; CSV/detail flatten it to `start → end (N days)` via `flatten_value()`.
 
 **Single `date` field** — also supports `min_from_today` / `max_from_today` (earliest/latest in
 days from today; 0 = today, blank = no limit); converted to the input's `min`/`max` client-side

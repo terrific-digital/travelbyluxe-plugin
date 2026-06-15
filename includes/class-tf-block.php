@@ -32,8 +32,7 @@ class TF_Block {
 			TF_VERSION,
 			true
 		);
-		// Register the form's style/script handles (with the flatpickr dependency) so
-		// the editor preview is styled AND flatpickr CSS loads on the front end.
+		// Register the form's style/script handles so the editor preview is styled.
 		TF_Render::register_handles();
 
 		// Provide the list of forms to the editor (id, title, form_id).
