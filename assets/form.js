@@ -246,21 +246,14 @@
 			minDate: baseMin,
 			onChange: function (sel, str, fp) {
 				if (sel.length === 1) {
+					// Forward-only selection: lock the calendar to start..start+max so the
+					// view stays put and an out-of-range end can't be picked. Start stays
+					// selectable because minDate == start (inclusive).
 					var start = sel[0];
-					// Max length: cap how far the range can extend (either direction).
-					if (!isNaN(mxd) && mxd > 0) {
-						fp.set('maxDate', dAdd(start, mxd));
-						var bmin = dAdd(start, -mxd);
-						if (baseMin && bmin.getTime() < baseMin.getTime()) { bmin = baseMin; }
-						fp.set('minDate', bmin);
-					}
-					// Min length: disable the dates too close to the start (start stays selectable).
-					if (!isNaN(mnd) && mnd > 1) {
-						fp.set('disable', [
-							{ from: dAdd(start, -(mnd - 1)), to: dAdd(start, -1) },
-							{ from: dAdd(start, 1), to: dAdd(start, mnd - 1) }
-						]);
-					}
+					fp.set('minDate', start);
+					fp.set('maxDate', ( !isNaN( mxd ) && mxd > 0 ) ? dAdd( start, mxd ) : null);
+					// Min length: disable the end dates that would be too close to the start.
+					fp.set('disable', ( !isNaN( mnd ) && mnd > 1 ) ? [ { from: dAdd( start, 1 ), to: dAdd( start, mnd - 1 ) } ] : []);
 				} else if (sel.length === 2) {
 					setVals(ymd(sel[0]), ymd(sel[1]));
 					resetBounds(fp);
