@@ -32,10 +32,9 @@ class TF_Block {
 			TF_VERSION,
 			true
 		);
-		// Load the form CSS inside the editor so the preview is styled.
-		if ( ! wp_style_is( 'tf-form', 'registered' ) ) {
-			wp_register_style( 'tf-form', TF_URL . 'assets/form.css', array(), TF_VERSION );
-		}
+		// Register the form's style/script handles (with the flatpickr dependency) so
+		// the editor preview is styled AND flatpickr CSS loads on the front end.
+		TF_Render::register_handles();
 
 		// Provide the list of forms to the editor (id, title, form_id).
 		$forms = get_posts( array(

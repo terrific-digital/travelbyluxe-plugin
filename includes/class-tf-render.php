@@ -40,13 +40,28 @@ class TF_Render {
 		wp_send_json_success( array( 'html' => self::preview_markup( $def ) ) );
 	}
 
+	/**
+	 * Register the form's style/script handles (idempotent). Called from both
+	 * wp_enqueue_scripts and the block's init so whichever fires first registers
+	 * tf-form WITH its flatpickr dependency — otherwise the block's early, bare
+	 * registration would win and flatpickr's CSS would never load.
+	 *
+	 * flatpickr (vendored, no runtime CDN) powers the single-input date-range
+	 * picker; it's a dependency so load order survives Breeze's JS/CSS combining.
+	 */
+	public static function register_handles() {
+		if ( ! wp_style_is( 'tf-form', 'registered' ) ) {
+			wp_register_style( 'tf-flatpickr', TF_URL . 'assets/flatpickr.min.css', array(), '4.6.13' );
+			wp_register_style( 'tf-form', TF_URL . 'assets/form.css', array( 'tf-flatpickr' ), TF_VERSION );
+		}
+		if ( ! wp_script_is( 'tf-form', 'registered' ) ) {
+			wp_register_script( 'tf-flatpickr', TF_URL . 'assets/flatpickr.min.js', array(), '4.6.13', true );
+			wp_register_script( 'tf-form', TF_URL . 'assets/form.js', array( 'tf-flatpickr' ), TF_VERSION, true );
+		}
+	}
+
 	public static function register_assets() {
-		// flatpickr (vendored, no runtime CDN) powers the single-input date-range picker.
-		// Declared as a dependency so order survives Breeze's JS/CSS combining.
-		wp_register_style( 'tf-flatpickr', TF_URL . 'assets/flatpickr.min.css', array(), '4.6.13' );
-		wp_register_script( 'tf-flatpickr', TF_URL . 'assets/flatpickr.min.js', array(), '4.6.13', true );
-		wp_register_style( 'tf-form', TF_URL . 'assets/form.css', array( 'tf-flatpickr' ), TF_VERSION );
-		wp_register_script( 'tf-form', TF_URL . 'assets/form.js', array( 'tf-flatpickr' ), TF_VERSION, true );
+		self::register_handles();
 		wp_localize_script( 'tf-form', 'TF_FORM', array(
 			'ajax'  => admin_url( 'admin-ajax.php' ),
 			'nonce' => wp_create_nonce( 'tf_submit' ),
