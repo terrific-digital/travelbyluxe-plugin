@@ -143,6 +143,11 @@ class TF_Render {
 			if ( isset( $f['min'] ) && '' !== $f['min'] ) { $extra .= ' min="' . esc_attr( $f['min'] ) . '" data-min="' . esc_attr( $f['min'] ) . '"'; }
 			if ( isset( $f['max'] ) && '' !== $f['max'] ) { $extra .= ' max="' . esc_attr( $f['max'] ) . '" data-max="' . esc_attr( $f['max'] ) . '"'; }
 		}
+		if ( 'date' === $type ) {
+			// Bounds are days-from-today; the actual min/max dates are computed client-side (cache-safe).
+			if ( isset( $f['min_from_today'] ) && '' !== $f['min_from_today'] ) { $extra .= ' data-min-from-today="' . esc_attr( (int) $f['min_from_today'] ) . '"'; }
+			if ( isset( $f['max_from_today'] ) && '' !== $f['max_from_today'] ) { $extra .= ' data-max-from-today="' . esc_attr( (int) $f['max_from_today'] ) . '"'; }
+		}
 		if ( in_array( $type, array( 'text', 'email', 'tel', 'textarea' ), true ) ) {
 			if ( ! empty( $f['minlength'] ) ) { $extra .= ' minlength="' . esc_attr( $f['minlength'] ) . '" data-minlength="' . esc_attr( $f['minlength'] ) . '"'; }
 			if ( ! empty( $f['maxlength'] ) ) { $extra .= ' maxlength="' . esc_attr( $f['maxlength'] ) . '" data-maxlength="' . esc_attr( $f['maxlength'] ) . '"'; }

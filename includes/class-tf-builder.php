@@ -294,8 +294,9 @@ class TF_Builder {
 					'minlength'   => $int_or_blank( isset( $f['minlength'] ) ? $f['minlength'] : '' ),
 					'maxlength'   => $int_or_blank( isset( $f['maxlength'] ) ? $f['maxlength'] : '' ),
 					'multiple'    => ! empty( $f['multiple'] ), // dropdown: multi-choice
-					// Date range constraints (0 is valid for min_from_today = today / no past).
+					// Date bounds (days from today; 0 = today). Used by `date` and `daterange`.
 					'min_from_today' => $int_or_blank( isset( $f['min_from_today'] ) ? $f['min_from_today'] : '' ),
+					'max_from_today' => $int_or_blank( isset( $f['max_from_today'] ) ? $f['max_from_today'] : '' ),
 					'min_days'       => $int_or_blank( isset( $f['min_days'] ) ? $f['min_days'] : '' ),
 					'max_days'       => $int_or_blank( isset( $f['max_days'] ) ? $f['max_days'] : '' ),
 					// Slider range.

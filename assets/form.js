@@ -136,6 +136,11 @@
 					if (mn !== null && mn !== '' && n < parseFloat(mn)) { msg = 'Must be ' + mn + ' or more.'; }
 					if (!msg && mx !== null && mx !== '' && n > parseFloat(mx)) { msg = 'Must be ' + mx + ' or less.'; }
 				}
+				// Date bounds (min/max set on init from days-from-today; ISO strings compare lexicographically).
+				if (!msg && el.type === 'date' && raw) {
+					if (el.min && raw < el.min) { msg = 'Please choose a later date.'; }
+					else if (el.max && raw > el.max) { msg = 'Please choose an earlier date.'; }
+				}
 			}
 			if (setError(el, msg)) { ok = false; }
 		});
@@ -239,6 +244,13 @@
 		form.querySelectorAll('.tf-range').forEach(function (r) {
 			var out = r.parentNode ? r.parentNode.querySelector('.tf-range-val') : null;
 			if (out) { out.textContent = r.value; r.addEventListener('input', function () { out.textContent = r.value; }); }
+		});
+		// Single date field: apply earliest/latest bounds (days from today → actual dates).
+		form.querySelectorAll('input[type="date"][data-key]').forEach(function (d) {
+			var mn = parseInt(d.getAttribute('data-min-from-today'), 10);
+			var mx = parseInt(d.getAttribute('data-max-from-today'), 10);
+			if (!isNaN(mn)) { d.min = startMinDate(mn); }
+			if (!isNaN(mx)) { d.max = startMinDate(mx); }
 		});
 		// Stable token for this fill — links every step + the final submit to one row.
 		form.__tfToken = 'tfs_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);

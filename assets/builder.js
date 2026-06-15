@@ -104,6 +104,10 @@
 		var lengthRow = ( ['text', 'email', 'tel', 'textarea'].indexOf(f.type) >= 0 ) ?
 			'<div class="tf-b-row2"><label class="tf-b-row">Min length<input type="number" min="0" class="tf-b-minlen" value="' + esc(f.minlength) + '"></label>' +
 			'<label class="tf-b-row">Max length<input type="number" min="0" class="tf-b-maxlen" value="' + esc(f.maxlength) + '"></label></div>' : '';
+		var dateRow = (f.type === 'date') ?
+			'<div class="tf-b-row2"><label class="tf-b-row">Earliest (days from today)<input type="number" class="tf-b-minfromtoday" value="' + esc(f.min_from_today) + '" placeholder="(no limit)"></label>' +
+			'<label class="tf-b-row">Latest (days from today)<input type="number" class="tf-b-maxfromtoday" value="' + esc(f.max_from_today) + '" placeholder="(no limit)"></label></div>' +
+			'<p class="tf-b-hint" style="margin-top:-6px"><strong>0</strong> = today. Blank = no limit. E.g. earliest 0 blocks past dates; latest 90 caps at 90 days out.</p>' : '';
 		var dateRangeRow = (f.type === 'daterange') ?
 			'<label class="tf-b-row">Earliest start date<input type="number" min="0" class="tf-b-minfromtoday" value="' + esc(f.min_from_today) + '" placeholder="(no limit)"></label>' +
 			'<p class="tf-b-hint" style="margin-top:-6px">Days from today the visitor can first pick. <strong>0</strong> = today (blocks past dates); blank = no limit.</p>' +
@@ -149,7 +153,7 @@
 				labelRow +
 				showLabelRow +
 				keyRow +
-				placeRow + numberRow + sliderRow + lengthRow + dateRangeRow + htmlRow + optionsRow + widthRow + reqRow +
+				placeRow + numberRow + sliderRow + lengthRow + dateRow + dateRangeRow + htmlRow + optionsRow + widthRow + reqRow +
 			'</div>';
 
 		var editBtn = card.querySelector('.tf-b-edit');
@@ -216,6 +220,7 @@
 		var maxL = card.querySelector('.tf-b-maxlen'); if (maxL) { maxL.addEventListener('input', function () { f.maxlength = maxL.value; sync(); }); }
 		// date range constraints
 		var mft = card.querySelector('.tf-b-minfromtoday'); if (mft) { mft.addEventListener('input', function () { f.min_from_today = mft.value; sync(); }); }
+		var mxt = card.querySelector('.tf-b-maxfromtoday'); if (mxt) { mxt.addEventListener('input', function () { f.max_from_today = mxt.value; sync(); }); }
 		var mnd = card.querySelector('.tf-b-mindays'); if (mnd) { mnd.addEventListener('input', function () { f.min_days = mnd.value; sync(); }); }
 		var mxd = card.querySelector('.tf-b-maxdays'); if (mxd) { mxd.addEventListener('input', function () { f.max_days = mxd.value; sync(); }); }
 		// dropdown: multiple toggle
@@ -277,7 +282,7 @@
 						id: uid(), type: newType, label: defaultLabel(newType), key: '', placeholder: '',
 						required: false, show_label: true, width: 'full',
 						min: '', max: '', minlength: '', maxlength: '', multiple: false,
-						min_from_today: '', min_days: '', max_days: '',
+						min_from_today: '', max_from_today: '', min_days: '', max_days: '',
 						step: '', default: '', html: '',
 						options: HAS_OPTIONS[newType] ? [ { label: 'Option 1', value: 'Option 1' }, { label: 'Option 2', value: 'Option 2' } ] : []
 					};
