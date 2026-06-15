@@ -9,9 +9,34 @@ class TF_CPT_Manager {
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register' ) );
 		add_action( 'save_post_' . TF_CPT, array( __CLASS__, 'on_save' ), 10, 2 );
-		// Show the static ID + shortcode in the forms list table.
+		// Show the static ID + shortcode + submissions count in the forms list table.
 		add_filter( 'manage_' . TF_CPT . '_posts_columns', array( __CLASS__, 'columns' ) );
 		add_action( 'manage_' . TF_CPT . '_posts_custom_column', array( __CLASS__, 'column_content' ), 10, 2 );
+		add_filter( 'post_row_actions', array( __CLASS__, 'row_actions' ), 10, 2 );
+	}
+
+	/** Number of submissions stored for a form. */
+	protected static function subs_count( $post_id ) {
+		global $wpdb;
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}tf_submissions WHERE form_post_id = %d", $post_id ) );
+	}
+
+	/** Submissions screen URL filtered to one form. */
+	protected static function subs_url( $post_id ) {
+		return add_query_arg( array( 'page' => 'tf-submissions', 'form' => (int) $post_id ), admin_url( 'admin.php' ) );
+	}
+
+	/** Add a "Submissions (N)" link to each form's row actions. */
+	public static function row_actions( $actions, $post ) {
+		if ( $post->post_type === TF_CPT && current_user_can( 'edit_pages' ) ) {
+			$count = self::subs_count( $post->ID );
+			$actions['tf_subs'] = sprintf(
+				'<a href="%s">%s</a>',
+				esc_url( self::subs_url( $post->ID ) ),
+				esc_html( sprintf( __( 'Submissions (%s)', 'terrific-digital' ), number_format_i18n( $count ) ) )
+			);
+		}
+		return $actions;
 	}
 
 	public static function register() {
@@ -50,6 +75,7 @@ class TF_CPT_Manager {
 			if ( 'title' === $k ) {
 				$new['tf_id']        = 'Form ID';
 				$new['tf_shortcode'] = 'Shortcode';
+				$new['tf_subs']      = 'Submissions';
 			}
 		}
 		return $new;
@@ -61,6 +87,16 @@ class TF_CPT_Manager {
 		}
 		if ( 'tf_shortcode' === $col ) {
 			echo '<code>[terrific_form id="' . esc_attr( $post_id ) . '"]</code>';
+		}
+		if ( 'tf_subs' === $col ) {
+			$count = self::subs_count( $post_id );
+			printf(
+				'<a href="%s" class="button button-small" title="%s">%s %s</a>',
+				esc_url( self::subs_url( $post_id ) ),
+				esc_attr__( 'View submissions for this form', 'terrific-digital' ),
+				'<span class="dashicons dashicons-feedback" style="vertical-align:text-bottom;width:16px;height:16px;font-size:16px"></span>',
+				esc_html( number_format_i18n( $count ) )
+			);
 		}
 	}
 }
