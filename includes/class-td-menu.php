@@ -83,7 +83,10 @@ class TD_Menu {
 		$subs = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'tf_submissions' );
 		?>
 		<div class="wrap">
-			<h1>Terrific Digital</h1>
+			<h1 style="display:flex;align-items:center;gap:14px;margin:8px 0 12px">
+				<img src="<?php echo esc_url( TF_URL . 'assets/td-logo.svg' ); ?>" alt="Terrific Digital" style="height:36px;width:auto;display:block">
+				<span style="background:#f0f0f1;color:#50575e;border-radius:12px;padding:3px 11px;font-size:12px;font-weight:600;line-height:1.4">v<?php echo esc_html( TD_VERSION ); ?></span>
+			</h1>
 			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — for now it includes <strong>Terrific Forms</strong>.</p>
 			<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:20px">
 				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
