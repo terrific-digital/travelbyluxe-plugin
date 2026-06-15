@@ -58,7 +58,9 @@
 		// rebuild def.steps from DOM order, preserving field config from fieldMap
 		var steps = [];
 		root.querySelectorAll('.tf-b-step').forEach(function (stepEl) {
-			var title = stepEl.querySelector('.tf-b-step-title').value;
+			var titleEl = stepEl.querySelector('.tf-b-step-title');
+			if (!titleEl) { return; } // guard: only real step containers (not a stray matching element)
+			var title = titleEl.value;
 			var nextEl = stepEl.querySelector('.tf-b-step-next');
 			var fields = [];
 			stepEl.querySelectorAll('.tf-b-field').forEach(function (card) {
@@ -95,7 +97,7 @@
 		var sliderRow = (f.type === 'slider') ?
 			'<div class="tf-b-row2"><label class="tf-b-row">Minimum<input type="number" class="tf-b-min" value="' + esc(f.min) + '" placeholder="0"></label>' +
 			'<label class="tf-b-row">Maximum<input type="number" class="tf-b-max" value="' + esc(f.max) + '" placeholder="100"></label></div>' +
-			'<div class="tf-b-row2"><label class="tf-b-row">Step<input type="number" min="0" step="any" class="tf-b-step" value="' + esc(f.step) + '" placeholder="1"></label>' +
+			'<div class="tf-b-row2"><label class="tf-b-row">Step<input type="number" min="0" step="any" class="tf-b-sstep" value="' + esc(f.step) + '" placeholder="1"></label>' +
 			'<label class="tf-b-row">Default value<input type="number" class="tf-b-default" value="' + esc(f.default) + '" placeholder="(min)"></label></div>' : '';
 		var htmlRow = (f.type === 'custom_html') ?
 			'<label class="tf-b-row">Custom HTML<textarea class="tf-b-html" rows="6" spellcheck="false" placeholder="&lt;div&gt;…&lt;/div&gt;" style="font-family:monospace">' + escArea(f.html) + '</textarea></label>' : '';
@@ -133,7 +135,7 @@
 		}
 		var keyRow = STATIC_TYPES[f.type] ? '' :
 			'<label class="tf-b-row">Key (data layer)<input type="text" class="tf-b-key" value="' + esc(f.key) + '"></label>';
-		var widthBadge = ('full' !== f.width) ? '<span class="tf-b-wbadge">' + (f.width === 'half' ? '½' : '⅓') + '</span>' : '';
+		var widthBadge = ('full' !== f.width) ? '<span class="tf-b-wbadge">' + (f.width === 'half' ? '½ width' : '⅓ width') + '</span>' : '';
 		card.innerHTML =
 			'<div class="tf-b-field-head">' +
 				'<span class="tf-b-handle dashicons dashicons-move"></span>' +
@@ -170,7 +172,7 @@
 				card.classList.remove('tf-bw-full', 'tf-bw-half', 'tf-bw-third');
 				card.classList.add('tf-bw-' + f.width);
 				var wrap = card.querySelector('.tf-b-wbadge-wrap');
-				if (wrap) { wrap.innerHTML = 'full' !== f.width ? '<span class="tf-b-wbadge">' + (f.width === 'half' ? '½' : '⅓') + '</span>' : ''; }
+				if (wrap) { wrap.innerHTML = 'full' !== f.width ? '<span class="tf-b-wbadge">' + (f.width === 'half' ? '½ width' : '⅓ width') + '</span>' : ''; }
 				sync();
 			});
 		}
@@ -191,7 +193,7 @@
 		}
 		if (keyEl) { keyEl.addEventListener('input', function () { f.key = slug(keyEl.value); keyEl.setAttribute('data-auto', '0'); sync(); }); }
 		// slider step / default value
-		var stp = card.querySelector('.tf-b-step'); if (stp) { stp.addEventListener('input', function () { f.step = stp.value; sync(); }); }
+		var stp = card.querySelector('.tf-b-sstep'); if (stp) { stp.addEventListener('input', function () { f.step = stp.value; sync(); }); }
 		var dft = card.querySelector('.tf-b-default'); if (dft) { dft.addEventListener('input', function () { f.default = dft.value; sync(); }); }
 		// custom HTML content
 		var htmlEl = card.querySelector('.tf-b-html'); if (htmlEl) { htmlEl.addEventListener('input', function () { f.html = htmlEl.value; sync(); }); }

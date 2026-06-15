@@ -19,11 +19,9 @@
 .tf-b-fields { min-height: 60px; padding: 10px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
 .tf-b-fields:empty::after { content: 'Drop fields here'; flex: 0 0 100%; text-align: center; color: #aaa; padding: 18px; border: 2px dashed #dcdcde; border-radius: 4px; }
 
+/* Builder cards are always full-width for clear editing; the ½/⅓ badge shows the
+   chosen width, which is applied on the live form (not in this editor canvas). */
 .tf-b-field { border: 1px solid #dcdcde; border-radius: 4px; background: #fff; box-sizing: border-box; flex: 0 0 100%; }
-.tf-b-field.tf-bw-full  { flex: 0 0 100%; }
-.tf-b-field.tf-bw-half  { flex: 0 0 calc(50% - 4px); }
-.tf-b-field.tf-bw-third { flex: 0 0 calc((100% - 16px) / 3); }
-.tf-b-field.is-editing  { flex: 0 0 100%; }
 .tf-b-wbadge { display: inline-block; background: #2271b1; color: #fff; font-size: 11px; font-weight: 600; border-radius: 3px; padding: 1px 6px; }
 .tf-b-wbadge-wrap { margin-left: auto; }
 .tf-b-field-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 8px 10px; }
