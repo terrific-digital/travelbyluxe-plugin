@@ -226,14 +226,19 @@ class TF_Render {
 				echo '<textarea class="tf-input" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '" rows="4"></textarea>'; // phpcs:ignore
 				break;
 			case 'tel':
-				echo '<div class="tf-phone" data-tf-phone>';
-				echo '<select class="tf-phone-cc" aria-label="Country dial code">';
-				foreach ( tf_countries() as $c ) {
-					echo '<option value="' . esc_attr( $c[1] ) . '" data-cc="' . esc_attr( $c[0] ) . '">' . tf_flag( $c[0] ) . ' ' . esc_html( $c[1] ) . '</option>';
+				$with_cc = ! isset( $f['country_code'] ) || ! empty( $f['country_code'] ); // default on
+				if ( $with_cc ) {
+					echo '<div class="tf-phone" data-tf-phone>';
+					echo '<select class="tf-phone-cc" aria-label="Country dial code">';
+					foreach ( tf_countries() as $c ) {
+						echo '<option value="' . esc_attr( $c[1] ) . '" data-cc="' . esc_attr( $c[0] ) . '">' . tf_flag( $c[0] ) . ' ' . esc_html( $c[1] ) . '</option>';
+					}
+					echo '</select>';
+					echo '<input type="tel" class="tf-input tf-phone-num" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '">'; // phpcs:ignore
+					echo '</div>';
+				} else {
+					echo '<input type="tel" class="tf-input" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '">'; // phpcs:ignore
 				}
-				echo '</select>';
-				echo '<input type="tel" class="tf-input tf-phone-num" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '">'; // phpcs:ignore
-				echo '</div>';
 				break;
 			case 'select':
 				$multiple = ! empty( $f['multiple'] );
