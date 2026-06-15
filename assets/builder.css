@@ -1,0 +1,68 @@
+/* Terrific Forms — builder UI */
+#tf-builder .tf-builder-loading { padding: 20px; color: #777; }
+.tf-b-wrap { display: flex; gap: 16px; align-items: flex-start; }
+.tf-b-palette { width: 200px; flex: 0 0 200px; position: sticky; top: 40px; }
+.tf-b-palette h4 { margin: 0 0 4px; }
+.tf-b-hint { color: #777; font-size: 12px; margin: 0 0 10px; }
+.tf-b-palette-list { display: flex; flex-direction: column; gap: 6px; }
+.tf-b-pal-item { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: #f6f7f7; border: 1px solid #dcdcde; border-radius: 4px; cursor: grab; font-size: 13px; user-select: none; }
+.tf-b-pal-item:hover { background: #fff; border-color: #2271b1; }
+.tf-b-pal-item .dashicons { font-size: 16px; width: 16px; height: 16px; color: #2271b1; }
+
+.tf-b-canvas { flex: 1 1 auto; min-width: 0; }
+.tf-b-step { border: 1px solid #dcdcde; border-radius: 6px; margin-bottom: 14px; background: #fff; }
+.tf-b-step-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0f0f1; border-bottom: 1px solid #dcdcde; border-radius: 6px 6px 0 0; }
+.tf-b-step-n { font-weight: 600; white-space: nowrap; }
+.tf-b-step-title { flex: 1; }
+.tf-b-del-step { color: #b32d2e !important; }
+.tf-b-fields { min-height: 60px; padding: 10px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
+.tf-b-fields:empty::after { content: 'Drop fields here'; flex: 0 0 100%; text-align: center; color: #aaa; padding: 18px; border: 2px dashed #dcdcde; border-radius: 4px; }
+
+.tf-b-field { border: 1px solid #dcdcde; border-radius: 4px; background: #fff; box-sizing: border-box; flex: 0 0 100%; }
+.tf-b-field.tf-bw-full  { flex: 0 0 100%; }
+.tf-b-field.tf-bw-half  { flex: 0 0 calc(50% - 4px); }
+.tf-b-field.tf-bw-third { flex: 0 0 calc((100% - 16px) / 3); }
+.tf-b-field.is-editing  { flex: 0 0 100%; }
+.tf-b-wbadge { display: inline-block; background: #2271b1; color: #fff; font-size: 11px; font-weight: 600; border-radius: 3px; padding: 1px 6px; }
+.tf-b-wbadge-wrap { margin-left: auto; }
+.tf-b-field-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 8px 10px; }
+.tf-b-handle { cursor: grab; color: #999; }
+.tf-b-type { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #2271b1; background: #f0f6fc; padding: 2px 6px; border-radius: 3px; }
+.tf-b-field-label { flex: 1; font-weight: 500; }
+.tf-b-edit, .tf-b-del { font-size: 12px; }
+.tf-b-del { color: #b32d2e !important; }
+.tf-b-field-body { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 8px; border-top: 1px dashed #eee; margin-top: 2px; padding-top: 10px; }
+.tf-b-field-body[hidden] { display: none; }
+.tf-b-row { display: flex; flex-direction: column; font-size: 12px; font-weight: 600; gap: 3px; }
+.tf-b-row input[type=text], .tf-b-row textarea { font-weight: 400; }
+.tf-b-inline { flex-direction: row; align-items: center; gap: 6px; }
+.tf-b-ghost { opacity: .4; }
+.tf-b-add-step { margin-top: 4px; }
+
+/* Actions builder */
+.tf-actions-empty { color: #777; background: #f6f7f7; border: 1px dashed #c3c4c7; border-radius: 6px; padding: 16px; text-align: center; }
+.tf-action-card { border: 1px solid #dcdcde; border-radius: 6px; margin-bottom: 10px; background: #fff; }
+.tf-action-card.is-off { opacity: .55; }
+.tf-action-head { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #f6f7f7; border-bottom: 1px solid #dcdcde; border-radius: 6px 6px 0 0; }
+.tf-action-title { font-weight: 600; }
+.tf-action-toggle { margin-left: auto; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
+.tf-ac-remove { color: #b32d2e !important; font-size: 15px; line-height: 1; text-decoration: none; }
+.tf-action-body { padding: 12px; }
+.tf-ac-radio { display: block; margin: 6px 0; }
+.tf-action-body input.widefat, .tf-action-body select { margin: 4px 0 12px; }
+.tf-add-action { margin-top: 8px; padding-top: 10px; border-top: 1px solid #f0f0f1; }
+.tf-add-label { color: #555; margin-right: 6px; }
+.tf-ac-field { display:block; margin-top:8px; }
+.tf-ac-flabel { display:block; font-weight:600; font-size:12px; margin-bottom:3px; }
+.tf-ac-field select { min-width:200px; }
+
+/* Field options table + min/max rows */
+.tf-b-row2 { display: flex; gap: 10px; }
+.tf-b-row2 .tf-b-row { flex: 1; }
+.tf-b-rowlabel { font-weight: 600; font-size: 12px; margin-bottom: 3px; display: block; }
+.tf-b-opttable { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+.tf-b-opttable th { text-align: left; font-size: 11px; color: #666; padding: 2px 4px; }
+.tf-b-opttable td { padding: 2px 4px; }
+.tf-b-opttable input { width: 100%; }
+.tf-o-del { color: #b32d2e !important; }
+.tf-b-addopt { font-size: 12px; }

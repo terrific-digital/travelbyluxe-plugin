@@ -1,0 +1,52 @@
+/* Terrific Forms — frontend (neutral base styling; themes/pages can override) */
+.tf-form { max-width: 640px; margin: 0 auto; }
+.tf-form .tf-step { display: none; }
+.tf-form .tf-step.is-active { display: block; }
+.tf-form.tf-multistep .tf-step { animation: tf-fade .35s ease; }
+@keyframes tf-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.tf-progress { margin-bottom: 20px; }
+.tf-progress-meta { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; opacity: .8; }
+.tf-progress-bar { height: 4px; background: rgba(0,0,0,.1); border-radius: 4px; overflow: hidden; }
+.tf-progress-fill { display: block; height: 100%; background: currentColor; transition: width .4s ease; }
+
+.tf-step-title { margin: 0 0 14px; }
+.tf-fields { display: flex; flex-wrap: wrap; column-gap: 16px; }
+.tf-field { margin-bottom: 16px; box-sizing: border-box; flex: 0 0 100%; }
+.tf-field.tf-w-full  { flex: 0 0 100%; }
+.tf-field.tf-w-half  { flex: 0 0 calc((100% - 16px) / 2); }
+.tf-field.tf-w-third { flex: 0 0 calc((100% - 32px) / 3); }
+@media (max-width: 600px) {
+	.tf-field.tf-w-half, .tf-field.tf-w-third { flex: 0 0 100%; }
+}
+.tf-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.tf-req { color: #c0392b; }
+.tf-input { width: 100%; padding: 12px 14px; border: 1px solid rgba(0,0,0,.18); border-radius: 6px; font: inherit; box-sizing: border-box; background: #fff; }
+.tf-input:focus { outline: none; border-color: currentColor; box-shadow: 0 0 0 3px rgba(0,0,0,.06); }
+textarea.tf-input { resize: vertical; }
+.tf-heading { margin: 6px 0 10px; }
+
+.tf-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.tf-opt { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid rgba(0,0,0,.18); border-radius: 6px; cursor: pointer; font-size: 14px; }
+.tf-opt input { margin: 0; }
+.tf-opt:hover { border-color: currentColor; }
+
+.tf-actions { display: flex; gap: 12px; align-items: center; margin-top: 20px; }
+.tf-btn { font: inherit; font-weight: 600; padding: 13px 26px; border-radius: 6px; border: 0; cursor: pointer; }
+.tf-next, .tf-submit { background: #21313B; color: #fff; }
+.tf-back { background: transparent; border: 1px solid rgba(0,0,0,.2); }
+.tf-btn:disabled { opacity: .6; cursor: default; }
+.tf-loading::after { content: '…'; }
+
+.tf-field.tf-has-error .tf-input, .tf-field.tf-has-error .tf-options { border-color: #c0392b; }
+.tf-error { display: block; color: #c0392b; font-size: 12px; margin-top: 4px; }
+
+.tf-thankyou { text-align: center; padding: 30px 10px; }
+.tf-check { width: 56px; height: 56px; border-radius: 50%; background: #2e7d5b; color: #fff; font-size: 28px; line-height: 56px; margin: 0 auto 16px; }
+
+/* Phone (country code + number) */
+.tf-phone { display: flex; gap: 8px; }
+.tf-phone-cc { flex: 0 0 auto; width: auto; max-width: 140px; padding: 12px 8px; border: 1px solid rgba(0,0,0,.18); border-radius: 6px; font: inherit; background: #fff; }
+.tf-phone-num { flex: 1 1 auto; min-width: 0; }
+.tf-multiselect { padding: 6px; }
+.tf-hint { display: block; font-size: 11px; color: #777; margin-top: 4px; }
