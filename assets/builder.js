@@ -3,21 +3,21 @@
 	'use strict';
 
 	var FIELD_TYPES = [
-		{ type: 'text', label: 'Text' },
-		{ type: 'email', label: 'Email' },
-		{ type: 'tel', label: 'Phone' },
-		{ type: 'number', label: 'Number' },
-		{ type: 'slider', label: 'Slider' },
-		{ type: 'date', label: 'Date' },
-		{ type: 'textarea', label: 'Textarea' },
-		{ type: 'select', label: 'Dropdown' },
-		{ type: 'radio', label: 'Radio' },
-		{ type: 'checkbox', label: 'Checkboxes' },
-		{ type: 'heading', label: 'Heading' },
-		{ type: 'paragraph', label: 'Paragraph' },
-		{ type: 'separator', label: 'Separator' },
-		{ type: 'custom_html', label: 'Custom HTML' },
-		{ type: 'hidden', label: 'Hidden' }
+		{ type: 'text', label: 'Text', icon: 'dashicons-editor-textcolor' },
+		{ type: 'email', label: 'Email', icon: 'dashicons-email-alt' },
+		{ type: 'tel', label: 'Phone', icon: 'dashicons-phone' },
+		{ type: 'number', label: 'Number', icon: 'dashicons-calculator' },
+		{ type: 'slider', label: 'Slider', icon: 'dashicons-leftright' },
+		{ type: 'date', label: 'Date', icon: 'dashicons-calendar-alt' },
+		{ type: 'textarea', label: 'Textarea', icon: 'dashicons-editor-paragraph' },
+		{ type: 'select', label: 'Dropdown', icon: 'dashicons-arrow-down-alt2' },
+		{ type: 'radio', label: 'Radio', icon: 'dashicons-marker' },
+		{ type: 'checkbox', label: 'Checkboxes', icon: 'dashicons-yes' },
+		{ type: 'heading', label: 'Heading', icon: 'dashicons-heading' },
+		{ type: 'paragraph', label: 'Paragraph', icon: 'dashicons-media-text' },
+		{ type: 'separator', label: 'Separator', icon: 'dashicons-minus' },
+		{ type: 'custom_html', label: 'Custom HTML', icon: 'dashicons-editor-code' },
+		{ type: 'hidden', label: 'Hidden', icon: 'dashicons-hidden' }
 	];
 	var HAS_OPTIONS = { select: 1, radio: 1, checkbox: 1 };
 	// Static/display fields that carry no submitted value (and thus no data-layer key).
@@ -26,6 +26,7 @@
 	var root, hidden, def, fieldMap = {};
 
 	function uid() { return 'f_' + Math.random().toString(36).slice(2, 8); }
+	function typeIcon(t) { for (var i = 0; i < FIELD_TYPES.length; i++) { if (FIELD_TYPES[i].type === t) { return FIELD_TYPES[i].icon; } } return 'dashicons-editor-textcolor'; }
 	function slug(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''); }
 	function optLabel(o) { return (o && typeof o === 'object') ? (o.label || '') : (o || ''); }
 	function optValue(o) {
@@ -165,7 +166,7 @@
 		card.innerHTML =
 			'<div class="tf-b-field-head">' +
 				'<span class="tf-b-handle dashicons dashicons-move"></span>' +
-				'<span class="tf-b-type">' + f.type + '</span>' +
+				'<span class="tf-b-type"><span class="dashicons ' + typeIcon(f.type) + '"></span> ' + f.type + '</span>' +
 				'<span class="tf-b-field-label">' + esc(f.label || '(no label)') + '</span>' +
 				'<span class="tf-b-wbadge-wrap">' + widthBadge + '</span>' +
 				'<button type="button" class="tf-b-edit button-link">Edit</button>' +
@@ -334,7 +335,7 @@
 			var it = document.createElement('div');
 			it.className = 'tf-b-pal-item';
 			it.setAttribute('data-new-type', ft.type);
-			it.innerHTML = '<span class="dashicons dashicons-plus-alt2"></span>' + ft.label;
+			it.innerHTML = '<span class="dashicons ' + ft.icon + '"></span>' + ft.label;
 			list.appendChild(it);
 		});
 		Sortable.create(list, { group: { name: 'tf-fields', pull: 'clone', put: false }, sort: false, animation: 150 });

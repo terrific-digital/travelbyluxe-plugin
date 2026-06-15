@@ -27,6 +27,7 @@
 .tf-b-field-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 8px 10px; }
 .tf-b-handle { cursor: grab; color: #999; }
 .tf-b-type { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #2271b1; background: #f0f6fc; padding: 2px 6px; border-radius: 3px; }
+.tf-b-type .dashicons { font-size: 13px; width: 13px; height: 13px; vertical-align: text-bottom; }
 .tf-b-field-label { flex: 1; font-weight: 500; }
 .tf-b-edit, .tf-b-del { font-size: 12px; }
 .tf-b-del { color: #b32d2e !important; }
