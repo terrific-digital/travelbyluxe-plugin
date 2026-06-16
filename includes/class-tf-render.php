@@ -91,8 +91,17 @@ class TF_Render {
 		if ( ! $preview && ! is_admin() && $post_id && current_user_can( 'edit_post', $post_id ) ) {
 			$edit_url = get_edit_post_link( $post_id );
 			if ( $edit_url ) {
-				$pencil = '<svg class="tf-edit-ico" width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 13.5V16h2.5l7.4-7.4-2.5-2.5L4 13.5zM15.8 6.3a.7.7 0 0 0 0-1L14.7 4.2a.7.7 0 0 0-1 0l-1 1 2.5 2.5 1-1z" fill="currentColor"/></svg>';
-				echo '<div class="tf-admin-edit"><a class="tf-edit-link" href="' . esc_url( $edit_url ) . '" target="_blank" rel="noopener">' . $pencil . ' Edit form</a></div>'; // phpcs:ignore
+				// The Terrific Digital "t" brand mark (colour mosaic) so editors recognise it as a Terrific Form.
+				$tmark = '<svg class="tf-edit-ico" width="11" height="15" viewBox="0 0 24.33 33.95" aria-hidden="true">'
+					. '<rect x="8.109" y="0.758" width="8.109" height="8.109" fill="#7249B8"/>'
+					. '<rect x="0" y="8.867" width="8.109" height="8.109" fill="#FE3F4F"/>'
+					. '<rect x="8.109" y="8.867" width="8.109" height="8.109" fill="#FD8602"/>'
+					. '<rect x="16.217" y="8.867" width="8.109" height="8.109" fill="#C0DD32"/>'
+					. '<rect x="8.109" y="16.975" width="8.109" height="8.109" fill="#3DD2CB"/>'
+					. '<rect x="8.109" y="25.084" width="8.109" height="8.109" fill="#363C9F"/>'
+					. '<rect x="16.217" y="25.084" width="8.109" height="8.109" fill="#F5417F"/>'
+					. '</svg>';
+				echo '<div class="tf-admin-edit"><a class="tf-edit-link" href="' . esc_url( $edit_url ) . '" target="_blank" rel="noopener">' . $tmark . '<span>Edit form</span></a></div>'; // phpcs:ignore
 			}
 		}
 		?>
