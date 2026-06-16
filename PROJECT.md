@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.24.2
+**Current version:** 2.25.0
 
 ---
 
@@ -200,13 +200,14 @@ its `dbDelta` when ≠ `TF_VERSION`.
 ## 4. Front-end contracts
 
 **dataLayer events** (form.js) — `upd` (when User-Provided Data changes; pushed *before* the
-events below), `form_step` on each Next, `form_submission` on submit:
+events below), `form_step` on each Next, **`form_complete`** on the final step of a multi-step
+form (instead of `form_step`), `form_submission` on submit:
 ```js
 { event:'upd', upd:{ fn, ln, em, ph, co } }   // see §3 "User-Provided Data"
 ```
 ```js
-{ event:'form_step'|'form_submission', form_id, form_name, form_type:'Terrific Form',
-  form_step?, form_intent?, form_fields:{ key: value } }
+{ event:'form_step'|'form_complete'|'form_submission', form_id, form_name, form_type:'Terrific Form',
+  form_step?, form_intent?, form_fields:{ key: value } }   // form_complete = final step of a multi-step form
 ```
 
 **Webhook payload** (POSTed JSON):
@@ -317,6 +318,9 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   `manage_options`) to match the rest of the TD menu (see gotcha in §6).
 - **"Edit form" front-end link** (added earlier; 2.21.1 restyled) — small pill above each form with
   the Terrific "t" brand mark, linking to the editor; editors only (see §4).
+- **form_complete event** (2.25.0) — the final step of a multi-step form now fires a
+  `form_complete` dataLayer event instead of `form_step` (regular forms unchanged; still followed
+  by `form_submission`). See §4.
 - **Brand bar everywhere** (2.24.1) — `TD_Menu::brand_bar()` prints a shared logo + version bar at the
   top of every Terrific Digital admin screen via `in_admin_header` (gated by `is_td_screen()`), so the
   native Forms/Code Snippets list & edit screens carry the brand too. Dashboard/Notes dropped their

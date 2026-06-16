@@ -235,10 +235,12 @@
 		return ok;
 	}
 
-	function pushStep(form, stepNum) {
-		updateUpd(form); // push the `upd` event first, so it precedes form_step
+	// Push a step event. eventName defaults to 'form_step'; the final step of a
+	// multi-step form uses 'form_complete' instead.
+	function pushStep(form, stepNum, eventName) {
+		updateUpd(form); // push the `upd` event first, so it precedes this event
 		var ev = {
-			event: 'form_step',
+			event: eventName || 'form_step',
 			form_id: form.getAttribute('data-form-id'),
 			form_name: form.getAttribute('data-form-name'),
 			form_type: 'Terrific Form',
@@ -347,8 +349,8 @@
 			var fields = collect(form);
 			updateUpd(form); // capture/push `upd` before the form_submission event
 			if (multi) {
-				// final step also counts as a progression
-				pushStep(form, parseInt(form.getAttribute('data-total-steps'), 10));
+				// final step of a multi-step form: a form_complete event (not form_step)
+				pushStep(form, parseInt(form.getAttribute('data-total-steps'), 10), 'form_complete');
 			}
 			var btn = form.querySelector('.tf-submit');
 			if (btn) { btn.disabled = true; btn.classList.add('tf-loading'); }
