@@ -99,7 +99,9 @@ select (dropdown), radio, checkbox, heading, **paragraph**, **separator**, **cus
   `html`; stored raw for `unfiltered_html` authors, else `wp_kses_post`). The builder hides the
   Key field for all of these.
 - **slider** — `<input type="range">` with `min`/`max`/`step`/`default` (default value falls back
-  to `min`); live value readout via `.tf-range-val`; submits the chosen number under its `key`.
+  to `min`); the chosen number is shown **inline in the label** (`.tf-range-val`) and updates live.
+  Optional `prefix`/`suffix` (e.g. `$`, ` days`) and `show_scale` (renders a `.tf-range-scale`
+  min/max caption row). Values format with thousands separators. Submits the number under its `key`.
 
 **Single `date` field** — also supports `min_from_today` / `max_from_today` (earliest/latest in
 days from today; 0 = today, blank = no limit); converted to the input's `min`/`max` client-side

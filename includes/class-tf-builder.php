@@ -316,9 +316,12 @@ class TF_Builder {
 					// Date bounds for the `date` field (days from today; 0 = today).
 					'min_from_today' => $int_or_blank( isset( $f['min_from_today'] ) ? $f['min_from_today'] : '' ),
 					'max_from_today' => $int_or_blank( isset( $f['max_from_today'] ) ? $f['max_from_today'] : '' ),
-					// Slider range.
+					// Slider range + display.
 					'step'        => $num_or_blank( isset( $f['step'] ) ? $f['step'] : '' ),
 					'default'     => $num_or_blank( isset( $f['default'] ) ? $f['default'] : '' ),
+					'prefix'      => isset( $f['prefix'] ) ? sanitize_text_field( $f['prefix'] ) : '',
+					'suffix'      => isset( $f['suffix'] ) ? sanitize_text_field( $f['suffix'] ) : '',
+					'show_scale'  => ! empty( $f['show_scale'] ),
 					// Custom HTML content.
 					'html'        => $html,
 					'options'     => array(),

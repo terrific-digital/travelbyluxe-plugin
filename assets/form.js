@@ -159,10 +159,19 @@
 		if (form.__tfInit) { return; }
 		form.__tfInit = true;
 		var multi = form.getAttribute('data-multistep') === '1';
-		// Slider: live value readout.
+		// Slider: live value readout (in the field's label), with prefix/suffix.
 		form.querySelectorAll('.tf-range').forEach(function (r) {
-			var out = r.parentNode ? r.parentNode.querySelector('.tf-range-val') : null;
-			if (out) { out.textContent = r.value; r.addEventListener('input', function () { out.textContent = r.value; }); }
+			var field = r.closest('.tf-field');
+			var out = field ? field.querySelector('.tf-range-val') : (r.parentNode && r.parentNode.querySelector('.tf-range-val'));
+			if (!out) { return; }
+			var pfx = r.getAttribute('data-prefix') || '';
+			var sfx = r.getAttribute('data-suffix') || '';
+			function fmt() {
+				var n = Number(r.value);
+				out.textContent = pfx + (isNaN(n) ? r.value : n.toLocaleString()) + sfx;
+			}
+			fmt();
+			r.addEventListener('input', fmt);
 		});
 		// Single date field: apply earliest/latest bounds (days from today → actual dates).
 		form.querySelectorAll('input[type="date"][data-key]').forEach(function (d) {

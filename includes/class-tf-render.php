@@ -202,7 +202,7 @@ class TF_Render {
 			return ob_get_clean();
 		}
 
-		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html' ), true ) ) {
+		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html', 'slider' ), true ) ) {
 			echo '<label class="tf-label" for="' . esc_attr( $id ) . '">' . esc_html( $label ) . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</label>';
 		}
 
@@ -225,11 +225,23 @@ class TF_Render {
 				$smax  = ( isset( $f['max'] ) && '' !== $f['max'] ) ? $f['max'] : 100;
 				$sstep = ( isset( $f['step'] ) && '' !== $f['step'] ) ? $f['step'] : 1;
 				$sval  = ( isset( $f['default'] ) && '' !== $f['default'] ) ? $f['default'] : $smin;
+				$pfx   = isset( $f['prefix'] ) ? $f['prefix'] : '';
+				$sfx   = isset( $f['suffix'] ) ? $f['suffix'] : '';
+				$fmt   = function ( $n ) use ( $pfx, $sfx ) { return $pfx . number_format_i18n( (float) $n ) . $sfx; };
+				// Label carries the live value inline (slider is excluded from the generic label above).
+				if ( $label && $show_label ) {
+					echo '<label class="tf-label" for="' . esc_attr( $id ) . '">' . esc_html( $label )
+						. ( $req ? ' <span class="tf-req">*</span>' : '' )
+						. ': <span class="tf-range-val">' . esc_html( $fmt( $sval ) ) . '</span></label>';
+				}
 				echo '<div class="tf-slider">';
 				echo '<input type="range" class="tf-input tf-range" ' . $attrs // phpcs:ignore
-					. ' min="' . esc_attr( $smin ) . '" max="' . esc_attr( $smax ) . '" step="' . esc_attr( $sstep ) . '" value="' . esc_attr( $sval ) . '">';
-				echo '<output class="tf-range-val">' . esc_html( $sval ) . '</output>';
+					. ' min="' . esc_attr( $smin ) . '" max="' . esc_attr( $smax ) . '" step="' . esc_attr( $sstep ) . '" value="' . esc_attr( $sval ) . '"'
+					. ' data-prefix="' . esc_attr( $pfx ) . '" data-suffix="' . esc_attr( $sfx ) . '">';
 				echo '</div>';
+				if ( ! empty( $f['show_scale'] ) ) {
+					echo '<div class="tf-range-scale"><span>' . esc_html( $fmt( $smin ) ) . '</span><span>' . esc_html( $fmt( $smax ) ) . '</span></div>';
+				}
 				break;
 			case 'textarea':
 				echo '<textarea class="tf-input" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '" rows="4"></textarea>'; // phpcs:ignore
