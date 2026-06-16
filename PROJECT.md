@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.26.0
+**Current version:** 2.27.0
 
 ---
 
@@ -202,15 +202,18 @@ its `dbDelta` when ≠ `TF_VERSION`.
 **dataLayer events** (form.js) — `form_started` (once, on the first value entered in any field),
 `upd` (when User-Provided Data changes; pushed *before* the step/submit events), `form_step` on
 each Next, **`form_complete`** on the final step of a multi-step form (instead of `form_step`),
-`form_submission` on submit:
+`form_submission` on submit, then the form's **intent as its own event** (e.g. `generate_lead`)
+immediately after `form_submission`. Every front-end page also gets
+`window.dataLayer = window.dataLayer || [];` printed early in `<head>` (wp_head priority 1):
 ```js
 { event:'upd', upd:{ fn, ln, em, ph, co } }   // see §3 "User-Provided Data"
 ```
 ```js
-{ event:'form_started'|'form_step'|'form_complete'|'form_submission', form_id, form_name,
-  form_type:'Terrific Form', form_step?, form_intent?, form_fields:{ key: value } }
+{ event:'form_started'|'form_step'|'form_complete'|'form_submission'|<intent e.g. 'generate_lead'>,
+  form_id, form_name, form_type:'Terrific Form', form_step?, form_intent?, form_fields:{ key: value } }
 // form_started: fired once on first field interaction (no form_step/form_fields).
 // form_complete: final step of a multi-step form.
+// <intent>: the form's intent param (e.g. generate_lead) pushed as its own event right after form_submission.
 ```
 
 **Webhook payload** (POSTed JSON):
@@ -263,7 +266,8 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
 - **Field options** — number **min/max**, **min/max length** (text/email/tel/textarea),
   **phone** field with IP-geolocated country dial-code dropdown, **dropdown** single/multi +
   **Label/Value** options table (value can differ from label).
-- **Intent** — per-form (only "Lead" → `generate_lead`); adds `form_intent` to dataLayer + webhook.
+- **Intent** — per-form (only "Lead" → `generate_lead`); adds `form_intent` to dataLayer + webhook,
+  **and** pushes the intent param as its own dataLayer event (e.g. `generate_lead`) right after `form_submission`.
 - **Placement** — shortcode `[terrific_form id="N"]` **and** a Gutenberg block "Terrific Form"
   (live, non-interactive preview + "Edit form ↗" + form switcher).
 - **Actions** (one of each) — **Webhook** (global from Settings or custom URL; for multi-step a
@@ -321,6 +325,10 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   `manage_options`) to match the rest of the TD menu (see gotcha in §6).
 - **"Edit form" front-end link** (added earlier; 2.21.1 restyled) — small pill above each form with
   the Terrific "t" brand mark, linking to the editor; editors only (see §4).
+- **Intent event + dataLayer init** (2.27.0) — after `form_submission`, the form's intent param is
+  pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
+  property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
+  `<head>` (wp_head priority 1).
 - **form_started event** (2.26.0) — fires once (per fill) the first time the user enters a value
   in any field (honeypot ignored); a lightweight engagement signal carrying form id/name/intent.
 - **form_complete event** (2.25.0) — the final step of a multi-step form now fires a

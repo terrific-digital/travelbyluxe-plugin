@@ -397,10 +397,21 @@
 				fetch(window.TF_FORM.ajax, { method: 'POST', body: body, credentials: 'same-origin' })
 					.then(function (r) { return r.json(); })
 					.then(function (res) {
+						var subIntent = form.getAttribute('data-form-intent');
 						var subEv = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'Terrific Form', form_fields: fields };
-							var subIntent = form.getAttribute('data-form-intent');
-							if (subIntent) { subEv.form_intent = subIntent; }
-							window.dataLayer.push(subEv);
+						if (subIntent) { subEv.form_intent = subIntent; }
+						window.dataLayer.push(subEv);
+						// Fire the form's intent as its own event right after (e.g. generate_lead).
+						if (subIntent) {
+							window.dataLayer.push({
+								event: subIntent,
+								form_id: form.getAttribute('data-form-id'),
+								form_name: form.getAttribute('data-form-name'),
+								form_type: 'Terrific Form',
+								form_intent: subIntent,
+								form_fields: fields
+							});
+						}
 						var redirect = res && res.data && res.data.redirect;
 						if (redirect) { setTimeout(function () { window.location.href = redirect; }, 250); return; }
 						form.querySelectorAll('.tf-step, .tf-progress').forEach(function (s) { s.style.display = 'none'; });
