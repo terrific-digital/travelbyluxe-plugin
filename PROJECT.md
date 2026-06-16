@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.22.1
+**Current version:** 2.23.0
 
 ---
 
@@ -142,6 +142,16 @@ for dedupe), created_at`. Pruned to the most recent 50 per form (filter
 ```jsonc
 { "timestamp": "<ISO 8601 session-start>", "url": "<landing href>", "ref": "<referrer>" }
 ```
+The landing `url` is **param-normalized** before storage (2.23.0): when browsers/ad-blockers
+strip the official tracking params, our counterpart backups carried on the URL are rebuilt into
+the standard ones. `session.js` holds a backup→canonical map (`td_*` shadow the standard
+`utm_*`/click-ids — `td_src`→`utm_source`, `td_ga_cid`→`gclid`, `td_ba_cid`/`td_ma_cid`→`msclkid`,
+`td_tt_cid`→`ttclid`, `td_ya_cid`→`yclid`, `td_ra_cid`→`rdt_cid`, `td_ob_cid`→`dicbo`, …; and
+`hsa_*` HubSpot-ads params normalize into the `utm`/`td_*` scheme). For each backup it renames
+the key to its canonical name **only when** the canonical isn't already present (the surviving
+official param always wins) — a whole-key URLSearchParams rewrite (no substring-collision bug,
+order-independent), mirroring the GTM backup function. `ref` is left untouched.
+
 form.js reads this object (sessionStorage or cookie) and posts it as `session` with each
 submission/step; the server stores it in `meta.session`, adds it to the webhook payload as
 `session` (omitted when empty), shows it in the submission detail view, and exports it to CSV.
@@ -290,6 +300,9 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   `manage_options`) to match the rest of the TD menu (see gotcha in §6).
 - **"Edit form" front-end link** (added earlier; 2.21.1 restyled) — small pill above each form with
   the Terrific "t" brand mark, linking to the editor; editors only (see §4).
+- **Session URL param backup** (2.23.0) — `session.js` normalizes the stored landing `url`,
+  rebuilding stripped official tracking params (`utm_*`/`gclid`/`msclkid`/…) from our `td_*`/`hsa_*`
+  counterpart params (whole-key rewrite, official-wins). Mirrors the GTM backup function (see §3).
 - **User-Provided Data** (2.22.0) — plugin-wide feature (ON by default, TD_Upd) that captures the
   visitor's first name / last name / email / phone / country from any form fill into a persisted
   `upd` object `{fn,ln,em,ph,co}` (localStorage or a max-expiry cookie, selectable in Settings),
