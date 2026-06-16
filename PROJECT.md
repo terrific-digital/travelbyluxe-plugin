@@ -168,11 +168,12 @@ its `dbDelta` when ≠ `TF_VERSION`.
 
 **Code Snippets** (`td_snippet` CPT, `capability_type=page` → `edit_pages`, like the Forms CPT and
 the rest of the TD menu). Each snippet:
-`_td_snippet_code` (raw HTML/JS), `_td_snippet_location` (after_head_open · before_head_close ·
-after_body_open · after_body_close), `_td_snippet_enabled`, `_td_snippet_condition` (all · specific ·
-url_contains · url_not_contains) + `_td_snippet_pages` / `_td_snippet_url`. Injected via a single
-output buffer on `template_redirect` (string-spliced at each position — `after_head_open` and
-`after_body_close` have no WP hook), skipped for admin/ajax/REST/feed/embed. Code stored & output raw.
+`_td_snippet_code` (raw), `_td_snippet_type` (html | js — js is wrapped in `<script>` on output),
+`_td_snippet_location` (after_head_open · before_head_close · after_body_open · **before_body_close**),
+`_td_snippet_enabled`, `_td_snippet_condition` (all · specific · url_contains · url_not_contains) +
+`_td_snippet_pages` / `_td_snippet_url`. Injected via a single output buffer on `template_redirect`
+(string-spliced at each position — `after_head_open` and the body positions have no WP hook),
+skipped for admin/ajax/REST/feed/embed.
 
 **Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · Settings** (no "Add New"
 link — new forms are created from the Forms list screen's own "Add New" button).

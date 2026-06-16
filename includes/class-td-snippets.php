@@ -25,7 +25,11 @@ class TD_Snippets {
 		'after_head_open'   => 'After opening &lt;head&gt;',
 		'before_head_close' => 'Before closing &lt;/head&gt;',
 		'after_body_open'   => 'After opening &lt;body&gt;',
-		'after_body_close'  => 'After closing &lt;/body&gt;',
+		'before_body_close' => 'Before closing &lt;/body&gt;',
+	);
+	const TYPES = array(
+		'html' => 'HTML',
+		'js'   => 'JavaScript',
 	);
 	const CONDITIONS = array(
 		'all'              => 'On all pages',
@@ -96,6 +100,7 @@ class TD_Snippets {
 		foreach ( $cols as $k => $v ) {
 			$new[ $k ] = $v;
 			if ( 'title' === $k ) {
+				$new['td_type'] = 'Type';
 				$new['td_loc']  = 'Location';
 				$new['td_cond'] = 'Condition';
 				$new['td_on']   = 'Active';
@@ -105,6 +110,10 @@ class TD_Snippets {
 	}
 
 	public static function column( $col, $post_id ) {
+		if ( 'td_type' === $col ) {
+			$t = get_post_meta( $post_id, '_td_snippet_type', true ) ?: 'html';
+			echo esc_html( isset( self::TYPES[ $t ] ) ? self::TYPES[ $t ] : 'HTML' );
+		}
 		if ( 'td_loc' === $col ) {
 			$loc = get_post_meta( $post_id, '_td_snippet_location', true );
 			echo isset( self::LOCATIONS[ $loc ] ) ? wp_kses( self::LOCATIONS[ $loc ], array() ) : '—';
@@ -130,8 +139,15 @@ class TD_Snippets {
 
 	public static function box_code( $post ) {
 		$code = get_post_meta( $post->ID, '_td_snippet_code', true );
+		$type = get_post_meta( $post->ID, '_td_snippet_type', true ) ?: 'html';
 		wp_nonce_field( 'td_snippet_save', 'td_snippet_nonce' );
-		echo '<p class="description" style="margin-top:0">Raw HTML/JavaScript. Include your own <code>&lt;script&gt;</code> / <code>&lt;style&gt;</code> tags as needed. Injected verbatim into the page.</p>';
+		echo '<p style="margin:0 0 10px"><label><strong>Code type</strong> ';
+		echo '<select name="td_snippet_type" style="margin-left:6px">';
+		foreach ( self::TYPES as $v => $l ) {
+			printf( '<option value="%s"%s>%s</option>', esc_attr( $v ), selected( $type, $v, false ), esc_html( $l ) );
+		}
+		echo '</select></label></p>';
+		echo '<p class="description" style="margin-top:0"><strong>JavaScript</strong>: paste raw JS — it\'s wrapped in <code>&lt;script&gt;</code> automatically. <strong>HTML</strong>: include your own <code>&lt;script&gt;</code> / <code>&lt;style&gt;</code> tags. Injected verbatim.</p>';
 		echo '<textarea name="td_snippet_code" rows="16" style="width:100%;font-family:Menlo,Consolas,monospace;font-size:13px;line-height:1.5;white-space:pre" spellcheck="false">' . esc_textarea( $code ) . '</textarea>';
 	}
 
@@ -205,10 +221,12 @@ class TD_Snippets {
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
 		if ( ! current_user_can( 'edit_post', $post_id ) ) { return; }
 
-		// Code stored raw (admin-only feature). wp_slash counters update_post_meta's unslash.
+		// Code stored raw. wp_slash counters update_post_meta's unslash.
 		if ( isset( $_POST['td_snippet_code'] ) ) {
 			update_post_meta( $post_id, '_td_snippet_code', wp_slash( wp_unslash( $_POST['td_snippet_code'] ) ) );
 		}
+		$type = isset( $_POST['td_snippet_type'] ) ? sanitize_key( wp_unslash( $_POST['td_snippet_type'] ) ) : 'html';
+		update_post_meta( $post_id, '_td_snippet_type', isset( self::TYPES[ $type ] ) ? $type : 'html' );
 		update_post_meta( $post_id, '_td_snippet_enabled', empty( $_POST['td_snippet_enabled'] ) ? '' : '1' );
 
 		$loc = isset( $_POST['td_snippet_location'] ) ? sanitize_key( wp_unslash( $_POST['td_snippet_location'] ) ) : 'before_head_close';
@@ -255,6 +273,10 @@ class TD_Snippets {
 			if ( ! self::matches( $s->ID ) ) { continue; }
 			$code = (string) get_post_meta( $s->ID, '_td_snippet_code', true );
 			if ( '' === trim( $code ) ) { continue; }
+			// JavaScript snippets are raw JS — wrap them in a <script> tag.
+			if ( 'js' === ( get_post_meta( $s->ID, '_td_snippet_type', true ) ?: 'html' ) ) {
+				$code = "<script>\n" . $code . "\n</script>";
+			}
 			$out[] = array(
 				'location' => get_post_meta( $s->ID, '_td_snippet_location', true ) ?: 'before_head_close',
 				'code'     => $code,
@@ -276,7 +298,7 @@ class TD_Snippets {
 	public static function inject( $html ) {
 		if ( ! is_string( $html ) || stripos( $html, '</body>' ) === false ) { return $html; } // not a full HTML document
 
-		$by = array( 'after_head_open' => '', 'before_head_close' => '', 'after_body_open' => '', 'after_body_close' => '' );
+		$by = array( 'after_head_open' => '', 'before_head_close' => '', 'after_body_open' => '', 'before_body_close' => '' );
 		foreach ( self::$queued as $s ) {
 			if ( isset( $by[ $s['location'] ] ) ) { $by[ $s['location'] ] .= "\n" . $s['code'] . "\n"; }
 		}
@@ -284,7 +306,7 @@ class TD_Snippets {
 		$html = self::insert_after_open( $html, '/<head\b[^>]*>/i', $by['after_head_open'] );
 		$html = self::insert_before( $html, '</head>', $by['before_head_close'] );
 		$html = self::insert_after_open( $html, '/<body\b[^>]*>/i', $by['after_body_open'] );
-		$html = self::insert_after_last( $html, '</body>', $by['after_body_close'] );
+		$html = self::insert_before_last( $html, '</body>', $by['before_body_close'] );
 		return $html;
 	}
 
@@ -306,11 +328,11 @@ class TD_Snippets {
 		return $html;
 	}
 
-	/** Insert $code right after the last occurrence of $tag. */
-	protected static function insert_after_last( $html, $tag, $code ) {
+	/** Insert $code right before the last occurrence of $tag. */
+	protected static function insert_before_last( $html, $tag, $code ) {
 		if ( '' === $code ) { return $html; }
 		$pos = strripos( $html, $tag );
-		if ( false !== $pos ) { $pos += strlen( $tag ); return substr( $html, 0, $pos ) . $code . substr( $html, $pos ); }
+		if ( false !== $pos ) { return substr( $html, 0, $pos ) . $code . substr( $html, $pos ); }
 		return $html;
 	}
 }
