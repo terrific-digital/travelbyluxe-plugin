@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific.co.il
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.23.1
+ * Version:           2.24.0
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -11,7 +11,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.23.1' );
+define( 'TD_VERSION', '2.24.0' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -223,6 +223,56 @@ function tf_collect_cookies() {
 /** The plugin-wide global webhook URL (Settings page). */
 function tf_global_webhook() {
 	return TF_Settings::get( 'global_webhook' );
+}
+
+/* ----------------------------------------------------------- reCAPTCHA v3 */
+
+/** True only when reCAPTCHA is enabled AND both keys are configured. */
+function tf_recaptcha_enabled() {
+	$o = get_option( 'tf_settings', array() );
+	return ! empty( $o['recaptcha_enabled'] ) && ! empty( $o['recaptcha_site_key'] ) && ! empty( $o['recaptcha_secret_key'] );
+}
+
+function tf_recaptcha_site_key() {
+	$o = get_option( 'tf_settings', array() );
+	return isset( $o['recaptcha_site_key'] ) ? $o['recaptcha_site_key'] : '';
+}
+
+function tf_recaptcha_secret_key() {
+	$o = get_option( 'tf_settings', array() );
+	return isset( $o['recaptcha_secret_key'] ) ? $o['recaptcha_secret_key'] : '';
+}
+
+/** Minimum score (0–1) a submission must meet; defaults to Google's 0.5. */
+function tf_recaptcha_threshold() {
+	$o = get_option( 'tf_settings', array() );
+	$t = isset( $o['recaptcha_threshold'] ) ? (float) $o['recaptcha_threshold'] : 0.5;
+	return ( $t > 0 && $t <= 1 ) ? $t : 0.5;
+}
+
+/**
+ * Verify a reCAPTCHA v3 token with Google. Returns true when the token is valid
+ * and scores at/above the threshold. Fails OPEN on transport/parse errors (a
+ * Google outage shouldn't block real leads); fails CLOSED on a definitive
+ * low score or success:false.
+ */
+function tf_recaptcha_verify( $token ) {
+	$secret = tf_recaptcha_secret_key();
+	if ( ! $secret || ! $token ) { return false; }
+	$res = wp_remote_post( 'https://www.google.com/recaptcha/api/siteverify', array(
+		'timeout' => 5,
+		'body'    => array(
+			'secret'   => $secret,
+			'response' => $token,
+			'remoteip' => tf_client_ip(),
+		),
+	) );
+	if ( is_wp_error( $res ) ) { return true; } // fail open: don't lose leads on an outage
+	$body = json_decode( wp_remote_retrieve_body( $res ), true );
+	if ( ! is_array( $body ) ) { return true; }
+	if ( empty( $body['success'] ) ) { return false; }
+	$score = isset( $body['score'] ) ? (float) $body['score'] : 0.0;
+	return $score >= tf_recaptcha_threshold();
 }
 
 /**

@@ -28,6 +28,23 @@
 		return h ? h.value : '';
 	}
 
+	// Resolve a Google reCAPTCHA v3 token for the given action (empty string when
+	// reCAPTCHA isn't enabled or grecaptcha failed to load — the server then decides).
+	function recaptchaToken(action) {
+		return new Promise(function (resolve) {
+			var rc = window.TF_FORM && window.TF_FORM.recaptcha;
+			if (!rc || !rc.site_key || !window.grecaptcha || !window.grecaptcha.execute) { resolve(''); return; }
+			try {
+				window.grecaptcha.ready(function () {
+					window.grecaptcha.execute(rc.site_key, { action: action }).then(
+						function (token) { resolve(token || ''); },
+						function () { resolve(''); }
+					);
+				});
+			} catch (e) { resolve(''); }
+		});
+	}
+
 	// The td_session_data object (JSON string) from the "Store Session Data" feature,
 	// read from sessionStorage or a cookie. Empty string if not collected.
 	function sessionData() {
@@ -251,7 +268,10 @@
 		body.append('page_ref', document.referrer || '');
 		body.append('platform', (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
 		body.append('language', navigator.language || '');
-		fetch(window.TF_FORM.ajax, { method: 'POST', body: body, credentials: 'same-origin', keepalive: true }).catch(function () {});
+		recaptchaToken('step').then(function (tok) {
+			if (tok) { body.append('recaptcha_token', tok); }
+			fetch(window.TF_FORM.ajax, { method: 'POST', body: body, credentials: 'same-origin', keepalive: true }).catch(function () {});
+		});
 	}
 
 	function showStep(form, n) {
@@ -347,23 +367,26 @@
 			body.append('platform', (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
 			body.append('language', navigator.language || '');
 
-			fetch(window.TF_FORM.ajax, { method: 'POST', body: body, credentials: 'same-origin' })
-				.then(function (r) { return r.json(); })
-				.then(function (res) {
-					var subEv = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'Terrific Form', form_fields: fields };
-						var subIntent = form.getAttribute('data-form-intent');
-						if (subIntent) { subEv.form_intent = subIntent; }
-						window.dataLayer.push(subEv);
-					var redirect = res && res.data && res.data.redirect;
-					if (redirect) { setTimeout(function () { window.location.href = redirect; }, 250); return; }
-					form.querySelectorAll('.tf-step, .tf-progress').forEach(function (s) { s.style.display = 'none'; });
-					var ty = form.querySelector('.tf-thankyou');
-					if (ty) { ty.hidden = false; }
-				})
-				.catch(function () {
-					if (btn) { btn.disabled = false; btn.classList.remove('tf-loading'); }
-					alert('Something went wrong. Please try again.');
-				});
+			recaptchaToken('submit').then(function (tok) {
+				if (tok) { body.append('recaptcha_token', tok); }
+				fetch(window.TF_FORM.ajax, { method: 'POST', body: body, credentials: 'same-origin' })
+					.then(function (r) { return r.json(); })
+					.then(function (res) {
+						var subEv = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'Terrific Form', form_fields: fields };
+							var subIntent = form.getAttribute('data-form-intent');
+							if (subIntent) { subEv.form_intent = subIntent; }
+							window.dataLayer.push(subEv);
+						var redirect = res && res.data && res.data.redirect;
+						if (redirect) { setTimeout(function () { window.location.href = redirect; }, 250); return; }
+						form.querySelectorAll('.tf-step, .tf-progress').forEach(function (s) { s.style.display = 'none'; });
+						var ty = form.querySelector('.tf-thankyou');
+						if (ty) { ty.hidden = false; }
+					})
+					.catch(function () {
+						if (btn) { btn.disabled = false; btn.classList.remove('tf-loading'); }
+						alert('Something went wrong. Please try again.');
+					});
+			});
 		});
 	}
 

@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.23.1
+**Current version:** 2.24.0
 
 ---
 
@@ -176,6 +176,19 @@ selectable in Settings. Whenever the object changes, form.js pushes
 `{ event:'upd', upd:{…} }` **before** the matching `form_step`/`form_submission` event. This is
 a front-end/analytics identity feature only — nothing is stored server-side.
 
+**reCAPTCHA v3 (spam protection, 2.24.0)** — keys live in `tf_settings`:
+`{ recaptcha_enabled, recaptcha_site_key, recaptcha_secret_key, recaptcha_threshold }`
+(threshold 0–1, default 0.5). Settings shows an Enable toggle that reveals the Site/Secret key
++ threshold fields. Helpers in `terrific-digital.php`: `tf_recaptcha_enabled()` (true only when
+enabled **and** both keys set), `tf_recaptcha_site_key`/`_secret_key`/`_threshold`,
+`tf_recaptcha_verify($token)` (POST to Google `siteverify`; **fails open** on transport/parse
+error so an outage can't lose leads, **fails closed** on `success:false` or score below
+threshold). When enabled, `TF_Render` loads `https://www.google.com/recaptcha/api.js?render=KEY`
+on form pages and passes `TF_FORM.recaptcha.site_key`; `form.js` runs `grecaptcha.execute` (action
+`submit`/`step`) and posts `recaptcha_token` with each submit/step. `TF_Submissions::passes_recaptcha()`
+verifies it; a missing/low-score token is treated like the honeypot — **silent success-shaped drop**
+(nothing stored, no actions fired).
+
 **Options:** WP option `tf_settings` = `{ global_webhook }`. DB-version gates:
 `tf_db_version` (submissions) and `tf_revisions_db_version` (revisions) — each re-runs
 its `dbDelta` when ≠ `TF_VERSION`.
@@ -302,6 +315,9 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   `manage_options`) to match the rest of the TD menu (see gotcha in §6).
 - **"Edit form" front-end link** (added earlier; 2.21.1 restyled) — small pill above each form with
   the Terrific "t" brand mark, linking to the editor; editors only (see §4).
+- **reCAPTCHA v3** (2.24.0) — optional Google reCAPTCHA v3 on all forms (Settings: Enable + Site/Secret
+  keys + score threshold). Score-based, invisible; low-score/missing-token submissions are silently
+  dropped like the honeypot. Verified on both final submit and step pings (see §3).
 - **Notes tab** (2.23.1) — a read-only admin page (TD_Notes, last submenu) with a card grid that
   summarizes every plugin feature in short; keep it current by hand as features land.
 - **Session URL param backup** (2.23.0) — `session.js` normalizes the stored landing `url`,

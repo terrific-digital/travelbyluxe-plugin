@@ -25,6 +25,18 @@ class TF_Submissions {
 		return isset( $_POST['hp'] ) && '' !== trim( (string) wp_unslash( $_POST['hp'] ) );
 	}
 
+	/**
+	 * reCAPTCHA gate. True when the feature is off, or the posted token verifies
+	 * at/above the score threshold. A missing token (when enabled) or a low score
+	 * returns false → the request is treated like spam (silent drop).
+	 */
+	protected static function passes_recaptcha() {
+		if ( ! tf_recaptcha_enabled() ) { return true; }
+		$token = isset( $_POST['recaptcha_token'] ) ? sanitize_text_field( wp_unslash( $_POST['recaptcha_token'] ) ) : '';
+		if ( '' === $token ) { return false; }
+		return tf_recaptcha_verify( $token );
+	}
+
 	/** Public: return the visitor's country code (for phone-field auto-select). Not page-cached. */
 	public static function handle_geo() {
 		nocache_headers();
@@ -254,8 +266,8 @@ class TF_Submissions {
 		}
 		$def = tf_get_form( $post_id );
 
-		// Honeypot: pretend success but store nothing and fire no actions.
-		if ( self::is_spam() ) {
+		// Honeypot or reCAPTCHA: pretend success but store nothing and fire no actions.
+		if ( self::is_spam() || ! self::passes_recaptcha() ) {
 			wp_send_json_success( array( 'submission_id' => 0, 'message' => $def['success_message'], 'redirect' => '' ) );
 		}
 
@@ -310,7 +322,7 @@ class TF_Submissions {
 		if ( ! $post_id || get_post_type( $post_id ) !== TF_CPT ) {
 			wp_send_json_error( array( 'message' => 'Invalid form' ), 400 );
 		}
-		if ( self::is_spam() ) { wp_send_json_success( array( 'skipped' => 'hp' ) ); }
+		if ( self::is_spam() || ! self::passes_recaptcha() ) { wp_send_json_success( array( 'skipped' => 'spam' ) ); }
 		$def = tf_get_form( $post_id );
 		if ( 'multistep' !== $def['type'] || count( $def['steps'] ) < 2 ) {
 			wp_send_json_success( array( 'skipped' => 'not_multistep' ) );

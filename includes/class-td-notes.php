@@ -60,6 +60,7 @@ class TD_Notes {
 			) ),
 			array( '🛡️', 'Anti-spam', array(
 				'Honeypot field on every form — bot fills are silently dropped (nothing stored or sent).',
+				'Optional Google reCAPTCHA v3 (Settings) — invisible score-based bot filtering with a configurable threshold; low-scoring submissions are silently dropped.',
 			) ),
 			array( '🗂️', 'Store Session Data', array(
 				'Records <code>{ timestamp, url, ref }</code> once per session (sessionStorage or cookie).',
@@ -76,7 +77,7 @@ class TD_Notes {
 				'Per-snippet conditions (all pages, specific pages, URL contains / does not contain) + enable toggle.',
 			) ),
 			array( '⚙️', 'Settings &amp; dashboard', array(
-				'Settings: global webhook URL, Store Session Data, User-Provided Data.',
+				'Settings: global webhook URL, reCAPTCHA v3, Store Session Data, User-Provided Data.',
 				'Dashboard with feature cards, live counts, version &amp; last-updated date.',
 				'Top-level Terrific Digital menu (brand “t” icon); admin features gated on <code>edit_pages</code>.',
 			) ),

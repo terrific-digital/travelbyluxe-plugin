@@ -51,14 +51,19 @@ class TF_Render {
 		if ( ! wp_script_is( 'tf-form', 'registered' ) ) {
 			wp_register_script( 'tf-form', TF_URL . 'assets/form.js', array(), TF_VERSION, true );
 		}
+		// Google reCAPTCHA v3 API (loaded only when a form actually renders, below).
+		if ( ! wp_script_is( 'tf-recaptcha', 'registered' ) && tf_recaptcha_enabled() ) {
+			wp_register_script( 'tf-recaptcha', 'https://www.google.com/recaptcha/api.js?render=' . rawurlencode( tf_recaptcha_site_key() ), array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Google CDN, version-less
+		}
 	}
 
 	public static function register_assets() {
 		self::register_handles();
 		wp_localize_script( 'tf-form', 'TF_FORM', array(
-			'ajax'  => admin_url( 'admin-ajax.php' ),
-			'nonce' => wp_create_nonce( 'tf_submit' ),
-			'upd'   => TD_Upd::config(), // User-Provided Data capture (front-end identity object)
+			'ajax'      => admin_url( 'admin-ajax.php' ),
+			'nonce'     => wp_create_nonce( 'tf_submit' ),
+			'upd'       => TD_Upd::config(), // User-Provided Data capture (front-end identity object)
+			'recaptcha' => tf_recaptcha_enabled() ? array( 'site_key' => tf_recaptcha_site_key() ) : null,
 		) );
 	}
 
@@ -75,6 +80,7 @@ class TF_Render {
 		self::$enqueued = true;
 		wp_enqueue_style( 'tf-form' );
 		wp_enqueue_script( 'tf-form' );
+		if ( tf_recaptcha_enabled() ) { wp_enqueue_script( 'tf-recaptcha' ); }
 		self::$instances++;
 
 		return self::markup( $def, $post_id );
