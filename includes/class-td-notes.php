@@ -26,7 +26,7 @@ class TD_Notes {
 			array( '🧱', 'Form builder', array(
 				'Build by clicking a field type (or dragging) — regular &amp; multi-step forms, with a side-by-side live preview.',
 				'Duplicate any field; reorder by drag.',
-				'Per-field width (full / ½ / ⅓), show-label toggle, collapsible cards.',
+				'Per-field width (full / ½ / ⅓) shown to scale in the canvas — drag a field beside another to pair them into a row; show-label toggle; collapsible cards.',
 				'Field types: text, email, phone, number, slider, date, textarea, dropdown, radio, checkbox, heading, paragraph, separator, custom HTML, hidden.',
 				'Phone field with IP-geolocated country dial-code selector (toggleable).',
 				'Dropdown with separate label/value options, single or multi-select.',

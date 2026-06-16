@@ -26,6 +26,7 @@
 	var root, hidden, def, fieldMap = {};
 	var activeFieldsEl = null;   // the .tf-b-fields that a click-to-add field is dropped into
 	var previewHidden = false;   // live-preview pane collapsed?
+	var pairTarget = null;       // full-width card a dragged full-width field will pair into a row with
 
 	function uid() { return 'f_' + Math.random().toString(36).slice(2, 8); }
 
@@ -66,6 +67,40 @@
 		var eb = card.querySelector('.tf-b-edit');
 		if (eb) { eb.click(); } // auto-expand so it's ready to configure
 		try { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+	}
+
+	// ---- Width helpers (WYSIWYG widths + drag-to-pair into a row) ----
+	// A field that occupies a full row (and so can be paired with a neighbour).
+	function isFullEl(el) {
+		if (!el) { return false; }
+		if (el.getAttribute('data-new-type')) { return true; } // palette clone = new full-width field
+		var f = fieldMap[el.getAttribute('data-id')];
+		return !!f && (!f.width || f.width === 'full');
+	}
+	function clearPairCue() { if (root) { root.querySelectorAll('.tf-b-pairing').forEach(function (e) { e.classList.remove('tf-b-pairing'); }); } }
+	// Apply a width to an existing card: update the model, the card class, and its body control.
+	function setCardWidth(cardEl, w) {
+		var f = fieldMap[cardEl.getAttribute('data-id')];
+		if (!f) { return; }
+		f.width = w;
+		cardEl.classList.remove('tf-bw-full', 'tf-bw-half', 'tf-bw-third');
+		cardEl.classList.add('tf-bw-' + w);
+		var sel = cardEl.querySelector('.tf-b-width');
+		if (sel) { sel.value = w; }
+	}
+	// If a full-width card was dropped onto the right side of another full-width card,
+	// turn both into halves and sit them next to each other.
+	function maybePair(cardEl) {
+		if (!pairTarget || !cardEl || cardEl === pairTarget) { return; }
+		var a = fieldMap[cardEl.getAttribute('data-id')];
+		var b = fieldMap[pairTarget.getAttribute('data-id')];
+		if (!a || !b || a === b) { return; }
+		if (b.width && b.width !== 'full') { return; }
+		setCardWidth(cardEl, 'half');
+		setCardWidth(pairTarget, 'half');
+		if (cardEl.parentNode === pairTarget.parentNode) {
+			pairTarget.parentNode.insertBefore(cardEl, pairTarget.nextSibling);
+		}
 	}
 	function typeIcon(t) { for (var i = 0; i < FIELD_TYPES.length; i++) { if (FIELD_TYPES[i].type === t) { return FIELD_TYPES[i].icon; } } return 'dashicons-editor-textcolor'; }
 	function slug(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''); }
@@ -208,16 +243,16 @@
 		}
 		var keyRow = STATIC_TYPES[f.type] ? '' :
 			'<label class="tf-b-row">Key (data layer)<input type="text" class="tf-b-key" value="' + esc(f.key) + '"></label>';
-		var widthBadge = ('full' !== f.width) ? '<span class="tf-b-wbadge">' + (f.width === 'half' ? '½ width' : '⅓ width') + '</span>' : '';
 		card.innerHTML =
 			'<div class="tf-b-field-head">' +
 				'<span class="tf-b-handle dashicons dashicons-move"></span>' +
 				'<span class="tf-b-type"><span class="dashicons ' + typeIcon(f.type) + '"></span> ' + f.type + '</span>' +
 				'<span class="tf-b-field-label">' + esc(f.label || '(no label)') + '</span>' +
-				'<span class="tf-b-wbadge-wrap">' + widthBadge + '</span>' +
-				'<button type="button" class="tf-b-edit button-link">Edit</button>' +
-				'<button type="button" class="tf-b-dup button-link" title="Duplicate this field">Duplicate</button>' +
-				'<button type="button" class="tf-b-del button-link">Delete</button>' +
+				'<span class="tf-b-acts">' +
+					'<button type="button" class="tf-b-edit button-link" title="Edit"><span class="dashicons dashicons-edit"></span></button>' +
+					'<button type="button" class="tf-b-dup button-link" title="Duplicate"><span class="dashicons dashicons-admin-page"></span></button>' +
+					'<button type="button" class="tf-b-del button-link" title="Delete"><span class="dashicons dashicons-trash"></span></button>' +
+				'</span>' +
 			'</div>' +
 			'<div class="tf-b-field-body" hidden>' +
 				labelRow +
@@ -231,7 +266,9 @@
 		function setOpen(open) {
 			fieldBody.hidden = !open;
 			card.classList.toggle('is-editing', open);
-			editBtn.textContent = open ? 'Minimize' : 'Edit';
+			var ic = editBtn.querySelector('.dashicons');
+			if (ic) { ic.className = 'dashicons ' + (open ? 'dashicons-arrow-up-alt2' : 'dashicons-edit'); }
+			editBtn.title = open ? 'Minimize' : 'Edit';
 		}
 		editBtn.addEventListener('click', function (e) { e.stopPropagation(); setOpen(fieldBody.hidden); });
 		// Clicking the field name also expands/collapses.
@@ -242,11 +279,7 @@
 		var wsel = card.querySelector('.tf-b-width');
 		if (wsel) {
 			wsel.addEventListener('change', function () {
-				f.width = wsel.value;
-				card.classList.remove('tf-bw-full', 'tf-bw-half', 'tf-bw-third');
-				card.classList.add('tf-bw-' + f.width);
-				var wrap = card.querySelector('.tf-b-wbadge-wrap');
-				if (wrap) { wrap.innerHTML = 'full' !== f.width ? '<span class="tf-b-wbadge">' + (f.width === 'half' ? '½ width' : '⅓ width') + '</span>' : ''; }
+				setCardWidth(card, wsel.value);
 				sync();
 			});
 		}
@@ -358,6 +391,23 @@
 			handle: '.tf-b-handle',
 			animation: 150,
 			ghostClass: 'tf-b-ghost',
+			supportPointer: false, // use mouse/touch events (so onMove clientX is reliable)
+			// While dragging a full-width field over the RIGHT side of another full-width
+			// field, mark it as a pair target (drop there to share a row at 50/50).
+			onMove: function (evt, originalEvent) {
+				clearPairCue();
+				pairTarget = null;
+				var related = evt.related;
+				if (related && related.classList && related.classList.contains('tf-b-field') && isFullEl(evt.dragged) && isFullEl(related)) {
+					var rect = related.getBoundingClientRect();
+					var x = originalEvent ? originalEvent.clientX : 0;
+					if (x > rect.left + rect.width * 0.5) {
+						pairTarget = related;
+						related.classList.add('tf-b-pairing');
+					}
+				}
+				return true;
+			},
 			onAdd: function (evt) {
 				var item = evt.item;
 				var newType = item.getAttribute('data-new-type');
@@ -367,7 +417,14 @@
 					fieldMap[f.id] = f;
 					var card = fieldCard(f);
 					item.parentNode.replaceChild(card, item);
+					maybePair(card); // pair if dropped beside a full-width field
 				}
+				sync();
+			},
+			onEnd: function (evt) {
+				maybePair(evt.item); // pair when an existing field is dropped beside another
+				clearPairCue();
+				pairTarget = null;
 				sync();
 			},
 			onUpdate: sync,
@@ -394,7 +451,7 @@
 			it.addEventListener('click', function () { addFieldOfType(ft.type); });
 			list.appendChild(it);
 		});
-		Sortable.create(list, { group: { name: 'tf-fields', pull: 'clone', put: false }, sort: false, animation: 150 });
+		Sortable.create(list, { group: { name: 'tf-fields', pull: 'clone', put: false }, sort: false, animation: 150, supportPointer: false });
 		return pal;
 	}
 

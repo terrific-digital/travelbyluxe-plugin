@@ -32,18 +32,23 @@
 .tf-b-fields { min-height: 60px; padding: 10px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
 .tf-b-fields:empty::after { content: 'Drop fields here'; flex: 0 0 100%; text-align: center; color: #aaa; padding: 18px; border: 2px dashed #dcdcde; border-radius: 4px; }
 
-/* Builder cards are always full-width for clear editing; the ½/⅓ badge shows the
-   chosen width, which is applied on the live form (not in this editor canvas). */
+/* Builder cards reflect their chosen width (full / ½ / ⅓) so the canvas previews the
+   real layout; an expanded card temporarily goes full-width for comfortable editing. */
 .tf-b-field { border: 1px solid #dcdcde; border-radius: 4px; background: #fff; box-sizing: border-box; flex: 0 0 100%; }
-.tf-b-wbadge { display: inline-block; background: #2271b1; color: #fff; font-size: 11px; font-weight: 600; border-radius: 3px; padding: 1px 6px; }
-.tf-b-wbadge-wrap { margin-left: auto; }
+.tf-b-fields > .tf-b-field.tf-bw-half  { flex: 0 0 calc(50% - 4px); }
+.tf-b-fields > .tf-b-field.tf-bw-third { flex: 0 0 calc(33.333% - 6px); }
+.tf-b-field.is-editing { flex: 0 0 100% !important; }
+.tf-b-field.tf-b-pairing { box-shadow: 3px 0 0 #2271b1; } /* "drop here to pair into a row" cue */
 .tf-b-field-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 8px 10px; }
 .tf-b-handle { cursor: grab; color: #999; }
-.tf-b-type { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #2271b1; background: #f0f6fc; padding: 2px 6px; border-radius: 3px; }
+.tf-b-type { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #2271b1; background: #f0f6fc; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
 .tf-b-type .dashicons { font-size: 13px; width: 13px; height: 13px; vertical-align: text-bottom; }
-.tf-b-field-label { flex: 1; font-weight: 500; }
-.tf-b-edit, .tf-b-del, .tf-b-dup { font-size: 12px; }
-.tf-b-del { color: #b32d2e !important; }
+.tf-b-field-label { flex: 1; font-weight: 500; min-width: 60px; }
+.tf-b-acts { display: inline-flex; align-items: center; gap: 1px; margin-left: auto; }
+.tf-b-acts .button-link { padding: 3px; line-height: 1; color: #50575e; border-radius: 3px; }
+.tf-b-acts .button-link:hover { color: #2271b1; background: #f0f6fc; }
+.tf-b-acts .tf-b-del:hover { color: #b32d2e; background: #fcf0f1; }
+.tf-b-acts .dashicons { font-size: 18px; width: 18px; height: 18px; }
 .tf-b-field-body { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 8px; border-top: 1px dashed #eee; margin-top: 2px; padding-top: 10px; }
 .tf-b-field-body[hidden] { display: none; }
 .tf-b-row { display: flex; flex-direction: column; font-size: 12px; font-weight: 600; gap: 3px; }
