@@ -24,8 +24,49 @@
 	var STATIC_TYPES = { heading: 1, paragraph: 1, separator: 1, custom_html: 1 };
 
 	var root, hidden, def, fieldMap = {};
+	var activeFieldsEl = null;   // the .tf-b-fields that a click-to-add field is dropped into
+	var previewHidden = false;   // live-preview pane collapsed?
 
 	function uid() { return 'f_' + Math.random().toString(36).slice(2, 8); }
+
+	// Mark a step as the active target for click-to-add (highlighted only when multi-step).
+	function setActive(stepElm) {
+		if (!stepElm) { return; }
+		activeFieldsEl = stepElm.querySelector('.tf-b-fields');
+		if (root && currentType() === 'multistep') {
+			root.querySelectorAll('.tf-b-step.is-active-step').forEach(function (s) { s.classList.remove('is-active-step'); });
+			stepElm.classList.add('is-active-step');
+		}
+	}
+
+	// A fresh field object of the given type (used by both drag-add and click-add).
+	function newField(type) {
+		var f = {
+			id: uid(), type: type, label: defaultLabel(type), key: '', placeholder: '',
+			required: false, show_label: true, width: 'full',
+			min: '', max: '', minlength: '', maxlength: '', multiple: false,
+			min_from_today: '', max_from_today: '',
+			step: '', default: '', prefix: '', suffix: '', show_scale: false, value_inline: false, html: '', country_code: true,
+			options: HAS_OPTIONS[type] ? [{ label: 'Option 1', value: 'Option 1' }, { label: 'Option 2', value: 'Option 2' }] : []
+		};
+		f.key = slug(f.label);
+		return f;
+	}
+
+	// Click-to-add: append a new field to the active step (or the last step), open it, scroll to it.
+	function addFieldOfType(type) {
+		var fieldsEl = (activeFieldsEl && document.body.contains(activeFieldsEl)) ? activeFieldsEl : null;
+		if (!fieldsEl) { var all = root.querySelectorAll('.tf-b-fields'); fieldsEl = all[all.length - 1]; }
+		if (!fieldsEl) { return; }
+		var f = newField(type);
+		fieldMap[f.id] = f;
+		var card = fieldCard(f);
+		fieldsEl.appendChild(card);
+		sync();
+		var eb = card.querySelector('.tf-b-edit');
+		if (eb) { eb.click(); } // auto-expand so it's ready to configure
+		try { card.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+	}
 	function typeIcon(t) { for (var i = 0; i < FIELD_TYPES.length; i++) { if (FIELD_TYPES[i].type === t) { return FIELD_TYPES[i].icon; } } return 'dashicons-editor-textcolor'; }
 	function slug(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''); }
 	function optLabel(o) { return (o && typeof o === 'object') ? (o.label || '') : (o || ''); }
@@ -79,6 +120,7 @@
 	var previewTimer;
 	function schedulePreview() { clearTimeout(previewTimer); previewTimer = setTimeout(updatePreview, 400); }
 	function updatePreview() {
+		if (previewHidden) { return; } // pane collapsed — skip the server round-trip
 		var frame = document.getElementById('tf-preview-frame');
 		if (!frame || typeof TF_BUILD === 'undefined') { return; }
 		var submitEl = document.getElementById('tf_submit_text');
@@ -174,6 +216,7 @@
 				'<span class="tf-b-field-label">' + esc(f.label || '(no label)') + '</span>' +
 				'<span class="tf-b-wbadge-wrap">' + widthBadge + '</span>' +
 				'<button type="button" class="tf-b-edit button-link">Edit</button>' +
+				'<button type="button" class="tf-b-dup button-link" title="Duplicate this field">Duplicate</button>' +
 				'<button type="button" class="tf-b-del button-link">Delete</button>' +
 			'</div>' +
 			'<div class="tf-b-field-body" hidden>' +
@@ -207,6 +250,15 @@
 				sync();
 			});
 		}
+		card.querySelector('.tf-b-dup').addEventListener('click', function () {
+			var copy = JSON.parse(JSON.stringify(f));
+			copy.id = uid();
+			if (copy.key) { copy.key = copy.key + '_copy'; } // avoid a duplicate data-layer key
+			fieldMap[copy.id] = copy;
+			var nc = fieldCard(copy);
+			card.parentNode.insertBefore(nc, card.nextSibling);
+			sync();
+		});
 		card.querySelector('.tf-b-del').addEventListener('click', function () {
 			delete fieldMap[f.id];
 			card.remove();
@@ -294,6 +346,8 @@
 		var t = el.querySelector('.tf-b-step-title'); if (t) { t.addEventListener('input', sync); }
 		var nx = el.querySelector('.tf-b-step-next'); if (nx) { nx.addEventListener('input', sync); }
 		var ds = el.querySelector('.tf-b-del-step'); if (ds) { ds.addEventListener('click', function () { el.remove(); sync(); }); }
+		// Clicking anywhere in a step makes it the target for click-to-add.
+		el.addEventListener('mousedown', function () { setActive(el); });
 		makeSortable(list);
 		return el;
 	}
@@ -309,15 +363,7 @@
 				var newType = item.getAttribute('data-new-type');
 				if (newType) {
 					// dropped from palette -> create a real field
-					var f = {
-						id: uid(), type: newType, label: defaultLabel(newType), key: '', placeholder: '',
-						required: false, show_label: true, width: 'full',
-						min: '', max: '', minlength: '', maxlength: '', multiple: false,
-						min_from_today: '', max_from_today: '',
-						step: '', default: '', prefix: '', suffix: '', show_scale: false, value_inline: false, html: '', country_code: true,
-						options: HAS_OPTIONS[newType] ? [ { label: 'Option 1', value: 'Option 1' }, { label: 'Option 2', value: 'Option 2' } ] : []
-					};
-					f.key = slug(f.label);
+					var f = newField(newType);
 					fieldMap[f.id] = f;
 					var card = fieldCard(f);
 					item.parentNode.replaceChild(card, item);
@@ -337,13 +383,15 @@
 	function buildPalette() {
 		var pal = document.createElement('div');
 		pal.className = 'tf-b-palette';
-		pal.innerHTML = '<h4>Fields</h4><p class="tf-b-hint">Drag a field into the form &rarr;</p><div class="tf-b-palette-list"></div>';
+		pal.innerHTML = '<h4>Fields</h4><p class="tf-b-hint">Click to add, or drag into the form &rarr;</p><div class="tf-b-palette-list"></div>';
 		var list = pal.querySelector('.tf-b-palette-list');
 		FIELD_TYPES.forEach(function (ft) {
 			var it = document.createElement('div');
 			it.className = 'tf-b-pal-item';
 			it.setAttribute('data-new-type', ft.type);
+			it.title = 'Click to add, or drag into the form';
 			it.innerHTML = '<span class="dashicons ' + ft.icon + '"></span>' + ft.label;
+			it.addEventListener('click', function () { addFieldOfType(ft.type); });
 			list.appendChild(it);
 		});
 		Sortable.create(list, { group: { name: 'tf-fields', pull: 'clone', put: false }, sort: false, animation: 150 });
@@ -352,6 +400,14 @@
 
 	function render() {
 		root.innerHTML = '';
+
+		var bar = document.createElement('div');
+		bar.className = 'tf-b-toolbar';
+		var prevToggle = document.createElement('button');
+		prevToggle.type = 'button';
+		prevToggle.className = 'button-link tf-b-prev-toggle';
+		bar.appendChild(prevToggle);
+
 		var wrap = document.createElement('div');
 		wrap.className = 'tf-b-wrap';
 		var canvas = document.createElement('div');
@@ -366,15 +422,41 @@
 			add.textContent = '+ Add step';
 			add.addEventListener('click', function () {
 				var el = stepEl({ title: '', fields: [] }, canvas.querySelectorAll('.tf-b-step').length);
-				canvas.appendChild(el);
+				canvas.insertBefore(el, add); // keep the button last
+				setActive(el);
 				sync();
 			});
 			canvas.appendChild(add);
 		}
 
+		var pane = document.createElement('div');
+		pane.className = 'tf-b-preview-pane';
+		pane.innerHTML = '<div class="tf-b-preview-head">Live preview</div>' +
+			'<iframe id="tf-preview-frame" title="Form preview"></iframe>';
+
 		wrap.appendChild(buildPalette());
 		wrap.appendChild(canvas);
+		wrap.appendChild(pane);
+		root.appendChild(bar);
 		root.appendChild(wrap);
+
+		// Live-preview show/hide (persisted across sessions).
+		try { previewHidden = localStorage.getItem('tfBuilderHidePreview') === '1'; } catch (e) { previewHidden = false; }
+		function applyPreview() {
+			wrap.classList.toggle('tf-b-no-preview', previewHidden);
+			prevToggle.innerHTML = '<span class="dashicons dashicons-visibility"></span> ' + (previewHidden ? 'Show live preview' : 'Hide live preview');
+		}
+		applyPreview();
+		prevToggle.addEventListener('click', function () {
+			previewHidden = !previewHidden;
+			try { localStorage.setItem('tfBuilderHidePreview', previewHidden ? '1' : '0'); } catch (e) {}
+			applyPreview();
+			if (!previewHidden) { updatePreview(); }
+		});
+
+		// Default the click-to-add target to the first step.
+		setActive(canvas.querySelector('.tf-b-step'));
+
 		sync();
 	}
 

@@ -47,14 +47,7 @@ class TF_Builder {
 		add_meta_box( 'tf-settings-box', 'Form Settings', array( __CLASS__, 'render_settings' ), TF_CPT, 'side', 'default' );
 		add_meta_box( 'tf-usage-box', 'Submissions & Usage', array( __CLASS__, 'render_usage' ), TF_CPT, 'side', 'high' );
 		add_meta_box( 'tf-actions-box', 'Actions', array( __CLASS__, 'render_actions' ), TF_CPT, 'normal', 'default' );
-		add_meta_box( 'tf-preview-box', 'Live Preview', array( __CLASS__, 'render_preview' ), TF_CPT, 'normal', 'low' );
-	}
-
-	public static function render_preview( $post ) {
-		?>
-		<p class="description" style="margin-top:0">A live, non-interactive preview — it updates as you edit the form above (all steps shown stacked).</p>
-		<iframe id="tf-preview-frame" title="Form preview" style="width:100%;border:1px solid #dcdcde;border-radius:6px;background:#fff;min-height:260px"></iframe>
-		<?php
+		// (Live preview is rendered inside the Form Builder box, beside the canvas — see builder.js.)
 	}
 
 	public static function render_actions( $post ) {

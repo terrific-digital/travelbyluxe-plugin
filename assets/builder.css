@@ -1,7 +1,19 @@
 /* Terrific Forms — builder UI */
 #tf-builder .tf-builder-loading { padding: 20px; color: #777; }
+
+/* Toolbar above the builder (live-preview toggle). */
+.tf-b-toolbar { display: flex; justify-content: flex-end; align-items: center; margin: 0 0 10px; }
+.tf-b-prev-toggle { font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.tf-b-prev-toggle .dashicons { font-size: 16px; width: 16px; height: 16px; }
+
 .tf-b-wrap { display: flex; gap: 16px; align-items: flex-start; }
-.tf-b-palette { width: 200px; flex: 0 0 200px; position: sticky; top: 40px; }
+.tf-b-palette { width: 184px; flex: 0 0 184px; position: sticky; top: 40px; }
+
+/* Live-preview pane: sticky on the right of the canvas; collapsible. */
+.tf-b-preview-pane { flex: 0 0 320px; align-self: flex-start; position: sticky; top: 40px; max-height: calc(100vh - 90px); overflow: auto; border: 1px solid #dcdcde; border-radius: 6px; background: #fff; padding: 10px 12px; box-sizing: border-box; }
+.tf-b-preview-head { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #50575e; margin-bottom: 8px; }
+#tf-preview-frame { width: 100%; border: 0; background: #fff; min-height: 200px; display: block; }
+.tf-b-wrap.tf-b-no-preview .tf-b-preview-pane { display: none; }
 .tf-b-palette h4 { margin: 0 0 4px; }
 .tf-b-hint { color: #777; font-size: 12px; margin: 0 0 10px; }
 .tf-b-palette-list { display: flex; flex-direction: column; gap: 6px; }
@@ -11,6 +23,7 @@
 
 .tf-b-canvas { flex: 1 1 auto; min-width: 0; }
 .tf-b-step { border: 1px solid #dcdcde; border-radius: 6px; margin-bottom: 14px; background: #fff; }
+.tf-b-step.is-active-step { border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }
 .tf-b-step-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f0f0f1; border-bottom: 1px solid #dcdcde; border-radius: 6px 6px 0 0; }
 .tf-b-step-n { font-weight: 600; white-space: nowrap; }
 .tf-b-step-title { flex: 1 1 50%; min-width: 0; }
@@ -29,7 +42,7 @@
 .tf-b-type { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #2271b1; background: #f0f6fc; padding: 2px 6px; border-radius: 3px; }
 .tf-b-type .dashicons { font-size: 13px; width: 13px; height: 13px; vertical-align: text-bottom; }
 .tf-b-field-label { flex: 1; font-weight: 500; }
-.tf-b-edit, .tf-b-del { font-size: 12px; }
+.tf-b-edit, .tf-b-del, .tf-b-dup { font-size: 12px; }
 .tf-b-del { color: #b32d2e !important; }
 .tf-b-field-body { padding: 0 10px 10px; display: flex; flex-direction: column; gap: 8px; border-top: 1px dashed #eee; margin-top: 2px; padding-top: 10px; }
 .tf-b-field-body[hidden] { display: none; }

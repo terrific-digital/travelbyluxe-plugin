@@ -24,7 +24,8 @@ class TD_Notes {
 	protected static function groups() {
 		return array(
 			array( '🧱', 'Form builder', array(
-				'Drag-and-drop builder (regular &amp; multi-step forms).',
+				'Build by clicking a field type (or dragging) — regular &amp; multi-step forms, with a side-by-side live preview.',
+				'Duplicate any field; reorder by drag.',
 				'Per-field width (full / ½ / ⅓), show-label toggle, collapsible cards.',
 				'Field types: text, email, phone, number, slider, date, textarea, dropdown, radio, checkbox, heading, paragraph, separator, custom HTML, hidden.',
 				'Phone field with IP-geolocated country dial-code selector (toggleable).',
@@ -32,7 +33,7 @@ class TD_Notes {
 				'Slider with min/max/step/default, value bubble or inline, prefix/suffix &amp; scale.',
 				'Date field with earliest/latest bounds (days from today).',
 				'Per-step Next button text; per-type palette icons.',
-				'Live preview meta box — renders the real form as you edit.',
+				'Sticky side-by-side live preview — renders the real form as you edit (toggleable).',
 			) ),
 			array( '📍', 'Placement', array(
 				'Shortcode <code>[terrific_form id="N"]</code>.',

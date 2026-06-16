@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.29.0
+**Current version:** 2.30.0
 
 ---
 
@@ -60,7 +60,9 @@ terrific-digital/
                                 meta box, and one-click Restore (admin_post_tf_restore_revision)
     class-tf-block.php          Gutenberg block "Terrific Form" (dynamic, server-rendered)
   assets/
-    builder.js / builder.css    Drag-and-drop form builder UI (SortableJS)
+    builder.js / builder.css    Form builder UI (SortableJS): click-to-add OR drag fields, per-field
+                                Duplicate, active-step targeting, and a sticky side-by-side live
+                                preview pane (toggleable, persisted) — 3-pane palette|canvas|preview
     actions.js                  Actions list UI (Webhook / Redirect cards)
     form.js / form.css          Frontend form behaviour (steps, validation, dataLayer, submit, geo,
                                 sliders, honeypot, session capture, User-Provided Data capture,
@@ -123,8 +125,10 @@ Each step object also supports `next_text` (its Next button label; falls back to
 days from today; 0 = today, blank = no limit); converted to the input's `min`/`max` client-side
 (cache-safe) with matching validation.
 
-**Live preview** (builder) — a "Live Preview" meta box renders the real form server-side via the
-`tf_preview` AJAX action (admin-only, nonce'd) into an iframe, updating ~400ms after each edit.
+**Live preview** (builder) — a sticky preview pane **inside the Form Builder box** (right of the
+canvas; toggleable via a toolbar button, state persisted in `localStorage`) renders the real form
+server-side via the `tf_preview` AJAX action (admin-only, nonce'd) into an iframe, updating ~400ms
+after each edit (skipped while the pane is hidden).
 `TF_Render::markup($def, $post_id, $preview=true)` adds a `tf-preview` class (all steps shown
 stacked, nav hidden, `onsubmit` disabled) reusing the exact frontend renderer for WYSIWYG accuracy.
 
@@ -331,6 +335,11 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **Builder UX — Tier 1** (2.30.0) — fields can now be added by **clicking** a palette type (not just
+  dragging), appended to the active step (highlighted) and auto-expanded; each field card has a
+  **Duplicate** button; and the **live preview is side-by-side** with the canvas (sticky 3-pane
+  palette|canvas|preview, toggleable + persisted) instead of a separate meta box below. New steps now
+  insert above the "+ Add step" button.
 - **form_visible event** (2.28.0) — fires once when the form first scrolls into view
   (IntersectionObserver; falls back to firing on init where unsupported). Same id/name/intent payload.
 - **form_started event** (2.26.0) — fires once (per fill) the first time the user enters a value
