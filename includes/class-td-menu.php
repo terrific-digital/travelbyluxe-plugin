@@ -128,10 +128,12 @@ class TD_Menu {
 		$snip_counts  = wp_count_posts( TD_Snippets::CPT );
 		$total_snips  = isset( $snip_counts->publish ) ? (int) $snip_counts->publish : 0;
 		$active_snips = count( get_posts( array( 'post_type' => TD_Snippets::CPT, 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_td_snippet_enabled', 'meta_value' => '1' ) ) );
+		$faq_counts   = class_exists( 'TD_FAQ' ) ? wp_count_posts( TD_FAQ::CPT ) : null;
+		$total_faqs   = ( $faq_counts && isset( $faq_counts->publish ) ) ? (int) $faq_counts->publish : 0;
 		?>
 		<div class="wrap">
 			<h1 style="margin:8px 0 12px">Dashboard</h1>
-			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — currently <strong>Terrific Forms</strong> and <strong>Code Snippets</strong>.</p>
+			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — currently <strong>Terrific Forms</strong>, <strong>Code Snippets</strong>, and <strong>FAQ Lists</strong>.</p>
 			<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:20px">
 				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
 					<h2 style="margin-top:0">📝 Terrific Forms</h2>
@@ -146,6 +148,13 @@ class TD_Menu {
 					<p><strong><?php echo esc_html( $total_snips ); ?></strong> snippets · <strong><?php echo esc_html( $active_snips ); ?></strong> active</p>
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . TD_Snippets::CPT ) ); ?>" class="button button-primary">Manage Snippets</a>
 					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . TD_Snippets::CPT ) ); ?>" class="button">Add Snippet</a>
+				</div>
+				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
+					<h2 style="margin-top:0">❓ FAQ Lists</h2>
+					<p>Reusable Q&amp;A accordions — place any list on a page via a shortcode or the Terrific FAQ block.</p>
+					<p><strong><?php echo esc_html( $total_faqs ); ?></strong> FAQ lists</p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . TD_FAQ::CPT ) ); ?>" class="button button-primary">Manage FAQ Lists</a>
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . TD_FAQ::CPT ) ); ?>" class="button">Add FAQ List</a>
 				</div>
 				<div style="flex:1 1 260px;background:#f6f7f7;border:1px dashed #c3c4c7;border-radius:8px;padding:20px;color:#777">
 					<h2 style="margin-top:0;color:#777">More coming soon</h2>

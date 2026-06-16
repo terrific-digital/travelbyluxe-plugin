@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.33.0
+**Current version:** 2.34.0
 
 ---
 
@@ -273,7 +273,7 @@ panel, collapsed via `hidden`; "+"→"×" icon). `faq.js` toggles items and, on 
 item**, pushes `{ event:'faq_item_click', faq_title:'<question lowercased>' }` to the dataLayer
 (once per item, via an `item.__faqFired` flag; title read from `data-faq-title`).
 
-**Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · FAQ · Settings · Notes** (no "Add New"
+**Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · FAQ Lists · Settings · Notes** (no "Add New"
 link — new forms are created from the Forms list screen's own "Add New" button).
 
 **Front-end "Edit form" link:** every rendered form prepends a small `.tf-edit-link` pill — the
@@ -295,8 +295,10 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
 - **Field options** — number **min/max**, **min/max length** (text/email/tel/textarea),
   **phone** field with IP-geolocated country dial-code dropdown, **dropdown** single/multi +
   **Label/Value** options table (value can differ from label).
-- **Intent** — per-form (only "Lead" → `generate_lead`); adds `form_intent` to dataLayer + webhook,
-  **and** pushes the intent param as its own dataLayer event (e.g. `generate_lead`) right after `form_submission`.
+- **Intent** — per-form: **Lead** → `generate_lead`, **Career Application** → `career_application`,
+  **Contact Us** → `contact_us`, **Gated Content** → `gated_content` (2.34.0). Adds `form_intent` to
+  the dataLayer + webhook, **and** pushes the intent param as its own dataLayer event right after
+  `form_submission`. Extend via the `terrific_forms/intents` filter.
 - **Placement** — shortcode `[terrific_form id="N"]` **and** a Gutenberg block "Terrific Form"
   (live, non-interactive preview + "Edit form ↗" + form switcher).
 - **Actions** (one of each) — **Webhook** (global from Settings or custom URL; for multi-step a
@@ -358,6 +360,9 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **More intents + FAQ on dashboard** (2.34.0) — added Career Application / Contact Us / Gated Content
+  form intents (each fires its own dataLayer event); renamed the "FAQ" menu to **FAQ Lists** and added
+  an FAQ Lists card to the Dashboard.
 - **FAQ** (2.33.0) — new `td_faq` CPT: reusable Q&A accordion lists placed via `[terrific_faq id="N"]`
   or the "Terrific FAQ" block. Admin builder (drag-reorder items), a "Used on these pages" finder, and
   a front-end accordion that fires `{event:'faq_item_click', faq_title:'<question lowercased>'}` once

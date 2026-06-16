@@ -41,7 +41,7 @@ class TD_Notes {
 				'Front-end “Edit form” pill for logged-in editors.',
 			) ),
 			array( '🎯', 'Intent &amp; actions', array(
-				'Per-form intent (Lead → <code>generate_lead</code>) in dataLayer + webhook.',
+				'Per-form intent — Lead, Career Application, Contact Us, or Gated Content — added to dataLayer + webhook, and fired as its own event (e.g. <code>generate_lead</code>) after submit.',
 				'Webhook action — global or custom URL; multi-step: final step only or every step.',
 				'Redirect action — to a URL or a WordPress page. Each action toggleable.',
 			) ),
@@ -86,7 +86,7 @@ class TD_Notes {
 			) ),
 			array( '⚙️', 'Settings &amp; dashboard', array(
 				'Settings: global webhook URL, reCAPTCHA v3, Store Session Data, User-Provided Data.',
-				'Dashboard with feature cards, live counts, version &amp; last-updated date.',
+				'Dashboard with feature cards (Forms, Code Snippets, FAQ Lists), live counts, version &amp; last-updated date.',
 				'Top-level Terrific Digital menu (brand “t” icon); admin features gated on <code>edit_pages</code>.',
 			) ),
 		);

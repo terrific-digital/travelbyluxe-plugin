@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific.co.il
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.33.0
+ * Version:           2.34.0
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -11,7 +11,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.33.0' );
+define( 'TD_VERSION', '2.34.0' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -292,7 +292,10 @@ function tf_recaptcha_verify( $token ) {
  */
 function tf_intents() {
 	return apply_filters( 'terrific_forms/intents', array(
-		'lead' => array( 'label' => 'Lead', 'param' => 'generate_lead' ),
+		'lead'               => array( 'label' => 'Lead', 'param' => 'generate_lead' ),
+		'career_application' => array( 'label' => 'Career Application', 'param' => 'career_application' ),
+		'contact_us'         => array( 'label' => 'Contact Us', 'param' => 'contact_us' ),
+		'gated_content'      => array( 'label' => 'Gated Content', 'param' => 'gated_content' ),
 	) );
 }
 

@@ -45,7 +45,7 @@ class TD_FAQ {
 				'new_item'      => 'New FAQ List',
 				'search_items'  => 'Search FAQ Lists',
 				'not_found'     => 'No FAQ lists yet',
-				'menu_name'     => 'FAQ',
+				'menu_name'     => 'FAQ Lists',
 			),
 			'public'          => false,
 			'show_ui'         => true,
@@ -94,7 +94,7 @@ class TD_FAQ {
 	}
 
 	public static function menu() {
-		add_submenu_page( TD_MENU, 'FAQ Lists', 'FAQ', 'edit_pages', 'edit.php?post_type=' . self::CPT );
+		add_submenu_page( TD_MENU, 'FAQ Lists', 'FAQ Lists', 'edit_pages', 'edit.php?post_type=' . self::CPT );
 	}
 
 	public static function parent_file( $parent_file ) {
