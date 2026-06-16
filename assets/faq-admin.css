@@ -1,10 +1,24 @@
 /* Terrific FAQ — admin builder */
-#td-faq-builder .td-faq-list { display: flex; flex-direction: column; gap: 10px; }
-.td-faq-card { border: 1px solid #dcdcde; border-radius: 6px; background: #fff; padding: 10px 12px; }
-.td-faq-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.td-faq-handle { cursor: grab; color: #999; }
-.td-faq-q-input { flex: 1 1 auto; font-weight: 600; }
-.td-faq-del { color: #b32d2e !important; font-size: 14px; text-decoration: none; }
+#td-faq-builder .td-faq-list { display: flex; flex-direction: column; gap: 8px; }
+.td-faq-card { border: 1px solid #dcdcde; border-radius: 6px; background: #fff; }
+.td-faq-card.is-open { border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }
+
+.td-faq-card-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.td-faq-handle { cursor: grab; color: #a7aaad; flex: 0 0 auto; }
+.td-faq-handle:active { cursor: grabbing; }
+.td-faq-q-input { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+
+.td-faq-acts { display: inline-flex; align-items: center; gap: 1px; flex: 0 0 auto; }
+.td-faq-acts .button-link { padding: 4px; line-height: 1; color: #50575e; border-radius: 3px; text-decoration: none; }
+.td-faq-acts .button-link:hover { color: #2271b1; background: #f0f6fc; }
+.td-faq-acts .td-faq-del:hover { color: #b32d2e; background: #fcf0f1; }
+.td-faq-acts .dashicons { font-size: 18px; width: 18px; height: 18px; }
+
+.td-faq-body { padding: 0 10px 12px; border-top: 1px dashed #e6e6e6; }
+.td-faq-body[hidden] { display: none; }
+.td-faq-a-label { display: block; font-size: 12px; font-weight: 600; color: #50575e; margin: 10px 0 4px; }
+.td-faq-a-label span { font-weight: 400; color: #999; }
 .td-faq-a-input { width: 100%; font-family: inherit; }
+
 .td-faq-add { margin-top: 12px; }
 .td-faq-ghost { opacity: .4; }

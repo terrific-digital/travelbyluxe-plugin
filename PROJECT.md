@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.34.1
+**Current version:** 2.34.2
 
 ---
 
@@ -75,7 +75,8 @@ terrific-digital/
     session.js                  Store Session Data: writes td_session_data once per session (storage/cookie)
     block.js                    Block editor UI (no build step; wp.element.createElement)
     faq.js / faq.css            FAQ front-end accordion (toggle + faq_item_click dataLayer, once/item)
-    faq-admin.js / faq-admin.css  FAQ list builder (add/reorder/remove Q&A items, SortableJS)
+    faq-admin.js / faq-admin.css  FAQ list builder: collapsible cards (question inline in the header,
+                                answer in a collapsible body), drag-reorder, duplicate, icon actions
     faq-block.js                "Terrific FAQ" block editor (no build step)
     sortable.min.js             Bundled SortableJS 1.15.2 (no runtime CDN)
 ```
