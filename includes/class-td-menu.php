@@ -76,16 +76,33 @@ class TD_Menu {
 		return $submenu_file;
 	}
 
+	/** Most recent modification time across the plugin's own files (≈ last update). */
+	protected static function last_updated() {
+		$latest = 0;
+		$globs  = array( TF_DIR . '*.php', TF_DIR . 'includes/*.php', TF_DIR . 'assets/*' );
+		foreach ( $globs as $g ) {
+			foreach ( (array) glob( $g ) as $file ) {
+				$m = @filemtime( $file );
+				if ( $m && $m > $latest ) { $latest = $m; }
+			}
+		}
+		return $latest;
+	}
+
 	public static function dashboard() {
 		$forms = wp_count_posts( TF_CPT );
 		$total_forms = isset( $forms->publish ) ? (int) $forms->publish : 0;
 		global $wpdb;
 		$subs = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'tf_submissions' );
+		$updated = self::last_updated();
 		?>
 		<div class="wrap">
-			<h1 style="display:flex;align-items:center;gap:14px;margin:8px 0 12px">
+			<h1 style="display:flex;align-items:center;gap:14px;margin:8px 0 12px;flex-wrap:wrap">
 				<img src="<?php echo esc_url( TF_URL . 'assets/td-logo.svg' ); ?>" alt="Terrific Digital" style="height:36px;width:auto;display:block">
 				<span style="background:#f0f0f1;color:#50575e;border-radius:12px;padding:3px 11px;font-size:12px;font-weight:600;line-height:1.4">v<?php echo esc_html( TD_VERSION ); ?></span>
+				<?php if ( $updated ) : ?>
+					<span style="color:#787c82;font-size:12px;font-weight:400">Updated <?php echo esc_html( wp_date( get_option( 'date_format' ), $updated ) ); ?></span>
+				<?php endif; ?>
 			</h1>
 			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — for now it includes <strong>Terrific Forms</strong>.</p>
 			<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:20px">
