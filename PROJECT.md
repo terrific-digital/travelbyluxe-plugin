@@ -167,6 +167,11 @@ its `dbDelta` when ≠ `TF_VERSION`.
 **Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Settings** (no "Add New"
 link — new forms are created from the Forms list screen's own "Add New" button).
 
+**Front-end "Edit form" link:** every rendered form prepends a small `.tf-edit-link` pill
+(inline SVG pencil) linking to that form's editor — shown only to logged-in users who
+`current_user_can( 'edit_post', $post_id )`, and never in preview or `is_admin()` (block-editor
+SSR) contexts. Hidden from visitors.
+
 **Honeypot (anti-bot):** every rendered form includes an off-screen `.tf-hp` field
 (`name="tf_hp"`, the bait label "Email"). form.js posts its value as `hp`; if non-empty,
 `TF_Submissions::is_spam()` makes `tf_submit`/`tf_step` return a success-shaped response but

@@ -87,6 +87,14 @@ class TF_Render {
 		$step_webhook = ! $preview && $is_multi && tf_form_has_step_webhook( $post_id );
 
 		ob_start();
+		// Front-end quick-edit affordance for logged-in editors only.
+		if ( ! $preview && ! is_admin() && $post_id && current_user_can( 'edit_post', $post_id ) ) {
+			$edit_url = get_edit_post_link( $post_id );
+			if ( $edit_url ) {
+				$pencil = '<svg class="tf-edit-ico" width="13" height="13" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 13.5V16h2.5l7.4-7.4-2.5-2.5L4 13.5zM15.8 6.3a.7.7 0 0 0 0-1L14.7 4.2a.7.7 0 0 0-1 0l-1 1 2.5 2.5 1-1z" fill="currentColor"/></svg>';
+				echo '<div class="tf-admin-edit"><a class="tf-edit-link" href="' . esc_url( $edit_url ) . '" target="_blank" rel="noopener">' . $pencil . ' Edit form</a></div>'; // phpcs:ignore
+			}
+		}
 		?>
 		<form class="tf-form<?php echo $is_multi ? ' tf-multistep' : ''; ?><?php echo $preview ? ' tf-preview' : ''; ?>"
 			<?php if ( $preview ) : ?>onsubmit="return false"<?php endif; ?>
@@ -156,8 +164,8 @@ class TF_Render {
 	protected static function field( $f ) {
 		$type  = $f['type'];
 		if ( 'daterange' === $type ) { return ''; } // field type removed; skip any leftover instances
-		$key   = $f['key'];
-		$label = $f['label'];
+		$key   = isset( $f['key'] ) ? $f['key'] : '';
+		$label = isset( $f['label'] ) ? $f['label'] : '';
 		$req   = ! empty( $f['required'] );
 		$ph    = isset( $f['placeholder'] ) ? $f['placeholder'] : '';
 		$id    = 'tff-' . $f['id'];
