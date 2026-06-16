@@ -169,6 +169,20 @@
 			var key = el.getAttribute('data-key');
 			if (!key) { return; }
 			out[key] = readValue(el);
+			// Phone with a country-code selector: also submit the selected country as an object
+			// { code, name, ISO } under `<key>_country`.
+			if (el.classList.contains('tf-phone-num')) {
+				var pwrap = el.closest('.tf-phone');
+				var pcc = pwrap ? pwrap.querySelector('.tf-phone-cc') : null;
+				if (pcc && (el.value || '').trim()) {
+					var copt = pcc.options[pcc.selectedIndex];
+					out[key + '_country'] = {
+						code: pcc.value,
+						name: copt ? (copt.getAttribute('data-name') || '') : '',
+						ISO: copt ? (copt.getAttribute('data-cc') || '') : ''
+					};
+				}
+			}
 		});
 		form.querySelectorAll('.tf-options[data-key]').forEach(function (group) {
 			var key = group.getAttribute('data-key');

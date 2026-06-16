@@ -69,10 +69,12 @@ class TF_Submissions {
 		if ( array_keys( $v ) === range( 0, count( $v ) - 1 ) ) {
 			return implode( ', ', array_map( 'sanitize_text_field', $v ) );
 		}
-		// Associative object (date range, etc.) → keep keys, sanitize scalars.
+		// Associative object (e.g. phone_country {code,name,ISO}) → keep keys (case preserved,
+		// so "ISO" stays "ISO"), sanitize scalar values.
 		$out = array();
 		foreach ( $v as $sk => $sv ) {
-			$out[ sanitize_key( $sk ) ] = is_scalar( $sv ) ? sanitize_text_field( (string) $sv ) : '';
+			$ck = preg_replace( '/[^A-Za-z0-9_\-]/', '', (string) $sk );
+			$out[ $ck ] = is_scalar( $sv ) ? sanitize_text_field( (string) $sv ) : '';
 		}
 		return $out;
 	}

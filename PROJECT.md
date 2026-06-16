@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.31.1
+**Current version:** 2.32.0
 
 ---
 
@@ -108,7 +108,11 @@ terrific-digital/
 **Field types:** text, email, tel (phone), number, **slider**, date, textarea,
 select (dropdown), radio, checkbox, heading, **paragraph**, **separator**, **custom_html**, hidden.
 Each step object also supports `next_text` (its Next button label; falls back to "Next →").
-**phone** has a `country_code` toggle (default on) — off renders a plain tel input.
+**phone** has a `country_code` toggle (default on) — off renders a plain tel input. When the
+country-code selector is on and the number is filled, the submitted data also includes a
+`<key>_country` **object** `{ code:"+972", name:"Israel", ISO:"IL" }` alongside the combined
+`<key>` value (e.g. `+972 0541234567`). (Options carry `value`=dial, `data-cc`=ISO, `data-name`=name;
+the server preserves the `ISO` sub-key casing.)
 
 > The **date range** field was removed in 2.17.0 (flatpickr range UX wasn't reliable enough). The
 > renderer skips any leftover `daterange` fields. To re-introduce, revert the removal commit.
@@ -227,7 +231,7 @@ immediately after `form_submission`. Every front-end page also gets
 **Webhook payload** (POSTed JSON):
 ```jsonc
 { "event": "form_submission" | "form_step",
-  "data": { /* all form fields */ },
+  "data": { /* all form fields; a phone with a country-code selector adds `<key>_country` {code,name,ISO} */ },
   "form": { "id", "name", "intent", "wp_id" },
   "submission": { "id", "timestamp", "submission_link", "page_url", "page_title", "page_ref",
                   "current_step"?, "max_step"?, "final_step"? },   // step fields only when "every step"
@@ -337,6 +341,9 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **Phone country in data** (2.32.0) — a phone field with the country-code selector now submits the
+  selected country as a `<key>_country` object `{ code:"+972", name:"Israel", ISO:"IL" }` in the data /
+  dataLayer form_fields / webhook / CSV, in addition to the combined number.
 - **Builder: resizable preview + LAST STEP** (2.31.1) — the live-preview pane is wider by default
   and **drag-resizable** (handle on its left edge; width persisted in `localStorage`). On a
   multi-step form the **final step shows a "LAST STEP" tag** instead of a Next-button text input

@@ -282,7 +282,7 @@ class TF_Render {
 					echo '<div class="tf-phone" data-tf-phone>';
 					echo '<select class="tf-phone-cc" aria-label="Country dial code">';
 					foreach ( tf_countries() as $c ) {
-						echo '<option value="' . esc_attr( $c[1] ) . '" data-cc="' . esc_attr( $c[0] ) . '">' . tf_flag( $c[0] ) . ' ' . esc_html( $c[1] ) . '</option>';
+						echo '<option value="' . esc_attr( $c[1] ) . '" data-cc="' . esc_attr( $c[0] ) . '" data-name="' . esc_attr( $c[2] ) . '">' . tf_flag( $c[0] ) . ' ' . esc_html( $c[1] ) . '</option>';
 					}
 					echo '</select>';
 					echo '<input type="tel" class="tf-input tf-phone-num" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '">'; // phpcs:ignore
