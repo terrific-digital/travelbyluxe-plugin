@@ -22,6 +22,7 @@ class TD_Menu {
 		if ( ! $screen ) { return false; }
 		$cpts = array( TF_CPT );
 		if ( class_exists( 'TD_Snippets' ) ) { $cpts[] = TD_Snippets::CPT; }
+		if ( class_exists( 'TD_FAQ' ) ) { $cpts[] = TD_FAQ::CPT; }
 		// Our CPT list/edit screens, or any submenu page under the TD_MENU slug.
 		return in_array( $screen->post_type, $cpts, true ) || false !== strpos( $screen->id, TD_MENU );
 	}
