@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.15.0
+**Current version:** 2.21.1
 
 ---
 
@@ -55,7 +55,8 @@ terrific-digital/
   assets/
     builder.js / builder.css    Drag-and-drop form builder UI (SortableJS)
     actions.js                  Actions list UI (Webhook / Redirect cards)
-    form.js / form.css          Frontend form behaviour (steps, validation, dataLayer, submit, geo, date-range)
+    form.js / form.css          Frontend form behaviour (steps, validation, dataLayer, submit, geo,
+                                sliders, honeypot, session capture, "Edit form" link)
     session.js                  Store Session Data: writes td_session_data once per session (storage/cookie)
     block.js                    Block editor UI (no build step; wp.element.createElement)
     sortable.min.js             Bundled SortableJS 1.15.2 (no runtime CDN)
@@ -84,14 +85,18 @@ terrific-digital/
 ```
 { id, type, label, key, placeholder, required, show_label,
   width: full|half|third, min, max, minlength, maxlength,
-  multiple,                       // dropdown multi-select
+  multiple,                        // dropdown multi-select
+  country_code,                    // phone: show dial-code selector (default true)
   min_from_today, max_from_today,  // date field bounds (days from today; 0 valid)
-  step, default,                  // slider
-  html,                           // custom_html content
-  options: [ {label, value} ] }   // select/radio/checkbox
+  step, default, prefix, suffix, show_scale, value_inline,   // slider
+  html,                            // custom_html content
+  next_text,                       // per-STEP (on the step object): Next button label
+  options: [ {label, value} ] }    // select/radio/checkbox
 ```
 **Field types:** text, email, tel (phone), number, **slider**, date, textarea,
 select (dropdown), radio, checkbox, heading, **paragraph**, **separator**, **custom_html**, hidden.
+Each step object also supports `next_text` (its Next button label; falls back to "Next →").
+**phone** has a `country_code` toggle (default on) — off renders a plain tel input.
 
 > The **date range** field was removed in 2.17.0 (flatpickr range UX wasn't reliable enough). The
 > renderer skips any leftover `daterange` fields. To re-introduce, revert the removal commit.
@@ -182,10 +187,10 @@ skipped for admin/ajax/REST/feed/embed.
 **Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · Settings** (no "Add New"
 link — new forms are created from the Forms list screen's own "Add New" button).
 
-**Front-end "Edit form" link:** every rendered form prepends a small `.tf-edit-link` pill
-(inline SVG pencil) linking to that form's editor — shown only to logged-in users who
-`current_user_can( 'edit_post', $post_id )`, and never in preview or `is_admin()` (block-editor
-SSR) contexts. Hidden from visitors.
+**Front-end "Edit form" link:** every rendered form prepends a small `.tf-edit-link` pill — the
+colour **Terrific "t" brand mark** + "Edit form" — linking to that form's editor. Shown only to
+logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in preview or
+`is_admin()` (block-editor SSR) contexts. Hidden from visitors.
 
 **Honeypot (anti-bot):** every rendered form includes an off-screen `.tf-hp` field
 (`name="tf_hp"`, the bait label "Email"). form.js posts its value as `hp`; if non-empty,
@@ -220,18 +225,45 @@ SSR) contexts. Hidden from visitors.
   re-saves current state as a new revision first ("Restored from #N"), so nothing is ever lost.
   Snapshots are hash-deduped (no-op saves add nothing) and pruned to 50/form. `apply_snapshot()`
   refuses a malformed/empty snapshot so it can never blank a form.
-- **Date range field** (2.14.0) — `daterange` field type (start+end dates) with earliest-start
-  (days-from-today / block-past), min/max length options; emits `{start_date, end_date, duration}`.
 - **Store Session Data** (2.14.0) — opt-in plugin-wide feature recording a `td_session_data`
   object `{timestamp, url, ref}` once per session in sessionStorage or a session cookie.
+  (2.21.0: also captured into the submission `meta.session` + webhook `session` param + CSV.)
 - **Brand icon** (2.14.0) — the Terrific Digital "t" mosaic mark is the top-level menu icon,
   CSS-masked white (grey at rest, white on hover/current) to match native WP admin icons.
-- **More field types** (2.15.0) — `slider` (number range with min/max/step/default + live readout),
-  `paragraph` (multi-line static text), `separator` (`<hr>`), `custom_html` (embed arbitrary HTML).
-  `heading` no longer has a Key field; static/display fields carry no data-layer key.
+- **More field types** (2.15.0) — `slider`, `paragraph` (multi-line static text), `separator`
+  (`<hr>`), `custom_html` (embed arbitrary HTML). `heading` lost its Key field; static/display
+  fields carry no data-layer key.
 - **Honeypot** (2.15.0) — every form auto-includes an off-screen bait field; filled = bot →
   submission silently dropped (success-shaped response, nothing stored/sent).
-- Removed the "Add New" admin submenu (create forms from the Forms list screen).
+- Removed the **"Add New"** admin submenu (create forms from the Forms list screen).
+- **Per-step Next text** (2.15.1) — each step has an editable Next button label (default "Next →");
+  the last step uses the form's Submit button text.
+- **Phone country-code toggle** (2.15.1) — "Country-code selector" checkbox (default on); off
+  renders a plain tel input.
+- **Forms list** (2.15.2) — a **Submissions** column (linked count) + a "Submissions (N)" row
+  action per form. Also fixed a slider-not-saving bug (a builder field input class collided with
+  the multi-step container class `tf-b-step`, throwing in `sync()`); builder cards now render
+  full-width while editing (the chosen ½/⅓ width shows as a badge and applies on the live form).
+- **Dashboard** — logo + version pill (2.15.3), last-updated date (2.19.1), and a **Code Snippets**
+  card (2.19.3).
+- **Date field bounds** (2.15.4) — `min_from_today` / `max_from_today` (earliest/latest, days from
+  today; cache-safe, client-computed) with validation.
+- **Live preview** (2.16.0) — "Live Preview" builder meta box; AJAX-renders the real form into an
+  iframe, updating ~400ms after each edit (see §3).
+- **Date range field** — added 2.14.0 (two date inputs), reworked to a single flatpickr range input
+  (2.16.x), then **removed in 2.17.0** (range UX wasn't reliable; flatpickr dependency dropped).
+  Renderer skips any leftover `daterange` fields. Revert the removal commit to bring it back.
+- **Palette icons** (2.17.1) — each field type shows a distinct dashicon in the builder palette and
+  on each field card's type badge.
+- **Slider readout** (2.18.x) — value shown in a bubble by default; opt-in `value_inline` puts it in
+  the label; optional `prefix`/`suffix` (spaces preserved) and `show_scale` min/max captions.
+- **Code Snippets** (2.19.0) — `td_snippet` CPT: inject custom HTML/JS at a chosen location with
+  page/URL conditions (see §4). 2.20.0: HTML/JS **type** dropdown (JS auto-wrapped in `<script>`),
+  and the body location is **before** `</body>`.
+- **Capability fix** (2.19.2) — Settings + Code Snippets menus use `edit_pages` (not
+  `manage_options`) to match the rest of the TD menu (see gotcha in §6).
+- **"Edit form" front-end link** (added earlier; 2.21.1 restyled) — small pill above each form with
+  the Terrific "t" brand mark, linking to the editor; editors only (see §4).
 
 ---
 
@@ -249,6 +281,18 @@ SSR) contexts. Hidden from visitors.
 - **SortableJS** is bundled (no CDN at runtime).
 - **Partial capture** keyed by `form.__tfToken` (client-generated, sent on every step + final);
   server `store_submission()` inserts-or-updates by token.
+- **Capability — use `edit_pages`, not `manage_options`.** The test site's administrator account
+  resolves `manage_options` → **NO** (the role lists it, but it's denied at the user level), so any
+  menu/cap gated on `manage_options` is invisible to it. The whole TD plugin therefore gates admin
+  features on `edit_pages` (Forms/Submissions/Settings/Code Snippets, the `td_snippet` CPT, and the
+  Settings `option_page_capability_*` save cap). Don't introduce `manage_options` checks.
+- **Code Snippets injection** is done with a single output buffer on `template_redirect` (not
+  hooks) so it can hit positions WordPress has no hook for ("after `<head>`", "before `</body>`").
+  It string-splices into the final HTML and is skipped for admin/ajax/REST/feed/embed and
+  non-HTML responses. Snippet code is stored & output **raw** (JS type wrapped in `<script>`).
+- **`number_format_i18n` / `wp_date`** for human-facing numbers/dates (slider values, dashboard
+  "Updated"). Slider `prefix`/`suffix` are sanitized with `wp_kses(...,array())` (not
+  `sanitize_text_field`, which trims a leading space like in `" days"`).
 
 ---
 
@@ -277,9 +321,10 @@ ssh -i ~/.ssh/tbl_cloudways master_emqjrcyekf@46.101.96.39 \
 
 ## 8. Roadmap / ideas (not yet built)
 
-- Dedicated **range-slider** field type (the LP form used sliders for budget/length/pax).
 - **Conditional logic** (show/hide fields based on other answers).
 - More **action types** (send email, Slack/Teams notification).
 - **Submissions filtering** by status (partial/completed) + date range; partial-lead nurturing.
-- Wire a Terrific Forms form into the **luxury-travel-v3** page to replace the ported bespoke form.
-- Package for reuse across other client sites (it's already generic).
+- **Code Snippets** niceties: ordering/priority, a "Snippets" dashboard count is done — consider
+  device/role conditions, and a safer cap option for multi-editor sites (currently `edit_pages`).
+- Re-introduce **date range** with a more reliable picker (was removed in 2.17.0).
+- Package/distribute for reuse across other client sites (already generic).
