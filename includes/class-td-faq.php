@@ -239,12 +239,53 @@ class TD_FAQ {
 			$sc
 		) );
 
-		$all = array_unique( array_map( 'intval', array_merge( $ids, $meta_ids ) ) );
+		// Plus pages where the FAQ actually rendered (custom templates / do_shortcode /
+		// page builders store nothing scannable — render-time tracking catches those).
+		$seen = self::prune_seen( $faq_post_id );
+
+		$all = array_unique( array_map( 'intval', array_merge( $ids, $meta_ids, array_keys( $seen ) ) ) );
 		$all = array_filter( $all, function ( $id ) {
 			return $id && get_post_type( $id ) !== self::CPT
 				&& ! in_array( get_post_status( $id ), array( 'trash', 'auto-draft', 'inherit' ), true );
 		} );
 		return array_values( $all );
+	}
+
+	/**
+	 * Record (front-end) that this FAQ rendered on the current page — so the usage
+	 * finder can report embeds that aren't stored as scannable content (custom
+	 * templates, page builders, do_shortcode, etc.). Throttled to once/day per page.
+	 */
+	protected static function record_usage( $faq_post_id ) {
+		if ( is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || is_preview() || is_feed() ) { return; }
+		$page_id = (int) get_queried_object_id();
+		if ( ! $page_id || $page_id === (int) $faq_post_id ) { return; }
+		$seen = get_post_meta( $faq_post_id, '_td_faq_seen', true );
+		if ( ! is_array( $seen ) ) { $seen = array(); }
+		$now = time();
+		if ( isset( $seen[ $page_id ] ) && ( $now - (int) $seen[ $page_id ] ) < DAY_IN_SECONDS ) { return; }
+		$seen[ $page_id ] = $now;
+		update_post_meta( $faq_post_id, '_td_faq_seen', $seen );
+	}
+
+	/** Read the render-tracking map, dropping stale (>90d) / deleted / FAQ-CPT entries (self-healing). */
+	protected static function prune_seen( $faq_post_id ) {
+		$seen = get_post_meta( $faq_post_id, '_td_faq_seen', true );
+		if ( ! is_array( $seen ) ) { return array(); }
+		$cutoff  = time() - ( 90 * DAY_IN_SECONDS );
+		$changed = false;
+		foreach ( $seen as $pid => $ts ) {
+			$pid    = (int) $pid;
+			$status = $pid ? get_post_status( $pid ) : false;
+			if ( (int) $ts < $cutoff || ! $pid || false === $status
+				|| in_array( $status, array( 'trash', 'auto-draft', 'inherit' ), true )
+				|| get_post_type( $pid ) === self::CPT ) {
+				unset( $seen[ $pid ] );
+				$changed = true;
+			}
+		}
+		if ( $changed ) { update_post_meta( $faq_post_id, '_td_faq_seen', $seen ); }
+		return $seen;
 	}
 
 	public static function save( $post_id ) {
@@ -303,6 +344,7 @@ class TD_FAQ {
 			return current_user_can( 'edit_pages' ) ? '<!-- Terrific FAQ: no items -->' : '';
 		}
 		$faq_id = self::ensure_id( $post_id );
+		self::record_usage( $post_id ); // track where it actually renders (for the usage finder)
 
 		wp_enqueue_style( 'td-faq' );
 		wp_enqueue_script( 'td-faq' );

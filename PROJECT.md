@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.34.2
+**Current version:** 2.34.3
 
 ---
 
@@ -268,7 +268,10 @@ FAQ list stores `_td_faq_items` (JSON `[ {q, a} ]`; `q`=question text, `a`=answe
 `wp_kses_post`) and a stable `_td_faq_id` (`faq_{postID}_{6hex}`). Build items in the admin meta box
 (add/reorder/remove). Place with **`[terrific_faq id="N"]`** or the **Terrific FAQ** block (server-
 rendered, reuses the shortcode). The edit screen's side box shows the shortcode + a **"Used on these
-pages"** finder (`find_usages()` — shortcode/block/Elementor, mirrors the Forms finder). Front-end
+pages"** finder (`find_usages()` — shortcode/block/Elementor scan **plus render-time tracking**:
+`record_usage()` logs the queried page whenever the FAQ actually renders front-end, throttled to
+once/day per page and stored in `_td_faq_seen` {pageId: ts}, pruned to 90 days / existing pages.
+This catches embeds that store nothing scannable — custom templates, page builders, `do_shortcode`). Front-end
 renders an accessible accordion (`.td-faq` → `.td-faq-item` → `.td-faq-q` button + `.td-faq-a`
 panel, collapsed via `hidden`; "+"→"×" icon). `faq.js` toggles items and, on the **first open of each
 item**, pushes `{ event:'faq_item_click', faq_title:'<question lowercased>' }` to the dataLayer
