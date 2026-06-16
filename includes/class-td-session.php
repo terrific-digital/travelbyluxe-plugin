@@ -58,12 +58,8 @@ class TD_Session {
 		$enabled = self::is_enabled();
 		$storage = self::storage();
 		?>
+		<hr style="margin:2.5em 0 1.5em">
 		<h2 class="title">Store Session Data</h2>
-		<p class="description" style="max-width:760px">
-			Records a <code><?php echo esc_html( self::KEY ); ?></code> object once when a visitor's
-			session begins — capturing the start <strong>timestamp</strong>, landing <strong>URL</strong>,
-			and <strong>referrer</strong> — so it's available to your tracking/analytics on every page of the session.
-		</p>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">Enable</th>

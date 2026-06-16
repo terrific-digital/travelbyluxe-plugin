@@ -78,16 +78,8 @@ class TD_Upd {
 		$enabled = self::is_enabled();
 		$storage = self::storage();
 		?>
+		<hr style="margin:2.5em 0 1.5em">
 		<h2 class="title">User-Provided Data</h2>
-		<p class="description" style="max-width:760px">
-			Captures the personal details a visitor enters into your Terrific Forms — first name,
-			last name, email, phone, and country — into a persisted <code>upd</code> object
-			(<code>{ fn, ln, em, ph, co }</code>). Names and email are stored lowercase, phone as
-			digits only, and country as a 2-letter uppercase code. It accumulates across form steps
-			and submissions, and each time it changes a <code>dataLayer</code> event is pushed —
-			<code>{ event: 'upd', upd: {…} }</code> — fired <em>before</em> the matching
-			<code>form_step</code> / <code>form_submission</code> event.
-		</p>
 		<table class="form-table" role="presentation">
 			<tr>
 				<th scope="row">Enable</th>
