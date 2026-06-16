@@ -115,7 +115,7 @@ class TF_Settings {
 	public static function screen() {
 		?>
 		<div class="wrap">
-			<h1>Terrific Digital — Settings</h1>
+			<h1>Settings</h1>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'tf_settings_group' ); ?>
 

@@ -33,12 +33,16 @@ class TD_Menu {
 	 */
 	public static function brand_bar() {
 		if ( ! self::is_td_screen() ) { return; }
-		$logo = TF_URL . 'assets/td-logo.svg';
+		$logo    = TF_URL . 'assets/td-logo.svg';
+		$updated = self::last_updated();
 		echo '<div class="td-brand-bar" style="display:flex;align-items:center;gap:12px;margin:12px 20px 4px 0;padding:9px 16px;background:#fff;border:1px solid #dcdcde;border-radius:8px">'
 			. '<img src="' . esc_url( $logo ) . '" alt="Terrific Digital" style="height:24px;width:auto;display:block">'
 			. '<span style="width:1px;height:18px;background:#e0e0e2;display:inline-block"></span>'
-			. '<span style="background:#f0f0f1;color:#50575e;border-radius:12px;padding:3px 11px;font-size:12px;font-weight:600;line-height:1.4">v' . esc_html( TD_VERSION ) . '</span>'
-			. '</div>';
+			. '<span style="background:#f0f0f1;color:#50575e;border-radius:12px;padding:3px 11px;font-size:12px;font-weight:600;line-height:1.4">v' . esc_html( TD_VERSION ) . '</span>';
+		if ( $updated ) {
+			echo '<span style="color:#787c82;font-size:12px;font-weight:400">Updated ' . esc_html( wp_date( get_option( 'date_format' ), $updated ) ) . '</span>';
+		}
+		echo '</div>';
 	}
 
 	/** The Terrific Digital "t" brand mark (mosaic), single-colour so it can be masked white. */
@@ -121,18 +125,12 @@ class TD_Menu {
 		$total_forms = isset( $forms->publish ) ? (int) $forms->publish : 0;
 		global $wpdb;
 		$subs = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'tf_submissions' );
-		$updated = self::last_updated();
 		$snip_counts  = wp_count_posts( TD_Snippets::CPT );
 		$total_snips  = isset( $snip_counts->publish ) ? (int) $snip_counts->publish : 0;
 		$active_snips = count( get_posts( array( 'post_type' => TD_Snippets::CPT, 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_td_snippet_enabled', 'meta_value' => '1' ) ) );
 		?>
 		<div class="wrap">
-			<h1 style="display:flex;align-items:center;gap:12px;margin:8px 0 12px;flex-wrap:wrap">
-				<span>Dashboard</span>
-				<?php if ( $updated ) : ?>
-					<span style="color:#787c82;font-size:12px;font-weight:400">Updated <?php echo esc_html( wp_date( get_option( 'date_format' ), $updated ) ); ?></span>
-				<?php endif; ?>
-			</h1>
+			<h1 style="margin:8px 0 12px">Dashboard</h1>
 			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — currently <strong>Terrific Forms</strong> and <strong>Code Snippets</strong>.</p>
 			<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:20px">
 				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
