@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.28.0
+**Current version:** 2.29.0
 
 ---
 
@@ -202,7 +202,7 @@ its `dbDelta` when ≠ `TF_VERSION`.
 **dataLayer events** (form.js) — `form_visible` (once, when the form first scrolls into view),
 `form_started` (once, on the first value entered in any field),
 `upd` (when User-Provided Data changes; pushed *before* the step/submit events), `form_step` on
-each Next, **`form_complete`** on the final step of a multi-step form (instead of `form_step`),
+each Next (intermediate steps only — the final step is the `form_submission`),
 `form_submission` on submit, then the form's **intent as its own event** (e.g. `generate_lead`)
 immediately after `form_submission`. Every front-end page also gets
 `window.dataLayer = window.dataLayer || [];` printed early in `<head>` (wp_head priority 1):
@@ -210,11 +210,11 @@ immediately after `form_submission`. Every front-end page also gets
 { event:'upd', upd:{ fn, ln, em, ph, co } }   // see §3 "User-Provided Data"
 ```
 ```js
-{ event:'form_visible'|'form_started'|'form_step'|'form_complete'|'form_submission'|<intent e.g. 'generate_lead'>,
+{ event:'form_visible'|'form_started'|'form_step'|'form_submission'|<intent e.g. 'generate_lead'>,
   form_id, form_name, form_type:'Terrific Form', form_step?, form_intent?, form_fields:{ key: value } }
 // form_visible: fired once when the form first enters the viewport (no form_step/form_fields).
 // form_started: fired once on first field interaction (no form_step/form_fields).
-// form_complete: final step of a multi-step form.
+// form_step: each Next on a multi-step form (intermediate steps; the final step is form_submission).
 // <intent>: the form's intent param (e.g. generate_lead) pushed as its own event right after form_submission.
 ```
 
@@ -335,9 +335,9 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   (IntersectionObserver; falls back to firing on init where unsupported). Same id/name/intent payload.
 - **form_started event** (2.26.0) — fires once (per fill) the first time the user enters a value
   in any field (honeypot ignored); a lightweight engagement signal carrying form id/name/intent.
-- **form_complete event** (2.25.0) — the final step of a multi-step form now fires a
-  `form_complete` dataLayer event instead of `form_step` (regular forms unchanged; still followed
-  by `form_submission`). See §4.
+- **form_complete removed** (2.29.0) — dropped the `form_complete` event (added 2.25.0) as
+  redundant with `form_submission`; the final step of a multi-step form no longer fires a separate
+  event (intermediate Next clicks still fire `form_step`).
 - **Brand bar everywhere** (2.24.1) — `TD_Menu::brand_bar()` prints a shared logo + version bar at the
   top of every Terrific Digital admin screen via `in_admin_header` (gated by `is_td_screen()`), so the
   native Forms/Code Snippets list & edit screens carry the brand too. Dashboard/Notes dropped their
