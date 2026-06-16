@@ -37,6 +37,8 @@ terrific-digital/
                                 CSS-masked to match native WP icon states); nests the CPT under it
     class-td-session.php        "Store Session Data" feature: option td_session {enabled,storage};
                                 settings section + front-end session.js enqueue
+    class-td-snippets.php       "Code Snippets" feature: admin-only td_snippet CPT (raw HTML/JS),
+                                4 inject locations + conditions; output-buffer injection (template_redirect)
     class-tf-settings.php       Settings page (shared form): tf_settings { global_webhook } +
                                 a do_action('terrific_digital/settings_fields') hook for other features
     class-tf-cpt.php            Registers the `terrific_form` CPT (+ Form ID/Shortcode list columns)
@@ -164,7 +166,14 @@ its `dbDelta` when ≠ `TF_VERSION`.
 - `wp_ajax(_nopriv)_tf_geo` — returns the visitor's `country_code` (phone auto-select; cache-safe)
 - `admin_post_tf_export` — CSV export · `admin_post_tf_delete` — delete one
 
-**Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Settings** (no "Add New"
+**Code Snippets** (`td_snippet` CPT, admin-only — `manage_options` mapped to every cap). Each snippet:
+`_td_snippet_code` (raw HTML/JS), `_td_snippet_location` (after_head_open · before_head_close ·
+after_body_open · after_body_close), `_td_snippet_enabled`, `_td_snippet_condition` (all · specific ·
+url_contains · url_not_contains) + `_td_snippet_pages` / `_td_snippet_url`. Injected via a single
+output buffer on `template_redirect` (string-spliced at each position — `after_head_open` and
+`after_body_close` have no WP hook), skipped for admin/ajax/REST/feed/embed. Code stored & output raw.
+
+**Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · Settings** (no "Add New"
 link — new forms are created from the Forms list screen's own "Add New" button).
 
 **Front-end "Edit form" link:** every rendered form prepends a small `.tf-edit-link` pill
