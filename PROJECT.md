@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.21.1
+**Current version:** 2.22.0
 
 ---
 
@@ -37,6 +37,9 @@ terrific-digital/
                                 CSS-masked to match native WP icon states); nests the CPT under it
     class-td-session.php        "Store Session Data" feature: option td_session {enabled,storage};
                                 settings section + front-end session.js enqueue
+    class-td-upd.php            "User-Provided Data" feature (ON by default): option td_upd
+                                {enabled,storage:'local'|'cookie'}; settings section + config()
+                                injected into TF_FORM (capture logic lives in form.js)
     class-td-snippets.php       "Code Snippets" feature: admin-only td_snippet CPT (raw HTML/JS),
                                 4 inject locations + conditions; output-buffer injection (template_redirect)
     class-tf-settings.php       Settings page (shared form): tf_settings { global_webhook } +
@@ -56,7 +59,8 @@ terrific-digital/
     builder.js / builder.css    Drag-and-drop form builder UI (SortableJS)
     actions.js                  Actions list UI (Webhook / Redirect cards)
     form.js / form.css          Frontend form behaviour (steps, validation, dataLayer, submit, geo,
-                                sliders, honeypot, session capture, "Edit form" link)
+                                sliders, honeypot, session capture, User-Provided Data capture,
+                                "Edit form" link)
     session.js                  Store Session Data: writes td_session_data once per session (storage/cookie)
     block.js                    Block editor UI (no build step; wp.element.createElement)
     sortable.min.js             Bundled SortableJS 1.15.2 (no runtime CDN)
@@ -142,6 +146,24 @@ form.js reads this object (sessionStorage or cookie) and posts it as `session` w
 submission/step; the server stores it in `meta.session`, adds it to the webhook payload as
 `session` (omitted when empty), shows it in the submission detail view, and exports it to CSV.
 
+**User-Provided Data ("upd")** — WP option `td_upd` = `{ enabled, storage:'local'|'cookie' }`
+(TD_Upd), **ON by default** (absent option ⇒ enabled). Capture logic lives in `form.js`
+(config injected via `TF_FORM.upd`). On every form step + submit it inspects the form and
+builds a persisted identity object:
+```jsonc
+{ "fn": "", "ln": "", "em": "", "ph": "", "co": "" }   // first/last name, email, phone, country
+```
+Normalization: `fn`/`ln`/`em` lowercase, `ph` digits only (incl. dial code), `co` 2-letter ISO
+**uppercase**. Detection: `em` = first `input[type=email]`; `ph` = the phone field (composite
+or plain tel); `co` = the phone dial-code selector's `data-cc` (or an explicit 2-letter country
+field); `fn`/`ln` = fields whose key/label match first/last/full-name keywords (a single
+"name" field is split on whitespace). Values **accumulate** across steps/forms (a found value
+never overwrites with empty). Persisted in `localStorage` or a max-expiry cookie (named
+`td_upd`, `Max-Age=2147483647` + far-future `Expires`, `SameSite=Lax`, `Secure` on HTTPS),
+selectable in Settings. Whenever the object changes, form.js pushes
+`{ event:'upd', upd:{…} }` **before** the matching `form_step`/`form_submission` event. This is
+a front-end/analytics identity feature only — nothing is stored server-side.
+
 **Options:** WP option `tf_settings` = `{ global_webhook }`. DB-version gates:
 `tf_db_version` (submissions) and `tf_revisions_db_version` (revisions) — each re-runs
 its `dbDelta` when ≠ `TF_VERSION`.
@@ -150,7 +172,11 @@ its `dbDelta` when ≠ `TF_VERSION`.
 
 ## 4. Front-end contracts
 
-**dataLayer events** (form.js) — `form_step` on each Next, `form_submission` on submit:
+**dataLayer events** (form.js) — `upd` (when User-Provided Data changes; pushed *before* the
+events below), `form_step` on each Next, `form_submission` on submit:
+```js
+{ event:'upd', upd:{ fn, ln, em, ph, co } }   // see §3 "User-Provided Data"
+```
 ```js
 { event:'form_step'|'form_submission', form_id, form_name, form_type:'Terrific Form',
   form_step?, form_intent?, form_fields:{ key: value } }
@@ -264,6 +290,10 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   `manage_options`) to match the rest of the TD menu (see gotcha in §6).
 - **"Edit form" front-end link** (added earlier; 2.21.1 restyled) — small pill above each form with
   the Terrific "t" brand mark, linking to the editor; editors only (see §4).
+- **User-Provided Data** (2.22.0) — plugin-wide feature (ON by default, TD_Upd) that captures the
+  visitor's first name / last name / email / phone / country from any form fill into a persisted
+  `upd` object `{fn,ln,em,ph,co}` (localStorage or a max-expiry cookie, selectable in Settings),
+  pushing a `{event:'upd',upd}` dataLayer event before each `form_step`/`form_submission` (see §3/§4).
 
 ---
 

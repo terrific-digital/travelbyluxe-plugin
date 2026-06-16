@@ -40,6 +40,111 @@
 		return raw || '';
 	}
 
+	/* ---------------------------------------------------- User-Provided Data (upd)
+	 * Captures the visitor's personal details from any form fill into a single
+	 * persisted object { fn, ln, em, ph, co } and pushes a `upd` dataLayer event
+	 * whenever it changes — fired before the matching form_step/form_submission.
+	 */
+	var UPD = (window.TF_FORM && window.TF_FORM.upd) || {};
+	var UPD_KEYS = ['fn', 'ln', 'em', 'ph', 'co'];
+	// Field key/label keyword detection (matched against "key label", lowercased).
+	var RE_FIRST = /\b(first[\s_-]?name|firstname|fname|given[\s_-]?name|forename|first)\b/;
+	var RE_LAST = /\b(last[\s_-]?name|lastname|lname|sur[\s_-]?name|surname|family[\s_-]?name|last)\b/;
+	var RE_FULL = /\b(full[\s_-]?name|fullname|your[\s_-]?name|name)\b/;
+	var RE_COUNTRY = /\b(country|nation|co)\b/;
+
+	function updEnabled() { return !!UPD.enabled; }
+	function digitsOnly(s) { return (s || '').replace(/\D+/g, ''); }
+
+	// A field's visible label text (for keyword matching), falling back to aria-label.
+	function fieldLabel(el) {
+		var wrap = el.closest('.tf-field');
+		var lbl = wrap ? wrap.querySelector('.tf-label') : null;
+		return (lbl ? lbl.textContent : (el.getAttribute('aria-label') || '')) || '';
+	}
+
+	function readUpd() {
+		var raw = null, useCookie = UPD.storage === 'cookie', K = UPD.key || 'td_upd';
+		try {
+			if (useCookie) {
+				var m = document.cookie.match(new RegExp('(?:^|; )' + K.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
+				if (m) { raw = decodeURIComponent(m[1]); }
+			} else if (window.localStorage) {
+				raw = localStorage.getItem(K);
+			}
+		} catch (e) {}
+		var obj = {};
+		if (raw) { try { obj = JSON.parse(raw) || {}; } catch (e) { obj = {}; } }
+		return obj;
+	}
+
+	function saveUpd(obj) {
+		var json = JSON.stringify(obj), useCookie = UPD.storage === 'cookie', K = UPD.key || 'td_upd';
+		try {
+			if (useCookie) {
+				// Max-Age 2147483647s (~68y): the conventional "as far out as it goes" cookie.
+				var secure = location.protocol === 'https:' ? '; Secure' : '';
+				document.cookie = K + '=' + encodeURIComponent(json) + '; path=/; max-age=2147483647; expires=Fri, 31 Dec 9999 23:59:59 GMT; SameSite=Lax' + secure;
+			} else if (window.localStorage) {
+				localStorage.setItem(K, json);
+			}
+		} catch (e) {}
+	}
+
+	// Inspect the form's current values and return the personal data slots found.
+	function detectUpd(form) {
+		var found = {};
+		// Email — first non-empty email input.
+		var em = form.querySelector('input[type="email"][data-key]');
+		if (em && em.value.trim()) { found.em = em.value.trim().toLowerCase(); }
+		// Phone — composite (.tf-phone-num + dial-code) or a plain tel input.
+		var phNum = form.querySelector('.tf-phone-num[data-key]') || form.querySelector('input[type="tel"][data-key]');
+		if (phNum && phNum.value.trim()) {
+			var wrap = phNum.closest('.tf-phone');
+			var cc = wrap ? wrap.querySelector('.tf-phone-cc') : null;
+			found.ph = digitsOnly((cc ? cc.value : '') + phNum.value);
+			if (cc && cc.options[cc.selectedIndex]) {
+				var code = cc.options[cc.selectedIndex].getAttribute('data-cc');
+				if (code) { found.co = code.toUpperCase(); }
+			}
+		}
+		// Names + an explicit country field, detected by key/label keywords.
+		form.querySelectorAll('[data-key]').forEach(function (el) {
+			if (el.classList.contains('tf-options') || el.classList.contains('tf-phone-num')) { return; }
+			if (el.type === 'email' || el.type === 'range' || el.type === 'hidden') { return; }
+			var v = (el.value || '').trim();
+			if (!v) { return; }
+			var hay = ((el.getAttribute('data-key') || '') + ' ' + fieldLabel(el)).toLowerCase();
+			if (found.fn === undefined && RE_FIRST.test(hay)) { found.fn = v.toLowerCase(); }
+			else if (found.ln === undefined && RE_LAST.test(hay)) { found.ln = v.toLowerCase(); }
+			else if ((found.fn === undefined || found.ln === undefined) && RE_FULL.test(hay)) {
+				var parts = v.split(/\s+/);
+				if (found.fn === undefined) { found.fn = (parts.shift() || '').toLowerCase(); }
+				if (found.ln === undefined && parts.length) { found.ln = parts.join(' ').toLowerCase(); }
+			}
+			if (found.co === undefined && RE_COUNTRY.test(hay) && /^[a-z]{2}$/i.test(v)) {
+				found.co = v.toUpperCase();
+			}
+		});
+		return found;
+	}
+
+	// Merge freshly-found values into the persisted object; on any change, persist
+	// and push the dataLayer event (callers invoke this BEFORE form_step/submission).
+	function updateUpd(form) {
+		if (!updEnabled()) { return; }
+		var found = detectUpd(form);
+		var cur = readUpd();
+		var next = {}, changed = false;
+		UPD_KEYS.forEach(function (k) {
+			next[k] = (cur && typeof cur[k] === 'string') ? cur[k] : '';
+			if (found[k] && found[k] !== next[k]) { next[k] = found[k]; changed = true; }
+		});
+		if (!changed) { return; }
+		saveUpd(next);
+		window.dataLayer.push({ event: UPD.event || 'upd', upd: next });
+	}
+
 	function collect(form) {
 		var out = {};
 		form.querySelectorAll('[data-key]').forEach(function (el) {
@@ -114,6 +219,7 @@
 	}
 
 	function pushStep(form, stepNum) {
+		updateUpd(form); // push the `upd` event first, so it precedes form_step
 		var ev = {
 			event: 'form_step',
 			form_id: form.getAttribute('data-form-id'),
@@ -219,6 +325,7 @@
 			var activeStep = form.querySelector('.tf-step.is-active') || form;
 			if (!validateStep(activeStep)) { return; }
 			var fields = collect(form);
+			updateUpd(form); // capture/push `upd` before the form_submission event
 			if (multi) {
 				// final step also counts as a progression
 				pushStep(form, parseInt(form.getAttribute('data-total-steps'), 10));

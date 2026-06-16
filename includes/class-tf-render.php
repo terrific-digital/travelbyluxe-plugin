@@ -58,6 +58,7 @@ class TF_Render {
 		wp_localize_script( 'tf-form', 'TF_FORM', array(
 			'ajax'  => admin_url( 'admin-ajax.php' ),
 			'nonce' => wp_create_nonce( 'tf_submit' ),
+			'upd'   => TD_Upd::config(), // User-Provided Data capture (front-end identity object)
 		) );
 	}
 
