@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.23.0
+**Current version:** 2.23.1
 
 ---
 
@@ -42,6 +42,8 @@ terrific-digital/
                                 injected into TF_FORM (capture logic lives in form.js)
     class-td-snippets.php       "Code Snippets" feature: admin-only td_snippet CPT (raw HTML/JS),
                                 4 inject locations + conditions; output-buffer injection (template_redirect)
+    class-td-notes.php          "Notes" admin page: a hand-maintained card grid summarizing every
+                                plugin feature in short (submenu under TD_MENU, last; edit_pages)
     class-tf-settings.php       Settings page (shared form): tf_settings { global_webhook } +
                                 a do_action('terrific_digital/settings_fields') hook for other features
     class-tf-cpt.php            Registers the `terrific_form` CPT (+ Form ID/Shortcode list columns)
@@ -220,7 +222,7 @@ the rest of the TD menu). Each snippet:
 (string-spliced at each position — `after_head_open` and the body positions have no WP hook),
 skipped for admin/ajax/REST/feed/embed.
 
-**Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · Settings** (no "Add New"
+**Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · Settings · Notes** (no "Add New"
 link — new forms are created from the Forms list screen's own "Add New" button).
 
 **Front-end "Edit form" link:** every rendered form prepends a small `.tf-edit-link` pill — the
@@ -300,6 +302,8 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   `manage_options`) to match the rest of the TD menu (see gotcha in §6).
 - **"Edit form" front-end link** (added earlier; 2.21.1 restyled) — small pill above each form with
   the Terrific "t" brand mark, linking to the editor; editors only (see §4).
+- **Notes tab** (2.23.1) — a read-only admin page (TD_Notes, last submenu) with a card grid that
+  summarizes every plugin feature in short; keep it current by hand as features land.
 - **Session URL param backup** (2.23.0) — `session.js` normalizes the stored landing `url`,
   rebuilding stripped official tracking params (`utm_*`/`gclid`/`msclkid`/…) from our `td_*`/`hsa_*`
   counterpart params (whole-key rewrite, official-wins). Mirrors the GTM backup function (see §3).
