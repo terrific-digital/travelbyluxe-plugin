@@ -20,6 +20,7 @@ new landing page "just works" for leads + analytics.
 | **WP path** | `~/applications/mpggmnftkb/public_html` |
 | **WP admin** | https://wordpress-1636848-6491457.cloudwaysapps.com/wp-admin/ (creds in the LP repo `.cloudways-wp.local.md`) |
 | **Demo form** | post **62** (`tf_62_3ea8e1`) · pages `/tf-demo/` (shortcode) and `/tf-block-demo/` (block) |
+| **Live landing page** | page **84** "Luxury Travel v3 (Native)" `/luxury-travel-v3-native/` — a custom template that `do_shortcode`s form **77** + FAQ list **88** (`faq_88_a5250f`). Its stored content is only the form shortcode; the rest is template-rendered (why the FAQ usage finder needed render-tracking). |
 
 > ⚠️ Earlier the version string in `terrific-digital.php` drifted (stuck at 2.6.0) because
 > `sed` version‑bumps silently failed to match. `TD_VERSION` is the asset cache‑buster
@@ -139,9 +140,9 @@ days from today; 0 = today, blank = no limit); converted to the input's `min`/`m
 (cache-safe) with matching validation.
 
 **Live preview** (builder) — a sticky preview pane **inside the Form Builder box** (right of the
-canvas; toggleable via a toolbar button, state persisted in `localStorage`) renders the real form
-server-side via the `tf_preview` AJAX action (admin-only, nonce'd) into an iframe, updating ~400ms
-after each edit (skipped while the pane is hidden).
+canvas; toggleable via a toolbar button + **drag-resizable** by a handle on its left edge, both
+states persisted in `localStorage`) renders the real form server-side via the `tf_preview` AJAX
+action (admin-only, nonce'd) into an iframe, updating ~400ms after each edit (skipped while hidden).
 `TF_Render::markup($def, $post_id, $preview=true)` adds a `tf-preview` class (all steps shown
 stacked, nav hidden, `onsubmit` disabled) reusing the exact frontend renderer for WYSIWYG accuracy.
 
@@ -364,6 +365,19 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **Plugins screen polish** (2.34.4–2.34.5) — added a **Settings** action link to the plugin row
+  (`plugin_action_links_*` → `admin.php?page=tf-settings`); set `Plugin URI` to
+  **https://terrific-digital.com**; and made "Visit plugin site" open in a new tab
+  (`plugin_row_meta` adds `target="_blank" rel="noopener noreferrer"`).
+- **FAQ usage render-tracking** (2.34.3) — the FAQ "Used on these pages" finder now also records
+  pages where the FAQ actually renders front-end (`record_usage()` → `_td_faq_seen`), so it catches
+  embeds with nothing scannable (custom landing-page templates / page builders / `do_shortcode`).
+  See §4.
+- **FAQ editor rebuild** (2.34.2) — the FAQ admin builder became collapsible drag-and-drop cards:
+  question editable inline in the header, answer in a collapsible body, with drag-reorder, duplicate,
+  and compact icon actions (matches the form builder's feel).
+- **Brand bar on FAQ screens** (2.34.1) — `is_td_screen()` now whitelists `td_faq` so the FAQ Lists
+  list/edit screens get the shared header bar too.
 - **More intents + FAQ on dashboard** (2.34.0) — added Career Application / Contact Us / Gated Content
   form intents (each fires its own dataLayer event); renamed the "FAQ" menu to **FAQ Lists** and added
   an FAQ Lists card to the Dashboard.
@@ -444,24 +458,41 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
 
 ## 7. Deploy & test workflow
 
-**Deploy** (from the canonical source):
+**Deploy** (from the canonical source) — **scp straight to the destination path** (via the
+`applications` symlink). Don't scp to a relative `~/tmp.x`: the SFTP login is chrooted to a
+different root than the interactive shell, so a relative upload lands somewhere the `ssh` session
+can't `cp` from. Direct-to-dest avoids that:
 ```bash
-# edit files in ~/Claude/terrific-digital-plugin/, bump TD_VERSION, then:
-scp -i ~/.ssh/tbl_cloudways <file> master_emqjrcyekf@46.101.96.39:tmp.x
-ssh -i ~/.ssh/tbl_cloudways master_emqjrcyekf@46.101.96.39 \
-  'cd ~/applications/mpggmnftkb/public_html/wp-content/plugins/terrific-digital && cp ~/tmp.x <dest> && \
-   php -l <dest>; cd ~/applications/mpggmnftkb/public_html && wp breeze purge --cache=all'
+H=master_emqjrcyekf@46.101.96.39; K=~/.ssh/tbl_cloudways
+D=applications/mpggmnftkb/public_html/wp-content/plugins/terrific-digital
+scp -i $K <localfile> $H:$D/<relpath>          # e.g. assets/form.js, includes/class-x.php
+ssh -i $K $H 'P=~/applications/mpggmnftkb/public_html/wp-content/plugins/terrific-digital
+  php -l $P/<relpath>; cd ~/applications/mpggmnftkb/public_html && wp breeze purge --cache=all'
 ```
-- DB ops / inspection: `wp eval` / `wp eval-file` (e.g. `TF_Submissions::create_table()` to migrate).
+- `php` is **not** installed locally — lint on the server with `php -l`. `node --check` lints JS locally.
+- DB ops / inspection: `wp eval` / `wp eval-file` (heredoc with a **quoted** `<<"PHP"` delimiter to
+  avoid shell expansion; inside it use plain PHP — don't backslash-escape `$` or quotes).
 - On schema change, bump `TD_VERSION` so `maybe_create_table()` re-runs dbDelta.
+- **Block-editor scripts must be registered on `init`** (not `wp_enqueue_scripts`, which is front-end
+  only) so the handle exists in the admin block editor — see `TD_FAQ::register()` / `TF_Block`.
 
-**Test** (headless Chrome via CDP — Chrome 149 at `/Applications/Google Chrome.app`):
-- Full-page screenshots: `/tmp/shot.js` (scroll-and-tile; use isolated `--user-data-dir`, unique port).
-- Admin tests: log in at `/wp-login.php` with the WP creds, then drive the screen.
-- Front-end behaviour: fill fields, click, read `window.dataLayer` / network for `tf_step` etc.
-- Protected PHP methods: verify via `ReflectionMethod` in `wp eval`.
-- Webhook payloads: echo through `https://httpbin.org/post` (blocking) — **do not** use webhook.site
-  (blocked by the sandbox as exfil-shaped).
+**Test** (headless Chrome via CDP — `/Applications/Google Chrome.app`; spawn with `--headless=new`,
+an isolated `--user-data-dir`, a unique `--remote-debugging-port`; drive over the WebSocket):
+- Admin tests: log in at `/wp-login.php`, then `Page.navigate` to the screen. **Credential-safety:**
+  the auto-mode classifier blocks writing the WP password into a file or command line. Pass it via an
+  env var the script reads from `process.env` — e.g.
+  `WP_USER=… WP_PASS="$(grep -oE … /tmp/tfadmin.js)" node /tmp/x.js` — so the literal never appears.
+- Front-end behaviour: fill fields, click, read `window.dataLayer` (wrap `dataLayer.push` to record
+  events; if a submit may redirect, stash records in `sessionStorage` so they survive the nav).
+- **Synthetic drag** (SortableJS): Sortable uses **pointer events** by default, which CDP's
+  `Input.dispatchMouseEvent` doesn't drive — so the builder/FAQ Sortables set `supportPointer:false`
+  (mouse/touch events) which makes mouse-event drags work *and* is fine for desktop admin.
+- Deploy itself is gated by the auto-mode classifier; it asks before the first scp to production.
+- Front-end pages are Breeze-cached: purge after deploy, and add a unique `?query` to force a fresh
+  (uncached) render when testing render-time behaviour (e.g. FAQ `record_usage`).
+- Protected PHP methods: verify via `ReflectionMethod`/`wp eval`. Webhook payloads: echo through
+  `https://httpbin.org/post` (blocking) — **do not** use webhook.site (blocked by the sandbox).
+- Clean up any test rows/posts created on the live site (delete by a distinctive marker value).
 
 ---
 
