@@ -95,6 +95,9 @@ class TD_Menu {
 		global $wpdb;
 		$subs = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'tf_submissions' );
 		$updated = self::last_updated();
+		$snip_counts  = wp_count_posts( TD_Snippets::CPT );
+		$total_snips  = isset( $snip_counts->publish ) ? (int) $snip_counts->publish : 0;
+		$active_snips = count( get_posts( array( 'post_type' => TD_Snippets::CPT, 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_td_snippet_enabled', 'meta_value' => '1' ) ) );
 		?>
 		<div class="wrap">
 			<h1 style="display:flex;align-items:center;gap:14px;margin:8px 0 12px;flex-wrap:wrap">
@@ -104,7 +107,7 @@ class TD_Menu {
 					<span style="color:#787c82;font-size:12px;font-weight:400">Updated <?php echo esc_html( wp_date( get_option( 'date_format' ), $updated ) ); ?></span>
 				<?php endif; ?>
 			</h1>
-			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — for now it includes <strong>Terrific Forms</strong>.</p>
+			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — currently <strong>Terrific Forms</strong> and <strong>Code Snippets</strong>.</p>
 			<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:20px">
 				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
 					<h2 style="margin-top:0">📝 Terrific Forms</h2>
@@ -112,6 +115,13 @@ class TD_Menu {
 					<p><strong><?php echo esc_html( $total_forms ); ?></strong> forms · <strong><?php echo esc_html( $subs ); ?></strong> submissions</p>
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . TF_CPT ) ); ?>" class="button button-primary">Manage Forms</a>
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . TF_CPT . '&page=tf-submissions' ) ); ?>" class="button">Submissions</a>
+				</div>
+				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
+					<h2 style="margin-top:0">✂️ Code Snippets</h2>
+					<p>Inject custom HTML/JS into your pages at a chosen location (head/body), with page &amp; URL conditions.</p>
+					<p><strong><?php echo esc_html( $total_snips ); ?></strong> snippets · <strong><?php echo esc_html( $active_snips ); ?></strong> active</p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . TD_Snippets::CPT ) ); ?>" class="button button-primary">Manage Snippets</a>
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . TD_Snippets::CPT ) ); ?>" class="button">Add Snippet</a>
 				</div>
 				<div style="flex:1 1 260px;background:#f6f7f7;border:1px dashed #c3c4c7;border-radius:8px;padding:20px;color:#777">
 					<h2 style="margin-top:0;color:#777">More coming soon</h2>
