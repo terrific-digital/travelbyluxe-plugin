@@ -166,7 +166,8 @@ its `dbDelta` when ≠ `TF_VERSION`.
 - `wp_ajax(_nopriv)_tf_geo` — returns the visitor's `country_code` (phone auto-select; cache-safe)
 - `admin_post_tf_export` — CSV export · `admin_post_tf_delete` — delete one
 
-**Code Snippets** (`td_snippet` CPT, admin-only — `manage_options` mapped to every cap). Each snippet:
+**Code Snippets** (`td_snippet` CPT, `capability_type=page` → `edit_pages`, like the Forms CPT and
+the rest of the TD menu). Each snippet:
 `_td_snippet_code` (raw HTML/JS), `_td_snippet_location` (after_head_open · before_head_close ·
 after_body_open · after_body_close), `_td_snippet_enabled`, `_td_snippet_condition` (all · specific ·
 url_contains · url_not_contains) + `_td_snippet_pages` / `_td_snippet_url`. Injected via a single

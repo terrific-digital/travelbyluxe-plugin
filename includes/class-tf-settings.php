@@ -15,11 +15,15 @@ class TF_Settings {
 	}
 
 	public static function menu() {
-		add_submenu_page( TD_MENU, 'Forms Settings', 'Settings', 'manage_options', 'tf-settings', array( __CLASS__, 'screen' ) );
+		// edit_pages (not manage_options) to match the rest of the Terrific Digital menu.
+		add_submenu_page( TD_MENU, 'Terrific Digital Settings', 'Settings', 'edit_pages', 'tf-settings', array( __CLASS__, 'screen' ) );
 	}
 
 	public static function register() {
 		register_setting( 'tf_settings_group', self::OPT, array( 'sanitize_callback' => array( __CLASS__, 'sanitize' ) ) );
+		// options.php enforces the option-group capability (defaults to manage_options); align it so
+		// the same edit_pages users who can open the Settings screen can also save it.
+		add_filter( 'option_page_capability_tf_settings_group', function () { return 'edit_pages'; } );
 	}
 
 	public static function sanitize( $in ) {

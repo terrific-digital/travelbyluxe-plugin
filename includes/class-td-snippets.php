@@ -3,7 +3,8 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /**
  * Code Snippets — inject custom HTML/JS into the page at a chosen location,
- * gated by URL/page conditions. Admin-only (snippets run arbitrary code).
+ * gated by URL/page conditions. Restricted to users who can edit pages
+ * (edit_pages — same model as the rest of the Terrific Digital plugin).
  *
  * Each snippet is a `td_snippet` post:
  *   _td_snippet_code      raw HTML/JS
@@ -61,28 +62,17 @@ class TD_Snippets {
 				'not_found'     => 'No snippets yet',
 				'menu_name'     => 'Code Snippets',
 			),
-			'public'        => false,
-			'show_ui'       => true,
-			'show_in_menu'  => false, // nested under Terrific Digital.
-			'supports'      => array( 'title' ),
-			'map_meta_cap'  => true,
-			// Admin-only: every capability maps to manage_options.
-			'capabilities'  => array(
-				'edit_post'           => 'manage_options',
-				'read_post'           => 'manage_options',
-				'delete_post'         => 'manage_options',
-				'edit_posts'          => 'manage_options',
-				'edit_others_posts'   => 'manage_options',
-				'delete_posts'        => 'manage_options',
-				'publish_posts'       => 'manage_options',
-				'read_private_posts'  => 'manage_options',
-				'create_posts'        => 'manage_options',
-			),
+			'public'          => false,
+			'show_ui'         => true,
+			'show_in_menu'    => false, // nested under Terrific Digital.
+			'supports'        => array( 'title' ),
+			'capability_type' => 'page', // edit_pages-family caps — same model as the Forms CPT.
+			'map_meta_cap'    => true,
 		) );
 	}
 
 	public static function menu() {
-		add_submenu_page( TD_MENU, 'Code Snippets', 'Code Snippets', 'manage_options', 'edit.php?post_type=' . self::CPT );
+		add_submenu_page( TD_MENU, 'Code Snippets', 'Code Snippets', 'edit_pages', 'edit.php?post_type=' . self::CPT );
 	}
 
 	public static function parent_file( $parent_file ) {
@@ -141,7 +131,7 @@ class TD_Snippets {
 	public static function box_code( $post ) {
 		$code = get_post_meta( $post->ID, '_td_snippet_code', true );
 		wp_nonce_field( 'td_snippet_save', 'td_snippet_nonce' );
-		echo '<p class="description" style="margin-top:0">Raw HTML/JavaScript. Include your own <code>&lt;script&gt;</code> / <code>&lt;style&gt;</code> tags as needed. Injected verbatim — only administrators can edit snippets.</p>';
+		echo '<p class="description" style="margin-top:0">Raw HTML/JavaScript. Include your own <code>&lt;script&gt;</code> / <code>&lt;style&gt;</code> tags as needed. Injected verbatim into the page.</p>';
 		echo '<textarea name="td_snippet_code" rows="16" style="width:100%;font-family:Menlo,Consolas,monospace;font-size:13px;line-height:1.5;white-space:pre" spellcheck="false">' . esc_textarea( $code ) . '</textarea>';
 	}
 
@@ -213,7 +203,7 @@ class TD_Snippets {
 	public static function save( $post_id ) {
 		if ( ! isset( $_POST['td_snippet_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['td_snippet_nonce'] ) ), 'td_snippet_save' ) ) { return; }
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
-		if ( ! current_user_can( 'manage_options' ) ) { return; }
+		if ( ! current_user_can( 'edit_post', $post_id ) ) { return; }
 
 		// Code stored raw (admin-only feature). wp_slash counters update_post_meta's unslash.
 		if ( isset( $_POST['td_snippet_code'] ) ) {
