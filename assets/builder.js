@@ -40,6 +40,20 @@
 		}
 	}
 
+	// The final step submits (no Next button), so show a "LAST STEP" tag there instead
+	// of the Next-button text input. Re-evaluated whenever steps are added/removed.
+	function refreshStepNextFields() {
+		if (!root) { return; }
+		var steps = root.querySelectorAll('.tf-b-step');
+		steps.forEach(function (st, i) {
+			var isLast = (i === steps.length - 1);
+			var nextInput = st.querySelector('.tf-b-step-next');
+			var lastTag = st.querySelector('.tf-b-step-last');
+			if (nextInput) { nextInput.style.display = isLast ? 'none' : ''; }
+			if (lastTag) { lastTag.style.display = isLast ? '' : 'none'; }
+		});
+	}
+
 	// A fresh field object of the given type (used by both drag-add and click-add).
 	function newField(type) {
 		var f = {
@@ -371,6 +385,7 @@
 				'<span class="tf-b-step-n">' + (multi ? 'Step ' + (idx + 1) : 'Fields') + '</span>' +
 				(multi ? '<input type="text" class="tf-b-step-title" placeholder="Step title (optional)" value="' + esc(step.title) + '">' : '<input type="hidden" class="tf-b-step-title" value="">') +
 				(multi ? '<input type="text" class="tf-b-step-next" placeholder="Next button: Next →" title="Next button text for this step" value="' + esc(step.next_text) + '">' : '') +
+				(multi ? '<span class="tf-b-step-last" title="The final step submits the form (uses the Submit button text)">LAST STEP</span>' : '') +
 				(multi ? '<button type="button" class="tf-b-del-step button-link">Remove step</button>' : '') +
 			'</div>' +
 			'<div class="tf-b-fields"></div>';
@@ -378,7 +393,7 @@
 		(step.fields || []).forEach(function (f) { list.appendChild(fieldCard(f)); });
 		var t = el.querySelector('.tf-b-step-title'); if (t) { t.addEventListener('input', sync); }
 		var nx = el.querySelector('.tf-b-step-next'); if (nx) { nx.addEventListener('input', sync); }
-		var ds = el.querySelector('.tf-b-del-step'); if (ds) { ds.addEventListener('click', function () { el.remove(); sync(); }); }
+		var ds = el.querySelector('.tf-b-del-step'); if (ds) { ds.addEventListener('click', function () { el.remove(); refreshStepNextFields(); sync(); }); }
 		// Clicking anywhere in a step makes it the target for click-to-add.
 		el.addEventListener('mousedown', function () { setActive(el); });
 		makeSortable(list);
@@ -481,6 +496,7 @@
 				var el = stepEl({ title: '', fields: [] }, canvas.querySelectorAll('.tf-b-step').length);
 				canvas.insertBefore(el, add); // keep the button last
 				setActive(el);
+				refreshStepNextFields();
 				sync();
 			});
 			canvas.appendChild(add);
@@ -488,8 +504,14 @@
 
 		var pane = document.createElement('div');
 		pane.className = 'tf-b-preview-pane';
-		pane.innerHTML = '<div class="tf-b-preview-head">Live preview</div>' +
-			'<iframe id="tf-preview-frame" title="Form preview"></iframe>';
+		pane.innerHTML = '<span class="tf-b-resizer" title="Drag to resize the preview"></span>' +
+			'<div class="tf-b-preview-inner">' +
+				'<div class="tf-b-preview-head">Live preview</div>' +
+				'<iframe id="tf-preview-frame" title="Form preview"></iframe>' +
+			'</div>';
+		// Restore a previously dragged width.
+		var storedW = 0; try { storedW = parseInt(localStorage.getItem('tfBuilderPreviewW'), 10) || 0; } catch (e) {}
+		if (storedW) { pane.style.flexBasis = storedW + 'px'; }
 
 		wrap.appendChild(buildPalette());
 		wrap.appendChild(canvas);
@@ -511,9 +533,34 @@
 			if (!previewHidden) { updatePreview(); }
 		});
 
+		// Drag the divider on the preview's left edge to make it wider/narrower (persisted).
+		var resizer = pane.querySelector('.tf-b-resizer');
+		if (resizer) {
+			resizer.addEventListener('mousedown', function (e) {
+				e.preventDefault();
+				var startX = e.clientX, startW = pane.offsetWidth;
+				var maxW = Math.max(360, wrap.clientWidth - 360); // leave room for palette + canvas
+				document.body.style.userSelect = 'none';
+				function move(ev) {
+					var w = Math.max(280, Math.min(maxW, startW + (startX - ev.clientX))); // drag left = wider
+					pane.style.flexBasis = w + 'px';
+				}
+				function up() {
+					document.removeEventListener('mousemove', move);
+					document.removeEventListener('mouseup', up);
+					document.body.style.userSelect = '';
+					try { localStorage.setItem('tfBuilderPreviewW', String(pane.offsetWidth)); } catch (e2) {}
+					updatePreview(); // re-fit the iframe height for the new width
+				}
+				document.addEventListener('mousemove', move);
+				document.addEventListener('mouseup', up);
+			});
+		}
+
 		// Default the click-to-add target to the first step.
 		setActive(canvas.querySelector('.tf-b-step'));
 
+		refreshStepNextFields();
 		sync();
 	}
 

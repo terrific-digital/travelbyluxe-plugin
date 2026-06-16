@@ -9,8 +9,14 @@
 .tf-b-wrap { display: flex; gap: 16px; align-items: flex-start; }
 .tf-b-palette { width: 184px; flex: 0 0 184px; position: sticky; top: 40px; }
 
-/* Live-preview pane: sticky on the right of the canvas; collapsible. */
-.tf-b-preview-pane { flex: 0 0 320px; align-self: flex-start; position: sticky; top: 40px; max-height: calc(100vh - 90px); overflow: auto; border: 1px solid #dcdcde; border-radius: 6px; background: #fff; padding: 10px 12px; box-sizing: border-box; }
+/* Live-preview pane: sticky on the right of the canvas; collapsible and drag-resizable.
+   The scroll/overflow lives on the inner wrapper so the resize handle (at left:-9px) isn't clipped. */
+.tf-b-preview-pane { flex: 0 0 380px; align-self: flex-start; position: sticky; top: 40px; box-sizing: border-box; }
+.tf-b-preview-inner { max-height: calc(100vh - 90px); overflow: auto; border: 1px solid #dcdcde; border-radius: 6px; background: #fff; padding: 10px 12px; }
+/* Drag handle on the pane's left edge (sits in the gap between canvas and pane). */
+.tf-b-resizer { position: absolute; left: -9px; top: 0; width: 11px; height: 100%; cursor: col-resize; z-index: 2; }
+.tf-b-resizer::before { content: ''; position: absolute; left: 4px; top: 0; width: 3px; height: 100%; border-radius: 3px; background: transparent; transition: background .12s; }
+.tf-b-resizer:hover::before { background: #2271b1; }
 .tf-b-preview-head { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #50575e; margin-bottom: 8px; }
 #tf-preview-frame { width: 100%; border: 0; background: #fff; min-height: 200px; display: block; }
 .tf-b-wrap.tf-b-no-preview .tf-b-preview-pane { display: none; }
@@ -28,6 +34,7 @@
 .tf-b-step-n { font-weight: 600; white-space: nowrap; }
 .tf-b-step-title { flex: 1 1 50%; min-width: 0; }
 .tf-b-step-next { flex: 1 1 40%; min-width: 0; }
+.tf-b-step-last { background: #f0f0f1; color: #646970; border-radius: 3px; padding: 5px 12px; font-size: 11px; font-weight: 600; letter-spacing: .05em; white-space: nowrap; }
 .tf-b-del-step { color: #b32d2e !important; white-space: nowrap; }
 .tf-b-fields { min-height: 60px; padding: 10px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
 .tf-b-fields:empty::after { content: 'Drop fields here'; flex: 0 0 100%; text-align: center; color: #aaa; padding: 18px; border: 2px dashed #dcdcde; border-radius: 4px; }

@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.31.0
+**Current version:** 2.31.1
 
 ---
 
@@ -337,6 +337,10 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **Builder: resizable preview + LAST STEP** (2.31.1) — the live-preview pane is wider by default
+  and **drag-resizable** (handle on its left edge; width persisted in `localStorage`). On a
+  multi-step form the **final step shows a "LAST STEP" tag** instead of a Next-button text input
+  (it submits via the Submit button); re-evaluated as steps are added/removed.
 - **Builder WYSIWYG widths + drag-to-pair** (2.31.0) — field cards now render at their real width
   (full / ½ / ⅓) in the canvas (an expanded card goes full-width for editing); the redundant width
   badge is gone. Dropping a full-width field onto the right half of another full-width field turns

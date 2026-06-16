@@ -33,7 +33,7 @@ class TD_Notes {
 				'Slider with min/max/step/default, value bubble or inline, prefix/suffix &amp; scale.',
 				'Date field with earliest/latest bounds (days from today).',
 				'Per-step Next button text; per-type palette icons.',
-				'Sticky side-by-side live preview — renders the real form as you edit (toggleable).',
+				'Sticky side-by-side live preview — renders the real form as you edit (toggleable, drag-resizable).',
 			) ),
 			array( '📍', 'Placement', array(
 				'Shortcode <code>[terrific_form id="N"]</code>.',
