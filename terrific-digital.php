@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific.co.il
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.32.0
+ * Version:           2.33.0
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -11,7 +11,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.32.0' );
+define( 'TD_VERSION', '2.33.0' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -26,6 +26,7 @@ require_once TF_DIR . 'includes/class-td-session.php';
 require_once TF_DIR . 'includes/class-td-upd.php';
 require_once TF_DIR . 'includes/class-td-snippets.php';
 require_once TF_DIR . 'includes/class-td-notes.php';
+require_once TF_DIR . 'includes/class-td-faq.php';
 require_once TF_DIR . 'includes/class-tf-settings.php';
 require_once TF_DIR . 'includes/class-tf-cpt.php';
 require_once TF_DIR . 'includes/class-tf-builder.php';
@@ -39,6 +40,7 @@ add_action( 'plugins_loaded', function () {
 	TD_Session::init();
 	TD_Upd::init();
 	TD_Snippets::init();
+	TD_FAQ::init();
 	TD_Notes::init();
 	TF_Settings::init();
 	TF_CPT_Manager::init();

@@ -1,0 +1,10 @@
+/* Terrific FAQ — admin builder */
+#td-faq-builder .td-faq-list { display: flex; flex-direction: column; gap: 10px; }
+.td-faq-card { border: 1px solid #dcdcde; border-radius: 6px; background: #fff; padding: 10px 12px; }
+.td-faq-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.td-faq-handle { cursor: grab; color: #999; }
+.td-faq-q-input { flex: 1 1 auto; font-weight: 600; }
+.td-faq-del { color: #b32d2e !important; font-size: 14px; text-decoration: none; }
+.td-faq-a-input { width: 100%; font-family: inherit; }
+.td-faq-add { margin-top: 12px; }
+.td-faq-ghost { opacity: .4; }

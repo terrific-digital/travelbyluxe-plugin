@@ -78,6 +78,12 @@ class TD_Notes {
 				'Inject custom HTML or JS into pages at a chosen location (after/before head, after body open, before body close).',
 				'Per-snippet conditions (all pages, specific pages, URL contains / does not contain) + enable toggle.',
 			) ),
+			array( '❓', 'FAQ', array(
+				'Build reusable FAQ lists (question + answer items, drag to reorder).',
+				'Place any list with <code>[terrific_faq id="N"]</code> or the “Terrific FAQ” block.',
+				'See every page a list is used on, from the list’s edit screen.',
+				'Front-end accordion; opening an item fires <code>faq_item_click</code> (with the question, lowercased) once per item.',
+			) ),
 			array( '⚙️', 'Settings &amp; dashboard', array(
 				'Settings: global webhook URL, reCAPTCHA v3, Store Session Data, User-Provided Data.',
 				'Dashboard with feature cards, live counts, version &amp; last-updated date.',

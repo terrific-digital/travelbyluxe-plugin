@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.32.0
+**Current version:** 2.33.0
 
 ---
 
@@ -46,6 +46,9 @@ terrific-digital/
                                 4 inject locations + conditions; output-buffer injection (template_redirect)
     class-td-notes.php          "Notes" admin page: a hand-maintained card grid summarizing every
                                 plugin feature in short (submenu under TD_MENU, last; edit_pages)
+    class-td-faq.php            "FAQ" feature: td_faq CPT (reusable Q&A accordion lists); admin
+                                builder meta box, shortcode [terrific_faq id="N"] + "Terrific FAQ"
+                                block, "used on these pages" finder, front-end accordion + dataLayer
     class-tf-settings.php       Settings page (shared form): tf_settings { global_webhook } +
                                 a do_action('terrific_digital/settings_fields') hook for other features
     class-tf-cpt.php            Registers the `terrific_form` CPT (+ Form ID/Shortcode list columns)
@@ -71,6 +74,9 @@ terrific-digital/
                                 "Edit form" link)
     session.js                  Store Session Data: writes td_session_data once per session (storage/cookie)
     block.js                    Block editor UI (no build step; wp.element.createElement)
+    faq.js / faq.css            FAQ front-end accordion (toggle + faq_item_click dataLayer, once/item)
+    faq-admin.js / faq-admin.css  FAQ list builder (add/reorder/remove Q&A items, SortableJS)
+    faq-block.js                "Terrific FAQ" block editor (no build step)
     sortable.min.js             Bundled SortableJS 1.15.2 (no runtime CDN)
 ```
 
@@ -256,7 +262,18 @@ the rest of the TD menu). Each snippet:
 (string-spliced at each position — `after_head_open` and the body positions have no WP hook),
 skipped for admin/ajax/REST/feed/embed.
 
-**Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · Settings · Notes** (no "Add New"
+**FAQ** (`td_faq` CPT, `capability_type=page` → `edit_pages`, like the Forms/Snippets CPTs). Each
+FAQ list stores `_td_faq_items` (JSON `[ {q, a} ]`; `q`=question text, `a`=answer HTML via
+`wp_kses_post`) and a stable `_td_faq_id` (`faq_{postID}_{6hex}`). Build items in the admin meta box
+(add/reorder/remove). Place with **`[terrific_faq id="N"]`** or the **Terrific FAQ** block (server-
+rendered, reuses the shortcode). The edit screen's side box shows the shortcode + a **"Used on these
+pages"** finder (`find_usages()` — shortcode/block/Elementor, mirrors the Forms finder). Front-end
+renders an accessible accordion (`.td-faq` → `.td-faq-item` → `.td-faq-q` button + `.td-faq-a`
+panel, collapsed via `hidden`; "+"→"×" icon). `faq.js` toggles items and, on the **first open of each
+item**, pushes `{ event:'faq_item_click', faq_title:'<question lowercased>' }` to the dataLayer
+(once per item, via an `item.__faqFired` flag; title read from `data-faq-title`).
+
+**Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · FAQ · Settings · Notes** (no "Add New"
 link — new forms are created from the Forms list screen's own "Add New" button).
 
 **Front-end "Edit form" link:** every rendered form prepends a small `.tf-edit-link` pill — the
@@ -341,6 +358,10 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **FAQ** (2.33.0) — new `td_faq` CPT: reusable Q&A accordion lists placed via `[terrific_faq id="N"]`
+  or the "Terrific FAQ" block. Admin builder (drag-reorder items), a "Used on these pages" finder, and
+  a front-end accordion that fires `{event:'faq_item_click', faq_title:'<question lowercased>'}` once
+  per item on first open (see §3/§4).
 - **Phone country in data** (2.32.0) — a phone field with the country-code selector now submits the
   selected country as a `<key>_country` object `{ code:"+972", name:"Israel", ISO:"IL" }` in the data /
   dataLayer form_fields / webhook / CSV, in addition to the combined number.

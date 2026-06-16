@@ -1,0 +1,26 @@
+/* Terrific FAQ — front-end accordion (inherits the theme's font/colours). */
+.td-faq { width: 100%; }
+.td-faq-item { border-top: 1px solid rgba(0, 0, 0, .12); }
+.td-faq-item:last-child { border-bottom: 1px solid rgba(0, 0, 0, .12); }
+
+.td-faq-q {
+	display: flex; align-items: center; justify-content: space-between; gap: 16px;
+	width: 100%; box-sizing: border-box; margin: 0; padding: 20px 2px;
+	background: none; border: 0; cursor: pointer; text-align: left;
+	font: inherit; font-weight: 600; font-size: 1.15em; line-height: 1.35; color: inherit;
+}
+.td-faq-q:hover { opacity: .8; }
+.td-faq-q-text { flex: 1 1 auto; }
+
+/* "+" that rotates into "×" when open. */
+.td-faq-icon { position: relative; flex: 0 0 auto; width: 22px; height: 22px; transition: transform .2s ease; }
+.td-faq-icon::before, .td-faq-icon::after {
+	content: ''; position: absolute; top: 50%; left: 50%; width: 14px; height: 2px;
+	background: currentColor; transform: translate(-50%, -50%);
+}
+.td-faq-icon::after { transform: translate(-50%, -50%) rotate(90deg); }
+.td-faq-item.is-open .td-faq-icon { transform: rotate(45deg); }
+
+.td-faq-a-inner { padding: 0 2px 22px; line-height: 1.6; }
+.td-faq-a-inner > :first-child { margin-top: 0; }
+.td-faq-a-inner > :last-child { margin-bottom: 0; }
