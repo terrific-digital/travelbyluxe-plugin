@@ -28,6 +28,18 @@
 		return h ? h.value : '';
 	}
 
+	// The td_session_data object (JSON string) from the "Store Session Data" feature,
+	// read from sessionStorage or a cookie. Empty string if not collected.
+	function sessionData() {
+		var KEY = 'td_session_data', raw = null;
+		try { raw = window.sessionStorage ? sessionStorage.getItem(KEY) : null; } catch (e) {}
+		if (!raw) {
+			var m = document.cookie.match(/(?:^|; )td_session_data=([^;]*)/);
+			if (m) { try { raw = decodeURIComponent(m[1]); } catch (e) { raw = m[1]; } }
+		}
+		return raw || '';
+	}
+
 	function collect(form) {
 		var out = {};
 		form.querySelectorAll('[data-key]').forEach(function (el) {
@@ -126,6 +138,7 @@
 		body.append('step', stepNum);
 		body.append('submission_token', form.__tfToken);
 		body.append('hp', honeypot(form));
+		body.append('session', sessionData());
 		body.append('fields', JSON.stringify(collect(form)));
 		body.append('page_url', location.href);
 		body.append('page_title', document.title || '');
@@ -219,6 +232,7 @@
 			body.append('post_id', form.getAttribute('data-post-id'));
 			body.append('submission_token', form.__tfToken);
 			body.append('hp', honeypot(form));
+			body.append('session', sessionData());
 			body.append('fields', JSON.stringify(fields));
 			body.append('page_url', location.href);
 			body.append('page_title', document.title || '');

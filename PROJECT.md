@@ -117,7 +117,7 @@ stacked, nav hidden, `onsubmit` disabled) reusing the exact frontend renderer fo
 
 **Submissions table `{prefix}tf_submissions`**
 `id, form_post_id, form_id, form_name, data (JSON of fields), page_url, user_ip,
-user_agent, intent, meta (JSON {intent, submission, device, cookies}),
+user_agent, intent, meta (JSON {intent, submission, device, cookies, session}),
 status ('partial'|'completed'), last_step, token, updated_at, created_at`.
 
 **Revisions table `{prefix}tf_form_revisions`**
@@ -133,6 +133,9 @@ for dedupe), created_at`. Pruned to the most recent 50 per form (filter
 ```jsonc
 { "timestamp": "<ISO 8601 session-start>", "url": "<landing href>", "ref": "<referrer>" }
 ```
+form.js reads this object (sessionStorage or cookie) and posts it as `session` with each
+submission/step; the server stores it in `meta.session`, adds it to the webhook payload as
+`session` (omitted when empty), shows it in the submission detail view, and exports it to CSV.
 
 **Options:** WP option `tf_settings` = `{ global_webhook }`. DB-version gates:
 `tf_db_version` (submissions) and `tf_revisions_db_version` (revisions) — each re-runs
@@ -157,7 +160,8 @@ its `dbDelta` when ≠ `TF_VERSION`.
                   "current_step"?, "max_step"?, "final_step"? },   // step fields only when "every step"
   "device": { "user_agent","user_ip","category","ip_country","ip_country_code",
               "platform","language","os","browser" },
-  "cookies": { /* all request cookies except WP auth/internal */ } }
+  "cookies": { /* all request cookies except WP auth/internal */ },
+  "session": { "timestamp", "url", "ref" } }   // only when Store Session Data collected it
 ```
 
 **AJAX / endpoints**

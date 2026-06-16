@@ -86,7 +86,18 @@ class TF_Submissions {
 		return implode( ', ', $parts );
 	}
 
-	/** Build the request context (page meta, device, geo, cookies, intent). */
+	/** The client's td_session_data ({timestamp,url,ref}), posted with the form. Empty if not collected. */
+	protected static function session_data() {
+		$raw = isset( $_POST['session'] ) ? json_decode( wp_unslash( $_POST['session'] ), true ) : null;
+		if ( ! is_array( $raw ) ) { return array(); }
+		$out = array();
+		if ( isset( $raw['timestamp'] ) ) { $out['timestamp'] = sanitize_text_field( $raw['timestamp'] ); }
+		if ( isset( $raw['url'] ) ) { $out['url'] = esc_url_raw( $raw['url'] ); }
+		if ( isset( $raw['ref'] ) ) { $out['ref'] = esc_url_raw( $raw['ref'] ); }
+		return $out;
+	}
+
+	/** Build the request context (page meta, device, geo, cookies, session, intent). */
 	protected static function request_context( $post_id ) {
 		$page_url = isset( $_POST['page_url'] ) ? esc_url_raw( wp_unslash( $_POST['page_url'] ) ) : '';
 		if ( '' === $page_url && ! empty( $_SERVER['HTTP_REFERER'] ) ) { $page_url = esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ); }
@@ -111,6 +122,7 @@ class TF_Submissions {
 				'browser'         => tf_device_browser( $ua ),
 			),
 			'cookies'    => tf_collect_cookies(),
+			'session'    => self::session_data(),
 		);
 	}
 
@@ -127,7 +139,7 @@ class TF_Submissions {
 			$submission['max_step']     = (int) $step['max'];
 			$submission['final_step']   = (bool) $step['final'];
 		}
-		return array(
+		$payload = array(
 			'event'      => $event,
 			'data'       => $fields,
 			'form'       => array( 'id' => $def['form_id'], 'name' => $def['form_name'], 'intent' => $ctx['intent'], 'wp_id' => $post_id ),
@@ -135,6 +147,8 @@ class TF_Submissions {
 			'device'     => $ctx['device'],
 			'cookies'    => $ctx['cookies'],
 		);
+		if ( ! empty( $ctx['session'] ) ) { $payload['session'] = $ctx['session']; }
+		return $payload;
 	}
 
 	protected static function post_webhook( $url, $payload ) {
@@ -165,6 +179,7 @@ class TF_Submissions {
 				'submission' => array( 'page_url' => $ctx['page_url'], 'page_title' => $ctx['page_title'], 'page_ref' => $ctx['page_ref'] ),
 				'device'     => $ctx['device'],
 				'cookies'    => $ctx['cookies'],
+				'session'    => $ctx['session'],
 			) ),
 			'status'     => $status,
 			'last_step'  => (int) $last_step,
@@ -400,7 +415,7 @@ class TF_Submissions {
 		header( 'Content-Disposition: attachment; filename=' . $file );
 		$out = fopen( 'php://output', 'w' );
 		fputcsv( $out, array_merge(
-			array( 'ID', 'Date', 'Status', 'Last Step', 'Form', 'Form ID', 'Intent', 'Page URL', 'Page Title', 'Referrer', 'IP', 'Country', 'Country Code', 'Device', 'OS', 'Browser', 'Platform', 'Language', 'User Agent' ),
+			array( 'ID', 'Date', 'Status', 'Last Step', 'Form', 'Form ID', 'Intent', 'Page URL', 'Page Title', 'Referrer', 'IP', 'Country', 'Country Code', 'Device', 'OS', 'Browser', 'Platform', 'Language', 'User Agent', 'Session Start', 'Session URL', 'Session Ref' ),
 			$keys
 		) );
 		foreach ( $rows as $r ) {
@@ -409,6 +424,7 @@ class TF_Submissions {
 			$m   = json_decode( $r->meta, true );
 			$dev = ( is_array( $m ) && isset( $m['device'] ) ) ? $m['device'] : array();
 			$sm  = ( is_array( $m ) && isset( $m['submission'] ) ) ? $m['submission'] : array();
+			$ss  = ( is_array( $m ) && isset( $m['session'] ) ) ? $m['session'] : array();
 			$g   = function ( $a, $k ) { return isset( $a[ $k ] ) ? $a[ $k ] : ''; };
 			$row = array(
 				$r->id, $r->created_at, ( isset( $r->status ) ? $r->status : '' ), ( isset( $r->last_step ) ? $r->last_step : '' ),
@@ -417,6 +433,7 @@ class TF_Submissions {
 				$r->user_ip, $g( $dev, 'ip_country' ), $g( $dev, 'ip_country_code' ),
 				$g( $dev, 'category' ), $g( $dev, 'os' ), $g( $dev, 'browser' ), $g( $dev, 'platform' ), $g( $dev, 'language' ),
 				$r->user_agent,
+				$g( $ss, 'timestamp' ), $g( $ss, 'url' ), $g( $ss, 'ref' ),
 			);
 			foreach ( $keys as $k ) { $row[] = isset( $d[ $k ] ) ? self::flatten_value( $d[ $k ] ) : ''; }
 			fputcsv( $out, $row );
@@ -487,6 +504,7 @@ class TF_Submissions {
 		$device  = ( is_array( $meta ) && isset( $meta['device'] ) ) ? $meta['device'] : array();
 		$smeta   = ( is_array( $meta ) && isset( $meta['submission'] ) ) ? $meta['submission'] : array();
 		$cookies = ( is_array( $meta ) && isset( $meta['cookies'] ) ) ? $meta['cookies'] : array();
+		$session = ( is_array( $meta ) && isset( $meta['session'] ) ) ? $meta['session'] : array();
 
 		$del = wp_nonce_url( add_query_arg( array( 'action' => 'tf_delete', 'id' => $r->id ), admin_url( 'admin-post.php' ) ), 'tf_delete_' . $r->id );
 		?>
@@ -533,6 +551,15 @@ class TF_Submissions {
 			'IP'           => $r->user_ip,
 			'User agent'   => $r->user_agent,
 		) ); ?>
+
+		<?php if ( ! empty( $session ) ) : ?>
+		<h2>Session</h2>
+		<?php self::kv_table( array(
+			'Started'     => isset( $session['timestamp'] ) ? $session['timestamp'] : '',
+			'Landing URL' => isset( $session['url'] ) ? $session['url'] : '',
+			'Referrer'    => isset( $session['ref'] ) ? $session['ref'] : '',
+		) ); ?>
+		<?php endif; ?>
 
 		<h2>Cookies <span style="color:#999;font-weight:400">(<?php echo is_array( $cookies ) ? count( $cookies ) : 0; ?>)</span></h2>
 		<?php self::kv_table( is_array( $cookies ) ? $cookies : array(), true ); ?>
