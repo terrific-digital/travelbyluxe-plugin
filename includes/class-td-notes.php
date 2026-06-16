@@ -85,14 +85,9 @@ class TD_Notes {
 	}
 
 	public static function screen() {
-		$logo = TF_URL . 'assets/td-logo.svg';
 		?>
 		<div class="wrap">
-			<h1 style="display:flex;align-items:center;gap:14px;margin:8px 0 12px;flex-wrap:wrap">
-				<img src="<?php echo esc_url( $logo ); ?>" alt="Terrific Digital" style="height:32px;width:auto;display:block">
-				<span>Notes</span>
-				<span style="background:#f0f0f1;color:#50575e;border-radius:12px;padding:3px 11px;font-size:12px;font-weight:600;line-height:1.4">v<?php echo esc_html( TD_VERSION ); ?></span>
-			</h1>
+			<h1 style="margin:8px 0 12px">Notes</h1>
 			<p style="font-size:14px;color:#555;max-width:760px">A short summary of everything this plugin does — every feature, at a glance.</p>
 
 			<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;margin-top:20px">

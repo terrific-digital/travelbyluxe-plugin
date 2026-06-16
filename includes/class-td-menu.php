@@ -10,8 +10,35 @@ class TD_Menu {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ), 9 );
 		add_action( 'admin_head', array( __CLASS__, 'icon_css' ) );
+		add_action( 'in_admin_header', array( __CLASS__, 'brand_bar' ) );
 		add_filter( 'parent_file', array( __CLASS__, 'parent_file' ) );
 		add_filter( 'submenu_file', array( __CLASS__, 'submenu_file' ) );
+	}
+
+	/** Is the current admin screen part of the Terrific Digital plugin? */
+	protected static function is_td_screen() {
+		if ( ! function_exists( 'get_current_screen' ) ) { return false; }
+		$screen = get_current_screen();
+		if ( ! $screen ) { return false; }
+		$cpts = array( TF_CPT );
+		if ( class_exists( 'TD_Snippets' ) ) { $cpts[] = TD_Snippets::CPT; }
+		// Our CPT list/edit screens, or any submenu page under the TD_MENU slug.
+		return in_array( $screen->post_type, $cpts, true ) || false !== strpos( $screen->id, TD_MENU );
+	}
+
+	/**
+	 * A shared brand bar (logo + version) printed at the top of every Terrific
+	 * Digital admin screen — so the plugin's pages all carry the same identity,
+	 * including the native Forms / Code Snippets list & edit screens.
+	 */
+	public static function brand_bar() {
+		if ( ! self::is_td_screen() ) { return; }
+		$logo = TF_URL . 'assets/td-logo.svg';
+		echo '<div class="td-brand-bar" style="display:flex;align-items:center;gap:12px;margin:12px 20px 4px 0;padding:9px 16px;background:#fff;border:1px solid #dcdcde;border-radius:8px">'
+			. '<img src="' . esc_url( $logo ) . '" alt="Terrific Digital" style="height:24px;width:auto;display:block">'
+			. '<span style="width:1px;height:18px;background:#e0e0e2;display:inline-block"></span>'
+			. '<span style="background:#f0f0f1;color:#50575e;border-radius:12px;padding:3px 11px;font-size:12px;font-weight:600;line-height:1.4">v' . esc_html( TD_VERSION ) . '</span>'
+			. '</div>';
 	}
 
 	/** The Terrific Digital "t" brand mark (mosaic), single-colour so it can be masked white. */
@@ -100,9 +127,8 @@ class TD_Menu {
 		$active_snips = count( get_posts( array( 'post_type' => TD_Snippets::CPT, 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_td_snippet_enabled', 'meta_value' => '1' ) ) );
 		?>
 		<div class="wrap">
-			<h1 style="display:flex;align-items:center;gap:14px;margin:8px 0 12px;flex-wrap:wrap">
-				<img src="<?php echo esc_url( TF_URL . 'assets/td-logo.svg' ); ?>" alt="Terrific Digital" style="height:36px;width:auto;display:block">
-				<span style="background:#f0f0f1;color:#50575e;border-radius:12px;padding:3px 11px;font-size:12px;font-weight:600;line-height:1.4">v<?php echo esc_html( TD_VERSION ); ?></span>
+			<h1 style="display:flex;align-items:center;gap:12px;margin:8px 0 12px;flex-wrap:wrap">
+				<span>Dashboard</span>
 				<?php if ( $updated ) : ?>
 					<span style="color:#787c82;font-size:12px;font-weight:400">Updated <?php echo esc_html( wp_date( get_option( 'date_format' ), $updated ) ); ?></span>
 				<?php endif; ?>

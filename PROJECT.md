@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.24.0
+**Current version:** 2.24.1
 
 ---
 
@@ -34,7 +34,9 @@ terrific-digital/
   terrific-digital.php          Bootstrap: constants, requires, init(), and all global tf_* helpers
   includes/
     class-td-menu.php           Top-level "Terrific Digital" admin menu (white "t" brand-mark icon,
-                                CSS-masked to match native WP icon states); nests the CPT under it
+                                CSS-masked to match native WP icon states); nests the CPT under it.
+                                Also prints a shared logo "brand bar" (in_admin_header) on every TD
+                                admin screen — incl. native Forms/Snippets list+edit screens
     class-td-session.php        "Store Session Data" feature: option td_session {enabled,storage};
                                 settings section + front-end session.js enqueue
     class-td-upd.php            "User-Provided Data" feature (ON by default): option td_upd
@@ -315,6 +317,10 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   `manage_options`) to match the rest of the TD menu (see gotcha in §6).
 - **"Edit form" front-end link** (added earlier; 2.21.1 restyled) — small pill above each form with
   the Terrific "t" brand mark, linking to the editor; editors only (see §4).
+- **Brand bar everywhere** (2.24.1) — `TD_Menu::brand_bar()` prints a shared logo + version bar at the
+  top of every Terrific Digital admin screen via `in_admin_header` (gated by `is_td_screen()`), so the
+  native Forms/Code Snippets list & edit screens carry the brand too. Dashboard/Notes dropped their
+  duplicate inline logos.
 - **reCAPTCHA v3** (2.24.0) — optional Google reCAPTCHA v3 on all forms (Settings: Enable + Site/Secret
   keys + score threshold). Score-based, invisible; low-score/missing-token submissions are silently
   dropped like the honeypot. Verified on both final submit and step pings (see §3).
