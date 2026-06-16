@@ -235,6 +235,21 @@
 		return ok;
 	}
 
+	// Fire `form_started` once, the first time the user enters a value in any field.
+	function pushStarted(form) {
+		if (form.__tfStarted) { return; }
+		form.__tfStarted = true;
+		var ev = {
+			event: 'form_started',
+			form_id: form.getAttribute('data-form-id'),
+			form_name: form.getAttribute('data-form-name'),
+			form_type: 'Terrific Form'
+		};
+		var intent = form.getAttribute('data-form-intent');
+		if (intent) { ev.form_intent = intent; }
+		window.dataLayer.push(ev);
+	}
+
 	// Push a step event. eventName defaults to 'form_step'; the final step of a
 	// multi-step form uses 'form_complete' instead.
 	function pushStep(form, stepNum, eventName) {
@@ -323,6 +338,14 @@
 		});
 		// Stable token for this fill — links every step + the final submit to one row.
 		form.__tfToken = 'tfs_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+
+		// form_started: fire once on the first real value entered (ignore the honeypot).
+		function onFirstInteract(e) {
+			if (e.target && e.target.closest && e.target.closest('.tf-hp')) { return; }
+			pushStarted(form);
+		}
+		form.addEventListener('input', onFirstInteract);
+		form.addEventListener('change', onFirstInteract);
 
 		form.addEventListener('click', function (e) {
 			var next = e.target.closest('.tf-next');

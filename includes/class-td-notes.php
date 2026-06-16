@@ -45,7 +45,7 @@ class TD_Notes {
 				'Redirect action — to a URL or a WordPress page. Each action toggleable.',
 			) ),
 			array( '📊', 'Tracking', array(
-				'dataLayer events: <code>upd</code>, <code>form_step</code>, <code>form_complete</code> (final step of a multi-step form), <code>form_submission</code>.',
+				'dataLayer events: <code>form_started</code> (first field interaction), <code>upd</code>, <code>form_step</code>, <code>form_complete</code> (final step of a multi-step form), <code>form_submission</code>.',
 				'Webhook JSON payload: data, form, submission, device, cookies, session.',
 			) ),
 			array( '📥', 'Submissions', array(
