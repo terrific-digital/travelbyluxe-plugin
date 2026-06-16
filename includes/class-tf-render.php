@@ -163,6 +163,8 @@ class TF_Render {
 		$id    = 'tff-' . $f['id'];
 		$width      = isset( $f['width'] ) && in_array( $f['width'], array( 'full', 'half', 'third' ), true ) ? $f['width'] : 'full';
 		$show_label = ! isset( $f['show_label'] ) || ! empty( $f['show_label'] );
+		// Sliders show the value in a bubble by default; opt-in to show it inline in the label.
+		$slider_inline = ( 'slider' === $type && ! empty( $f['value_inline'] ) );
 
 		// Normalize options to [ {label, value} ].
 		$opts = array();
@@ -202,7 +204,7 @@ class TF_Render {
 			return ob_get_clean();
 		}
 
-		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html', 'slider' ), true ) ) {
+		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html' ), true ) && ! $slider_inline ) {
 			echo '<label class="tf-label" for="' . esc_attr( $id ) . '">' . esc_html( $label ) . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</label>';
 		}
 
@@ -228,8 +230,8 @@ class TF_Render {
 				$pfx   = isset( $f['prefix'] ) ? $f['prefix'] : '';
 				$sfx   = isset( $f['suffix'] ) ? $f['suffix'] : '';
 				$fmt   = function ( $n ) use ( $pfx, $sfx ) { return $pfx . number_format_i18n( (float) $n ) . $sfx; };
-				// Label carries the live value inline (slider is excluded from the generic label above).
-				if ( $label && $show_label ) {
+				// Opt-in: value inline in the label (the generic label above was skipped for this case).
+				if ( $slider_inline && $label && $show_label ) {
 					echo '<label class="tf-label" for="' . esc_attr( $id ) . '">' . esc_html( $label )
 						. ( $req ? ' <span class="tf-req">*</span>' : '' )
 						. ': <span class="tf-range-val">' . esc_html( $fmt( $sval ) ) . '</span></label>';
@@ -238,6 +240,10 @@ class TF_Render {
 				echo '<input type="range" class="tf-input tf-range" ' . $attrs // phpcs:ignore
 					. ' min="' . esc_attr( $smin ) . '" max="' . esc_attr( $smax ) . '" step="' . esc_attr( $sstep ) . '" value="' . esc_attr( $sval ) . '"'
 					. ' data-prefix="' . esc_attr( $pfx ) . '" data-suffix="' . esc_attr( $sfx ) . '">';
+				// Default: value shown in a bubble beside the slider.
+				if ( ! $slider_inline ) {
+					echo '<output class="tf-range-val">' . esc_html( $fmt( $sval ) ) . '</output>';
+				}
 				echo '</div>';
 				if ( ! empty( $f['show_scale'] ) ) {
 					echo '<div class="tf-range-scale"><span>' . esc_html( $fmt( $smin ) ) . '</span><span>' . esc_html( $fmt( $smax ) ) . '</span></div>';

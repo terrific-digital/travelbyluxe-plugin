@@ -319,9 +319,11 @@ class TF_Builder {
 					// Slider range + display.
 					'step'        => $num_or_blank( isset( $f['step'] ) ? $f['step'] : '' ),
 					'default'     => $num_or_blank( isset( $f['default'] ) ? $f['default'] : '' ),
-					'prefix'      => isset( $f['prefix'] ) ? sanitize_text_field( $f['prefix'] ) : '',
-					'suffix'      => isset( $f['suffix'] ) ? sanitize_text_field( $f['suffix'] ) : '',
+					// Strip tags but keep surrounding spaces (a suffix like " days" needs its leading space).
+					'prefix'      => isset( $f['prefix'] ) ? preg_replace( '/[\r\n\t]+/', ' ', wp_kses( (string) $f['prefix'], array() ) ) : '',
+					'suffix'      => isset( $f['suffix'] ) ? preg_replace( '/[\r\n\t]+/', ' ', wp_kses( (string) $f['suffix'], array() ) ) : '',
 					'show_scale'  => ! empty( $f['show_scale'] ),
+					'value_inline' => ! empty( $f['value_inline'] ),
 					// Custom HTML content.
 					'html'        => $html,
 					'options'     => array(),

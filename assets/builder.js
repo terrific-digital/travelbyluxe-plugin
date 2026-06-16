@@ -127,7 +127,8 @@
 			'<label class="tf-b-row">Default value<input type="number" class="tf-b-default" value="' + esc(f.default) + '" placeholder="(min)"></label></div>' +
 			'<div class="tf-b-row2"><label class="tf-b-row">Value prefix<input type="text" class="tf-b-prefix" value="' + esc(f.prefix) + '" placeholder="e.g. $"></label>' +
 			'<label class="tf-b-row">Value suffix<input type="text" class="tf-b-suffix" value="' + esc(f.suffix) + '" placeholder="e.g. days"></label></div>' +
-			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-scale"' + (f.show_scale ? ' checked' : '') + '> Show min/max scale</label>' : '';
+			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-scale"' + (f.show_scale ? ' checked' : '') + '> Show min/max scale</label>' +
+			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-vinline"' + (f.value_inline ? ' checked' : '') + '> Show value in the label (instead of a bubble)</label>' : '';
 		var htmlRow = (f.type === 'custom_html') ?
 			'<label class="tf-b-row">Custom HTML<textarea class="tf-b-html" rows="6" spellcheck="false" placeholder="&lt;div&gt;…&lt;/div&gt;" style="font-family:monospace">' + escArea(f.html) + '</textarea></label>' : '';
 		var ccRow = (f.type === 'tel') ?
@@ -228,6 +229,7 @@
 		var pfx = card.querySelector('.tf-b-prefix'); if (pfx) { pfx.addEventListener('input', function () { f.prefix = pfx.value; sync(); }); }
 		var sfx = card.querySelector('.tf-b-suffix'); if (sfx) { sfx.addEventListener('input', function () { f.suffix = sfx.value; sync(); }); }
 		var scl = card.querySelector('.tf-b-scale'); if (scl) { scl.addEventListener('change', function () { f.show_scale = scl.checked; sync(); }); }
+		var vin = card.querySelector('.tf-b-vinline'); if (vin) { vin.addEventListener('change', function () { f.value_inline = vin.checked; sync(); }); }
 		// custom HTML content
 		var htmlEl = card.querySelector('.tf-b-html'); if (htmlEl) { htmlEl.addEventListener('input', function () { f.html = htmlEl.value; sync(); }); }
 		// phone: country-code selector toggle
@@ -312,7 +314,7 @@
 						required: false, show_label: true, width: 'full',
 						min: '', max: '', minlength: '', maxlength: '', multiple: false,
 						min_from_today: '', max_from_today: '',
-						step: '', default: '', prefix: '', suffix: '', show_scale: false, html: '', country_code: true,
+						step: '', default: '', prefix: '', suffix: '', show_scale: false, value_inline: false, html: '', country_code: true,
 						options: HAS_OPTIONS[newType] ? [ { label: 'Option 1', value: 'Option 1' }, { label: 'Option 2', value: 'Option 2' } ] : []
 					};
 					f.key = slug(f.label);
