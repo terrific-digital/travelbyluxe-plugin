@@ -235,6 +235,21 @@
 		return ok;
 	}
 
+	// Fire `form_visible` once, the first time the form scrolls into view.
+	function pushVisible(form) {
+		if (form.__tfVisible) { return; }
+		form.__tfVisible = true;
+		var ev = {
+			event: 'form_visible',
+			form_id: form.getAttribute('data-form-id'),
+			form_name: form.getAttribute('data-form-name'),
+			form_type: 'Terrific Form'
+		};
+		var intent = form.getAttribute('data-form-intent');
+		if (intent) { ev.form_intent = intent; }
+		window.dataLayer.push(ev);
+	}
+
 	// Fire `form_started` once, the first time the user enters a value in any field.
 	function pushStarted(form) {
 		if (form.__tfStarted) { return; }
@@ -338,6 +353,18 @@
 		});
 		// Stable token for this fill — links every step + the final submit to one row.
 		form.__tfToken = 'tfs_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+
+		// form_visible: fire once when the form first scrolls into view.
+		if ('IntersectionObserver' in window) {
+			var io = new IntersectionObserver(function (entries) {
+				for (var i = 0; i < entries.length; i++) {
+					if (entries[i].isIntersecting) { pushVisible(form); io.disconnect(); break; }
+				}
+			}, { threshold: 0.01 });
+			io.observe(form);
+		} else {
+			pushVisible(form); // no IntersectionObserver support: assume visible
+		}
 
 		// form_started: fire once on the first real value entered (ignore the honeypot).
 		function onFirstInteract(e) {
