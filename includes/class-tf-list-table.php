@@ -24,9 +24,24 @@ class TF_List_Table extends WP_List_Table {
 			'created_at' => 'Date',
 			'status'     => 'Status',
 			'form'       => 'Form',
+			'intent'     => 'Intent',
 			'summary'    => 'Submission',
 			'source'     => 'Source',
 		);
+	}
+
+	public function column_intent( $item ) {
+		$param = isset( $item->intent ) ? (string) $item->intent : '';
+		if ( '' === $param ) { return '<em>—</em>'; }
+		// Map the stored param (e.g. generate_lead) back to its human label via tf_intents().
+		$label = $param;
+		foreach ( tf_intents() as $row ) {
+			if ( isset( $row['param'], $row['label'] ) && $row['param'] === $param ) {
+				$label = $row['label'];
+				break;
+			}
+		}
+		return esc_html( $label ) . '<br><code style="font-size:11px">' . esc_html( $param ) . '</code>';
 	}
 
 	public function column_status( $item ) {
@@ -107,14 +122,32 @@ class TF_List_Table extends WP_List_Table {
 		return isset( $item->$column_name ) ? esc_html( $item->$column_name ) : '';
 	}
 
-	/** Form filter dropdown above the table. */
+	/** Form + intent filters above the table. */
 	protected function extra_tablenav( $which ) {
 		if ( 'top' !== $which ) { return; }
-		$selected = isset( $_REQUEST['form'] ) ? (int) $_REQUEST['form'] : 0;
+		$selected_form   = isset( $_REQUEST['form'] ) ? (int) $_REQUEST['form'] : 0;
+		$selected_intent = isset( $_REQUEST['intent'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['intent'] ) ) : '';
 		echo '<div class="alignleft actions">';
-		TF_Submissions::forms_dropdown( $selected );
+		TF_Submissions::forms_dropdown( $selected_form );
+		self::intent_dropdown( $selected_intent );
 		submit_button( 'Filter', 'button', 'filter_action', false );
 		echo '</div>';
+	}
+
+	/** Intent dropdown — options come from tf_intents() (param → label). */
+	protected static function intent_dropdown( $selected ) {
+		echo '<select name="intent" style="margin-left:6px">';
+		echo '<option value="">All intents</option>';
+		foreach ( tf_intents() as $row ) {
+			if ( empty( $row['param'] ) ) { continue; }
+			printf(
+				'<option value="%s"%s>%s</option>',
+				esc_attr( $row['param'] ),
+				selected( $selected, $row['param'], false ),
+				esc_html( $row['label'] )
+			);
+		}
+		echo '</select>';
 	}
 
 	/** Handle bulk delete before rows are fetched. */
@@ -140,16 +173,23 @@ class TF_List_Table extends WP_List_Table {
 		$per_page = $this->get_items_per_page( 'tf_subs_per_page', 30 );
 		$paged    = max( 1, (int) $this->get_pagenum() );
 		$form     = isset( $_REQUEST['form'] ) ? (int) $_REQUEST['form'] : 0;
+		$intent   = isset( $_REQUEST['intent'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['intent'] ) ) : '';
 
 		$orderby_allowed = array( 'id', 'created_at' );
 		$orderby = isset( $_REQUEST['orderby'] ) && in_array( $_REQUEST['orderby'], $orderby_allowed, true ) ? $_REQUEST['orderby'] : 'created_at';
 		$order   = ( isset( $_REQUEST['order'] ) && 'asc' === strtolower( $_REQUEST['order'] ) ) ? 'ASC' : 'DESC';
 
-		$where = $form ? $wpdb->prepare( 'WHERE form_post_id = %d', $form ) : '';
-		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table $where" ); // phpcs:ignore
+		$clauses = array();
+		$args    = array();
+		if ( $form )   { $clauses[] = 'form_post_id = %d'; $args[] = $form; }
+		if ( $intent ) { $clauses[] = 'intent = %s';       $args[] = $intent; }
+		$where = $clauses ? ( 'WHERE ' . implode( ' AND ', $clauses ) ) : '';
+		$where_sql = $where ? $wpdb->prepare( $where, $args ) : ''; // phpcs:ignore
+
+		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table $where_sql" ); // phpcs:ignore
 
 		$offset = ( $paged - 1 ) * $per_page;
-		$items  = $wpdb->get_results( "SELECT * FROM $table $where ORDER BY $orderby $order LIMIT $per_page OFFSET $offset" ); // phpcs:ignore
+		$items  = $wpdb->get_results( "SELECT * FROM $table $where_sql ORDER BY $orderby $order LIMIT $per_page OFFSET $offset" ); // phpcs:ignore
 
 		$this->items = $items;
 		$this->set_pagination_args( array(
