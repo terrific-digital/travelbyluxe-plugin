@@ -182,10 +182,23 @@
 		tdPush({ event: UPD.event || 'upd', upd: next });
 	}
 
-	function collect(form) {
+	// Should an element be included when collecting up to step `maxStep`?
+	// On step 1 we don't want later-step fields (whose default values would
+	// otherwise leak into the partial payload as if the user had filled them).
+	// maxStep === undefined → include everything (final submission).
+	function withinStep(el, maxStep) {
+		if (maxStep === undefined || maxStep === null) { return true; }
+		var step = el.closest && el.closest('.tf-step');
+		if (!step) { return true; } // not inside any step container — always include
+		var n = parseInt(step.getAttribute('data-step'), 10);
+		return !isNaN(n) && n <= maxStep;
+	}
+
+	function collect(form, maxStep) {
 		var out = {};
 		form.querySelectorAll('[data-key]').forEach(function (el) {
 			if (el.classList.contains('tf-options')) { return; } // option groups handled below
+			if (!withinStep(el, maxStep)) { return; }
 			var key = el.getAttribute('data-key');
 			if (!key) { return; }
 			out[key] = readValue(el);
@@ -205,6 +218,7 @@
 			}
 		});
 		form.querySelectorAll('.tf-options[data-key]').forEach(function (group) {
+			if (!withinStep(group, maxStep)) { return; }
 			var key = group.getAttribute('data-key');
 			var checked = group.querySelectorAll('input:checked');
 			if (!checked.length) { out[key] = ''; return; }
@@ -308,7 +322,7 @@
 			form_name: form.getAttribute('data-form-name'),
 			form_type: 'Terrific Form',
 			form_step: stepNum,
-			form_fields: collect(form)
+			form_fields: collect(form, stepNum)
 		};
 		var intent = form.getAttribute('data-form-intent');
 		if (intent) { ev.form_intent = intent; }
@@ -327,7 +341,7 @@
 		body.append('submission_token', form.__tfToken);
 		body.append('hp', honeypot(form));
 		body.append('session', sessionData());
-		body.append('fields', JSON.stringify(collect(form)));
+		body.append('fields', JSON.stringify(collect(form, stepNum)));
 		body.append('page_url', location.href);
 		body.append('page_title', document.title || '');
 		body.append('page_ref', document.referrer || '');
