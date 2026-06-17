@@ -131,10 +131,11 @@ class TD_Menu {
 		$active_snips = count( get_posts( array( 'post_type' => TD_Snippets::CPT, 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_td_snippet_enabled', 'meta_value' => '1' ) ) );
 		$faq_counts   = class_exists( 'TD_FAQ' ) ? wp_count_posts( TD_FAQ::CPT ) : null;
 		$total_faqs   = ( $faq_counts && isset( $faq_counts->publish ) ) ? (int) $faq_counts->publish : 0;
+		$cal_enabled  = class_exists( 'TD_Calendly' ) && TD_Calendly::is_enabled();
 		?>
 		<div class="wrap">
 			<h1 style="margin:8px 0 12px">Dashboard</h1>
-			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — currently <strong>Terrific Forms</strong>, <strong>Code Snippets</strong>, and <strong>FAQ Lists</strong>.</p>
+			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — currently <strong>Terrific Forms</strong>, <strong>Code Snippets</strong>, <strong>FAQ Lists</strong>, and <strong>Calendly Listener</strong>.</p>
 			<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:20px">
 				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
 					<h2 style="margin-top:0">📝 Terrific Forms</h2>
@@ -157,6 +158,21 @@ class TD_Menu {
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . TD_FAQ::CPT ) ); ?>" class="button button-primary">Manage FAQ Lists</a>
 					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . TD_FAQ::CPT ) ); ?>" class="button">Add FAQ List</a>
 				</div>
+				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
+					<h2 style="margin-top:0">📅 Calendly Listener</h2>
+					<p>Push <code>dataLayer</code> events for the Calendly scheduler widget — <code>meeting_*</code> milestones plus <code>form_submission</code> / <code>meeting_booked</code> on confirmed bookings.</p>
+					<p>Status:
+						<?php if ( $cal_enabled ) : ?>
+							<strong style="color:#1e7e34">● On</strong>
+						<?php else : ?>
+							<strong style="color:#b32d2e">● Off</strong>
+						<?php endif; ?>
+					</p>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . TD_Calendly::SLUG ) ); ?>" class="button button-primary">
+						<?php echo $cal_enabled ? 'Configure' : 'Set up Calendly'; ?>
+					</a>
+				</div>
+
 				<div style="flex:1 1 260px;background:#f6f7f7;border:1px dashed #c3c4c7;border-radius:8px;padding:20px;color:#777">
 					<h2 style="margin-top:0;color:#777">More coming soon</h2>
 					<p>This is where future Terrific Digital features will appear.</p>
