@@ -511,7 +511,7 @@
 		pane.className = 'tf-b-preview-pane';
 		pane.innerHTML = '<span class="tf-b-resizer" title="Drag to resize the preview"></span>' +
 			'<div class="tf-b-preview-inner">' +
-				'<div class="tf-b-preview-head">Live preview</div>' +
+				'<div class="tf-b-preview-head">Live preview · visitor view</div>' +
 				'<iframe id="tf-preview-frame" title="Form preview"></iframe>' +
 			'</div>';
 		// Restore a previously dragged width.

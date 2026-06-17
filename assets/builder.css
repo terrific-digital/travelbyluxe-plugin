@@ -12,13 +12,18 @@
 /* Live-preview pane: sticky on the right of the canvas; collapsible and drag-resizable.
    The scroll/overflow lives on the inner wrapper so the resize handle (at left:-9px) isn't clipped. */
 .tf-b-preview-pane { flex: 0 0 380px; align-self: flex-start; position: sticky; top: 40px; box-sizing: border-box; }
-.tf-b-preview-inner { max-height: calc(100vh - 90px); overflow: auto; border: 1px solid #dcdcde; border-radius: 6px; background: #fff; padding: 10px 12px; }
+/* Visually distinct from the builder canvas (which sits on the native WP postbox grey):
+   a soft periwinkle tint + stronger border + inset shadow so the preview reads as
+   "what visitors see" at a glance instead of competing with the editable canvas. */
+.tf-b-preview-inner { max-height: calc(100vh - 90px); overflow: auto; border: 1px solid #b4c5da; border-radius: 8px; background: #eef3fa; padding: 12px; box-shadow: inset 0 0 0 1px #fff, 0 1px 2px rgba(15,30,60,.04); }
 /* Drag handle on the pane's left edge (sits in the gap between canvas and pane). */
 .tf-b-resizer { position: absolute; left: -9px; top: 0; width: 11px; height: 100%; cursor: col-resize; z-index: 2; }
 .tf-b-resizer::before { content: ''; position: absolute; left: 4px; top: 0; width: 3px; height: 100%; border-radius: 3px; background: transparent; transition: background .12s; }
 .tf-b-resizer:hover::before { background: #2271b1; }
-.tf-b-preview-head { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #50575e; margin-bottom: 8px; }
-#tf-preview-frame { width: 100%; border: 0; background: #fff; min-height: 200px; display: block; }
+.tf-b-preview-head { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #1d4d8a; margin-bottom: 10px; padding: 4px 10px; background: #fff; border: 1px solid #c8d6e8; border-radius: 999px; width: fit-content; }
+.tf-b-preview-head::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #2271b1; box-shadow: 0 0 0 2px rgba(34,113,177,.18); }
+/* The iframe sits on a white card inside the tinted pane — the "page" floating in the preview. */
+#tf-preview-frame { width: 100%; border: 1px solid #c8d6e8; border-radius: 6px; background: #fff; min-height: 200px; display: block; box-shadow: 0 1px 2px rgba(15,30,60,.06); }
 .tf-b-wrap.tf-b-no-preview .tf-b-preview-pane { display: none; }
 .tf-b-palette h4 { margin: 0 0 4px; }
 .tf-b-hint { color: #777; font-size: 12px; margin: 0 0 10px; }
