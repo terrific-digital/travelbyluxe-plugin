@@ -74,6 +74,7 @@ class TF_CPT_Manager {
 			$new[ $k ] = $v;
 			if ( 'title' === $k ) {
 				$new['tf_id']        = 'Form ID';
+				$new['tf_intent']    = 'Intent';
 				$new['tf_shortcode'] = 'Shortcode';
 				$new['tf_subs']      = 'Submissions';
 			}
@@ -84,6 +85,16 @@ class TF_CPT_Manager {
 	public static function column_content( $col, $post_id ) {
 		if ( 'tf_id' === $col ) {
 			echo '<code>' . esc_html( get_post_meta( $post_id, '_tf_form_id', true ) ) . '</code>';
+		}
+		if ( 'tf_intent' === $col ) {
+			$intents = tf_intents();
+			$key     = tf_get_intent( $post_id );
+			$label   = isset( $intents[ $key ]['label'] ) ? $intents[ $key ]['label'] : $key;
+			$param   = isset( $intents[ $key ]['param'] ) ? $intents[ $key ]['param'] : '';
+			echo esc_html( $label );
+			if ( $param ) {
+				echo '<br><code style="font-size:11px">' . esc_html( $param ) . '</code>';
+			}
 		}
 		if ( 'tf_shortcode' === $col ) {
 			echo '<code>[terrific_form id="' . esc_attr( $post_id ) . '"]</code>';
