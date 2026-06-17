@@ -7,7 +7,10 @@
  *   profile_page_viewed     → meeting_scheduler_loaded
  *   event_type_viewed       → meeting_type_selected
  *   date_and_time_selected  → meeting_time_selected
- *   event_scheduled         → form_submission (intent: meeting_booked)
+ *   event_scheduled         → form_submission, then a second event named
+ *                             after the configured form_intent (default
+ *                             `meeting_booked`) — mirrors how Terrific Forms
+ *                             fires the intent param right after submission.
  *
  * Each Calendly event fires at most once per page-load. */
 (function () {
@@ -76,5 +79,18 @@
 			form_intent: meta.form_intent,
 			entry_key:   entry
 		});
+
+		// Fire the intent as its own event immediately after form_submission —
+		// matches Terrific Forms behaviour (e.g. generate_lead after a lead form).
+		if (eventName === 'form_submission' && meta.form_intent) {
+			tdPush({
+				event:       meta.form_intent,
+				form_type:   meta.form_type,
+				form_name:   meta.form_name,
+				form_id:     meta.form_id,
+				form_intent: meta.form_intent,
+				entry_key:   entry
+			});
+		}
 	});
 })();
