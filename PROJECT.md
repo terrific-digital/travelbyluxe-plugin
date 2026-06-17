@@ -454,6 +454,13 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   hooks) so it can hit positions WordPress has no hook for ("after `<head>`", "before `</body>`").
   It string-splices into the final HTML and is skipped for admin/ajax/REST/feed/embed and
   non-HTML responses. Snippet code is stored & output **raw** (JS type wrapped in `<script>`).
+- **Legacy LP script `tbl-v3.js`** (custom landing-page asset at `wp-content/uploads/tbl/tbl-v3.js`,
+  **not** in this repo) had its own generic FAQ click tracker (`handleClick`) that matched our
+  `td-faq-item` via substring selectors like `[class*="faq-item"]` and pushed a second
+  `faq_item_click` (`link_text`, not `faq_title`) — so on the LP each FAQ click fired **twice**. Fixed
+  on the server by removing that one `push({ event:'faq_item_click', … })` line (backup:
+  `tbl-v3.js.bak-faqdup`). The plugin's FAQ fires exactly once on its own — if `tbl-v3.js` is ever
+  rebuilt from source, re-remove the legacy FAQ push.
 - **`number_format_i18n` / `wp_date`** for human-facing numbers/dates (slider values, dashboard
   "Updated"). Slider `prefix`/`suffix` are sanitized with `wp_kses(...,array())` (not
   `sanitize_text_field`, which trims a leading space like in `" days"`).
