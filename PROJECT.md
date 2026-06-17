@@ -19,7 +19,7 @@ new landing page "just works" for leads + analytics.
 | **Server SSH** | `ssh -i ~/.ssh/tbl_cloudways master_emqjrcyekf@46.101.96.39` |
 | **WP path** | `~/applications/mpggmnftkb/public_html` |
 | **WP admin** | https://wordpress-1636848-6491457.cloudwaysapps.com/wp-admin/ (creds in the LP repo `.cloudways-wp.local.md`) |
-| **Demo form** | post **62** (`tf_62_3ea8e1`) · pages `/tf-demo/` (shortcode) and `/tf-block-demo/` (block) |
+| **Demo form** | form CPT post **62** (`tf_62_3ea8e1`) still exists; its old demo pages `/tf-demo/` & `/tf-block-demo/` were deleted. For testing, create a throwaway page with `[terrific_form id="62"]` (or 77) and delete it after. |
 | **Live landing page** | page **84** "Luxury Travel v3 (Native)" `/luxury-travel-v3-native/` — a custom template that `do_shortcode`s form **77** + FAQ list **88** (`faq_88_a5250f`). Its stored content is only the form shortcode; the rest is template-rendered (why the FAQ usage finder needed render-tracking). |
 
 > ⚠️ Earlier the version string in `terrific-digital.php` drifted (stuck at 2.6.0) because
@@ -93,7 +93,9 @@ terrific-digital/
 `tf_client_ip`, `tf_user_agent`, `tf_global_webhook`, `tf_intents`/`tf_get_intent`/
 `tf_form_intent_param`, `tf_get_actions`/`tf_resolve_webhook_url`/`tf_resolve_redirect_url`,
 `tf_form_has_step_webhook`, `tf_device_category`/`tf_device_os`/`tf_device_browser`,
-`tf_geo_lookup`, `tf_collect_cookies`, `tf_countries`, `tf_flag`.
+`tf_geo_lookup`, `tf_collect_cookies`, `tf_countries`, `tf_flag`,
+`tf_recaptcha_enabled`/`tf_recaptcha_site_key`/`tf_recaptcha_secret_key`/`tf_recaptcha_threshold`/`tf_recaptcha_verify`,
+`tf_free_email_domains`/`tf_is_free_email`.
 
 ---
 
@@ -295,9 +297,10 @@ pages"** finder (`find_usages()` — shortcode/block/Elementor scan **plus rende
 once/day per page and stored in `_td_faq_seen` {pageId: ts}, pruned to 90 days / existing pages.
 This catches embeds that store nothing scannable — custom templates, page builders, `do_shortcode`). Front-end
 renders an accessible accordion (`.td-faq` → `.td-faq-item` → `.td-faq-q` button + `.td-faq-a`
-panel, collapsed via `hidden`; "+"→"×" icon). `faq.js` toggles items and, on the **first open of each
-item**, pushes `{ event:'faq_item_click', faq_title:'<question lowercased>' }` to the dataLayer
-(once per item, via an `item.__faqFired` flag; title read from `data-faq-title`).
+panel; collapsed/animated via CSS grid-rows `0fr↔1fr` on the `.is-open` class — no `hidden`;
+"+"→"×" icon). `faq.js` toggles items (closing others when `data-single`) and, on the **first open
+of each item**, pushes `{ event:'faq_item_click', faq_title:'<question lowercased>' }` to the
+dataLayer (once per item, via an `item.__faqFired` flag; title read from `data-faq-title`).
 
 **Admin menu:** Terrific Digital → **Dashboard · Forms · Submissions · Code Snippets · FAQ Lists · Settings · Notes** (no "Add New"
 link — new forms are created from the Forms list screen's own "Add New" button).
