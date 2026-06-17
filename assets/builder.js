@@ -61,7 +61,7 @@
 			required: false, show_label: true, width: 'full',
 			min: '', max: '', minlength: '', maxlength: '', multiple: false,
 			min_from_today: '', max_from_today: '',
-			step: '', default: '', prefix: '', suffix: '', show_scale: false, value_inline: false, html: '', country_code: true,
+			step: '', default: '', prefix: '', suffix: '', show_scale: false, value_inline: false, html: '', country_code: true, cc_show_name: false,
 			options: HAS_OPTIONS[type] ? [{ label: 'Option 1', value: 'Option 1' }, { label: 'Option 2', value: 'Option 2' }] : []
 		};
 		f.key = slug(f.label);
@@ -223,7 +223,8 @@
 		var htmlRow = (f.type === 'custom_html') ?
 			'<label class="tf-b-row">Custom HTML<textarea class="tf-b-html" rows="6" spellcheck="false" placeholder="&lt;div&gt;…&lt;/div&gt;" style="font-family:monospace">' + escArea(f.html) + '</textarea></label>' : '';
 		var ccRow = (f.type === 'tel') ?
-			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-cc"' + ((f.country_code !== false) ? ' checked' : '') + '> Country-code selector</label>' : '';
+			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-cc"' + ((f.country_code !== false) ? ' checked' : '') + '> Country-code selector</label>' +
+			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-ccname"' + (f.cc_show_name ? ' checked' : '') + '> Show country name in the selector</label>' : '';
 		var lengthRow = ( ['text', 'email', 'tel', 'textarea'].indexOf(f.type) >= 0 ) ?
 			'<div class="tf-b-row2"><label class="tf-b-row">Min length<input type="number" min="0" class="tf-b-minlen" value="' + esc(f.minlength) + '"></label>' +
 			'<label class="tf-b-row">Max length<input type="number" min="0" class="tf-b-maxlen" value="' + esc(f.maxlength) + '"></label></div>' : '';
@@ -333,6 +334,7 @@
 		var htmlEl = card.querySelector('.tf-b-html'); if (htmlEl) { htmlEl.addEventListener('input', function () { f.html = htmlEl.value; sync(); }); }
 		// phone: country-code selector toggle
 		var ccEl = card.querySelector('.tf-b-cc'); if (ccEl) { ccEl.addEventListener('change', function () { f.country_code = ccEl.checked; sync(); }); }
+		var ccnEl = card.querySelector('.tf-b-ccname'); if (ccnEl) { ccnEl.addEventListener('change', function () { f.cc_show_name = ccnEl.checked; sync(); }); }
 		var ph = card.querySelector('.tf-b-ph'); if (ph) { ph.addEventListener('input', function () { f.placeholder = ph.value; sync(); }); }
 		var req = card.querySelector('.tf-b-req'); if (req) { req.addEventListener('change', function () { f.required = req.checked; sync(); }); }
 		var sl = card.querySelector('.tf-b-showlabel'); if (sl) { sl.addEventListener('change', function () { f.show_label = sl.checked; sync(); }); }

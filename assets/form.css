@@ -54,6 +54,7 @@ textarea.tf-input { resize: vertical; }
 /* Phone (country code + number) */
 .tf-phone { display: flex; gap: 8px; }
 .tf-phone-cc { flex: 0 0 auto; width: auto; max-width: 140px; padding: 12px 8px; border: 1px solid rgba(0,0,0,.18); border-radius: 6px; font: inherit; background: #fff; }
+.tf-phone-cc-named { max-width: 260px; } /* room for "🇮🇱 Israel +972" */
 .tf-phone-num { flex: 1 1 auto; min-width: 0; }
 .tf-multiselect { padding: 6px; }
 .tf-hint { display: block; font-size: 11px; color: #777; margin-top: 4px; }

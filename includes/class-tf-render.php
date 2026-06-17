@@ -92,8 +92,15 @@ class TF_Render {
 		$uid          = 'tf-' . $post_id . '-' . self::$instances;
 		$intent       = $preview ? '' : tf_form_intent_param( $post_id );
 		$step_webhook = ! $preview && $is_multi && tf_form_has_step_webhook( $post_id );
+		// Per-form styling (settings fields): a wrapper class + scoped Custom CSS.
+		$wrapper_class = ( $post_id && ! $preview ) ? (string) get_post_meta( $post_id, '_tf_wrapper_class', true ) : '';
+		$custom_css    = ( $post_id && ! $preview ) ? (string) get_post_meta( $post_id, '_tf_custom_css', true ) : '';
 
 		ob_start();
+		if ( '' !== trim( $custom_css ) ) {
+			// '<' was stripped on save; strip again as a belt-and-braces guard.
+			echo '<style id="' . esc_attr( $uid ) . '-css">' . str_replace( '<', '', $custom_css ) . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput
+		}
 		// Front-end quick-edit affordance for logged-in editors only.
 		if ( ! $preview && ! is_admin() && $post_id && current_user_can( 'edit_post', $post_id ) ) {
 			$edit_url = get_edit_post_link( $post_id );
@@ -112,7 +119,7 @@ class TF_Render {
 			}
 		}
 		?>
-		<form class="tf-form<?php echo $is_multi ? ' tf-multistep' : ''; ?><?php echo $preview ? ' tf-preview' : ''; ?>"
+		<form class="tf-form<?php echo $is_multi ? ' tf-multistep' : ''; ?><?php echo $preview ? ' tf-preview' : ''; ?><?php echo $wrapper_class ? ' ' . esc_attr( $wrapper_class ) : ''; ?>"
 			<?php if ( $preview ) : ?>onsubmit="return false"<?php endif; ?>
 			id="<?php echo esc_attr( $uid ); ?>"
 			data-form-id="<?php echo esc_attr( $def['form_id'] ); ?>"
@@ -277,12 +284,14 @@ class TF_Render {
 				echo '<textarea class="tf-input" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '" rows="4"></textarea>'; // phpcs:ignore
 				break;
 			case 'tel':
-				$with_cc = ! isset( $f['country_code'] ) || ! empty( $f['country_code'] ); // default on
+				$with_cc   = ! isset( $f['country_code'] ) || ! empty( $f['country_code'] ); // default on
+				$show_name = ! empty( $f['cc_show_name'] ); // include the country name (e.g. "🇮🇱 Israel +972")
 				if ( $with_cc ) {
 					echo '<div class="tf-phone" data-tf-phone>';
-					echo '<select class="tf-phone-cc" aria-label="Country dial code">';
+					echo '<select class="tf-phone-cc' . ( $show_name ? ' tf-phone-cc-named' : '' ) . '" aria-label="Country dial code">';
 					foreach ( tf_countries() as $c ) {
-						echo '<option value="' . esc_attr( $c[1] ) . '" data-cc="' . esc_attr( $c[0] ) . '" data-name="' . esc_attr( $c[2] ) . '">' . tf_flag( $c[0] ) . ' ' . esc_html( $c[1] ) . '</option>';
+						$opt_label = tf_flag( $c[0] ) . ' ' . ( $show_name ? esc_html( $c[2] ) . ' ' : '' ) . esc_html( $c[1] );
+						echo '<option value="' . esc_attr( $c[1] ) . '" data-cc="' . esc_attr( $c[0] ) . '" data-name="' . esc_attr( $c[2] ) . '">' . $opt_label . '</option>';
 					}
 					echo '</select>';
 					echo '<input type="tel" class="tf-input tf-phone-num" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '">'; // phpcs:ignore

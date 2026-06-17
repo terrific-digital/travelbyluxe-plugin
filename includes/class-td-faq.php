@@ -181,8 +181,12 @@ class TD_FAQ {
 	}
 
 	public static function box_usage( $post ) {
+		$single = get_post_meta( $post->ID, '_td_faq_single', true );
 		?>
-		<p style="margin-top:0"><strong>Shortcode</strong><br>
+		<p style="margin-top:0"><strong>Behaviour</strong></p>
+		<p><label><input type="checkbox" name="td_faq_single" value="1" <?php checked( $single, '1' ); ?>> Open one at a time <span class="description">(opening an item closes the others)</span></label></p>
+		<hr style="margin:14px 0">
+		<p><strong>Shortcode</strong><br>
 			<code>[terrific_faq id="<?php echo (int) $post->ID; ?>"]</code></p>
 		<p class="description">Or add the <strong>Terrific FAQ</strong> block to any page.</p>
 		<hr style="margin:14px 0">
@@ -299,6 +303,7 @@ class TD_FAQ {
 			// wp_slash so update_post_meta's internal wp_unslash doesn't strip JSON escapes.
 			update_post_meta( $post_id, '_td_faq_items', wp_slash( wp_json_encode( $clean ) ) );
 		}
+		update_post_meta( $post_id, '_td_faq_single', empty( $_POST['td_faq_single'] ) ? '' : '1' );
 		self::ensure_id( $post_id );
 	}
 
@@ -349,9 +354,10 @@ class TD_FAQ {
 		wp_enqueue_style( 'td-faq' );
 		wp_enqueue_script( 'td-faq' );
 
-		$uid = 'tdfaq-' . $post_id;
+		$single = get_post_meta( $post_id, '_td_faq_single', true ) ? ' data-single="1"' : '';
+		$uid    = 'tdfaq-' . $post_id;
 		ob_start();
-		echo '<div class="td-faq" data-faq-id="' . esc_attr( $faq_id ) . '">';
+		echo '<div class="td-faq" data-faq-id="' . esc_attr( $faq_id ) . '"' . $single . '>';
 		foreach ( $items as $i => $it ) {
 			$q = isset( $it['q'] ) ? $it['q'] : '';
 			$a = isset( $it['a'] ) ? $it['a'] : '';
@@ -362,7 +368,7 @@ class TD_FAQ {
 			echo '<span class="td-faq-q-text">' . esc_html( $q ) . '</span>';
 			echo '<span class="td-faq-icon" aria-hidden="true"></span>';
 			echo '</button>';
-			echo '<div class="td-faq-a" id="' . esc_attr( $pid ) . '" role="region" hidden>';
+			echo '<div class="td-faq-a" id="' . esc_attr( $pid ) . '" role="region">';
 			echo '<div class="td-faq-a-inner">' . wp_kses_post( $a ) . '</div>';
 			echo '</div>';
 			echo '</div>';

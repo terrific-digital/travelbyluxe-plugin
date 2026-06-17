@@ -28,12 +28,13 @@ class TD_Notes {
 				'Duplicate any field; reorder by drag.',
 				'Per-field width (full / ½ / ⅓) shown to scale in the canvas — drag a field beside another to pair them into a row; show-label toggle; collapsible cards.',
 				'Field types: text, email, phone, number, slider, date, textarea, dropdown, radio, checkbox, heading, paragraph, separator, custom HTML, hidden.',
-				'Phone field with IP-geolocated country dial-code selector (toggleable).',
+				'Phone field with IP-geolocated country dial-code selector (toggleable; can show the country name).',
 				'Dropdown with separate label/value options, single or multi-select.',
 				'Slider with min/max/step/default, value bubble or inline, prefix/suffix &amp; scale.',
 				'Date field with earliest/latest bounds (days from today).',
 				'Per-step Next button text; per-type palette icons.',
 				'Sticky side-by-side live preview — renders the real form as you edit (toggleable, drag-resizable).',
+				'Per-form Wrapper CSS class + Custom CSS (output in a scoped style tag) for one-off styling.',
 			) ),
 			array( '📍', 'Placement', array(
 				'Shortcode <code>[terrific_form id="N"]</code>.',
@@ -82,7 +83,7 @@ class TD_Notes {
 				'Build reusable FAQ lists (question + answer items, drag to reorder).',
 				'Place any list with <code>[terrific_faq id="N"]</code> or the “Terrific FAQ” block.',
 				'See every page a list is used on, from the list’s edit screen.',
-				'Front-end accordion; opening an item fires <code>faq_item_click</code> (with the question, lowercased) once per item.',
+				'Front-end accordion (animated open/close); optional “open one at a time” mode; opening an item fires <code>faq_item_click</code> (with the question, lowercased) once per item.',
 			) ),
 			array( '⚙️', 'Settings &amp; dashboard', array(
 				'Settings: global webhook URL, reCAPTCHA v3, Store Session Data, User-Provided Data.',

@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.36.0
+**Current version:** 2.37.0
 
 ---
 
@@ -102,13 +102,16 @@ terrific-digital/
 - `_tf_definition` — JSON `{ type:'regular'|'multistep', steps:[ {title, fields:[…]} ] }` (store **wp_slash'd**)
 - `_tf_type`, `_tf_submit_text`, `_tf_success`, `_tf_intent` (default `lead`)
 - `_tf_actions` — JSON `[ { type:'webhook'|'redirect', enabled:bool, config:{…} } ]` (one of each max)
+- `_tf_wrapper_class` — extra class(es) added to the `.tf-form` container (sanitize_html_class)
+- `_tf_custom_css` — per-form CSS, output in a scoped `<style id="tf-{uid}-css">` before the form
+  (`<` stripped on save + output; scope selectors with the wrapper class — 2.37.0)
 
 **Field shape**
 ```
 { id, type, label, key, placeholder, required, show_label,
   width: full|half|third, min, max, minlength, maxlength,
   multiple,                        // dropdown multi-select
-  country_code,                    // phone: show dial-code selector (default true)
+  country_code, cc_show_name,      // phone: dial-code selector (default true); cc_show_name → "🇮🇱 Israel +972"
   min_from_today, max_from_today,  // date field bounds (days from today; 0 valid)
   step, default, prefix, suffix, show_scale, value_inline,   // slider
   html,                            // custom_html content
@@ -118,7 +121,9 @@ terrific-digital/
 **Field types:** text, email, tel (phone), number, **slider**, date, textarea,
 select (dropdown), radio, checkbox, heading, **paragraph**, **separator**, **custom_html**, hidden.
 Each step object also supports `next_text` (its Next button label; falls back to "Next →").
-**phone** has a `country_code` toggle (default on) — off renders a plain tel input. When the
+**phone** has a `country_code` toggle (default on) — off renders a plain tel input. A `cc_show_name`
+toggle (2.37.0) renders dial-code options as "🇮🇱 Israel +972" (vs the default "🇮🇱 +972"); the
+selector widens via `.tf-phone-cc-named`. When the
 country-code selector is on and the number is filled, the submitted data also includes a
 `<key>_country` **object** `{ code:"+972", name:"Israel", ISO:"IL" }` alongside the combined
 `<key>` value (e.g. `+972 0541234567`). (Options carry `value`=dial, `data-cc`=ISO, `data-name`=name;
@@ -271,8 +276,9 @@ skipped for admin/ajax/REST/feed/embed.
 
 **FAQ** (`td_faq` CPT, `capability_type=page` → `edit_pages`, like the Forms/Snippets CPTs). Each
 FAQ list stores `_td_faq_items` (JSON `[ {q, a} ]`; `q`=question text, `a`=answer HTML via
-`wp_kses_post`) and a stable `_td_faq_id` (`faq_{postID}_{6hex}`). Build items in the admin meta box
-(add/reorder/remove). Place with **`[terrific_faq id="N"]`** or the **Terrific FAQ** block (server-
+`wp_kses_post`) and a stable `_td_faq_id` (`faq_{postID}_{6hex}`), plus `_td_faq_single` (open one at a
+time → `data-single="1"` on `.td-faq`, honored by faq.js). Build items in the admin meta box
+(add/reorder/remove). The accordion **animates** open/close (CSS grid-rows 0fr↔1fr; no `hidden`). Place with **`[terrific_faq id="N"]`** or the **Terrific FAQ** block (server-
 rendered, reuses the shortcode). The edit screen's side box shows the shortcode + a **"Used on these
 pages"** finder (`find_usages()` — shortcode/block/Elementor scan **plus render-time tracking**:
 `record_usage()` logs the queried page whenever the FAQ actually renders front-end, throttled to
@@ -370,6 +376,11 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **Form & FAQ polish** (2.37.0) — (1) phone field `cc_show_name` option → dial-code selector shows
+  the country name ("🇮🇱 Israel +972"); (2) FAQ per-list **"Open one at a time"** toggle
+  (`_td_faq_single` → `data-single`); (3) FAQ accordion now **animates** open/close (grid-rows
+  transition, no `hidden`); (4) per-form **Wrapper CSS class** + **Custom CSS** settings fields
+  (scoped `<style>`) — a first-class replacement for the custom_html `<style>` hack.
 - **event_origin on all events** (2.36.0) — every dataLayer event the plugin pushes now carries
   `event_origin: "td_wp_plugin"` (form.js + faq.js route through a `tdPush()` wrapper that stamps it).
 - **Pages "Slug" column** (2.35.0) — TD_Page_Slug adds a sortable **Slug** column to the admin Pages

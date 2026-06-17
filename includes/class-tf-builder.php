@@ -135,11 +135,13 @@ class TF_Builder {
 	}
 
 	public static function render_settings( $post ) {
-		$form_id = get_post_meta( $post->ID, '_tf_form_id', true );
-		$def     = tf_get_form( $post->ID );
-		$type    = isset( $def['type'] ) ? $def['type'] : 'regular';
-		$submit  = $def['submit_text'];
-		$success = $def['success_message'];
+		$form_id       = get_post_meta( $post->ID, '_tf_form_id', true );
+		$def           = tf_get_form( $post->ID );
+		$type          = isset( $def['type'] ) ? $def['type'] : 'regular';
+		$submit        = $def['submit_text'];
+		$success       = $def['success_message'];
+		$wrapper_class = get_post_meta( $post->ID, '_tf_wrapper_class', true );
+		$custom_css    = get_post_meta( $post->ID, '_tf_custom_css', true );
 		?>
 		<p><strong>Form ID</strong><br>
 			<code><?php echo esc_html( $form_id ?: '(saved on first publish)' ); ?></code></p>
@@ -168,6 +170,17 @@ class TF_Builder {
 		<p>
 			<label for="tf_success"><strong>Success message</strong></label>
 			<textarea id="tf_success" name="tf_success" class="widefat" rows="3"><?php echo esc_textarea( $success ); ?></textarea>
+		</p>
+		<hr>
+		<p>
+			<label for="tf_wrapper_class"><strong>Wrapper CSS class</strong></label>
+			<input type="text" id="tf_wrapper_class" name="tf_wrapper_class" class="widefat" value="<?php echo esc_attr( $wrapper_class ); ?>" placeholder="e.g. tbl-lux">
+			<span class="description">Added to the form's container — use it to scope the Custom CSS below.</span>
+		</p>
+		<p>
+			<label for="tf_custom_css"><strong>Custom CSS</strong></label>
+			<textarea id="tf_custom_css" name="tf_custom_css" class="widefat" rows="6" spellcheck="false" style="font-family:Menlo,Consolas,monospace;font-size:12px" placeholder=".tbl-lux .tf-field { … }"><?php echo esc_textarea( $custom_css ); ?></textarea>
+			<span class="description">Output in a scoped <code>&lt;style&gt;</code> with this form. Prefix selectors with the wrapper class (or <code>.tf-form</code>) so they only affect this form.</span>
 		</p>
 		<?php
 		wp_nonce_field( 'tf_save', 'tf_nonce' );
@@ -214,6 +227,16 @@ class TF_Builder {
 		}
 		if ( isset( $_POST['tf_success'] ) ) {
 			update_post_meta( $post_id, '_tf_success', sanitize_textarea_field( wp_unslash( $_POST['tf_success'] ) ) );
+		}
+		if ( isset( $_POST['tf_wrapper_class'] ) ) {
+			$classes = preg_split( '/\s+/', sanitize_text_field( wp_unslash( $_POST['tf_wrapper_class'] ) ), -1, PREG_SPLIT_NO_EMPTY );
+			$classes = array_filter( array_map( 'sanitize_html_class', (array) $classes ) );
+			update_post_meta( $post_id, '_tf_wrapper_class', implode( ' ', $classes ) );
+		}
+		if ( isset( $_POST['tf_custom_css'] ) ) {
+			// CSS never needs '<' — stripping it prevents closing the <style> tag / HTML injection.
+			$css = str_replace( '<', '', (string) wp_unslash( $_POST['tf_custom_css'] ) );
+			update_post_meta( $post_id, '_tf_custom_css', $css );
 		}
 
 		// --- Actions list ---
@@ -305,6 +328,7 @@ class TF_Builder {
 					'maxlength'   => $int_or_blank( isset( $f['maxlength'] ) ? $f['maxlength'] : '' ),
 					'multiple'    => ! empty( $f['multiple'] ), // dropdown: multi-choice
 					'country_code' => ! array_key_exists( 'country_code', $f ) || ! empty( $f['country_code'] ), // phone: default on
+					'cc_show_name' => ! empty( $f['cc_show_name'] ), // phone: show country name in the dial-code selector
 
 					// Date bounds for the `date` field (days from today; 0 = today).
 					'min_from_today' => $int_or_blank( isset( $f['min_from_today'] ) ? $f['min_from_today'] : '' ),
