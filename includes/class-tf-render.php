@@ -184,9 +184,10 @@ class TF_Render {
 				</div>
 			<?php endforeach; ?>
 
-			<?php // Honeypot: hidden from people; bots that fill it get their submission silently dropped. ?>
+			<?php // Honeypot: hidden from people; bots that fill it get their submission silently dropped.
+			      // Field name is innocuous ("secondary_email") so naive bots won't recognize it as bait. ?>
 			<div class="tf-hp" aria-hidden="true">
-				<label>Email<input type="text" name="tf_hp" tabindex="-1" autocomplete="off" value=""></label>
+				<label>Secondary email<input type="email" name="secondary_email" tabindex="-1" autocomplete="off" value=""></label>
 			</div>
 
 			<div class="tf-thankyou" hidden>

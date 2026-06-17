@@ -20,7 +20,7 @@ class TF_Submissions {
 		add_action( 'admin_post_tf_delete', array( __CLASS__, 'delete_single' ) );
 	}
 
-	/** Honeypot tripped? Bots fill the hidden tf_hp field; humans never see it. */
+	/** Honeypot tripped? Bots fill the hidden secondary_email field; humans never see it. */
 	protected static function is_spam() {
 		return isset( $_POST['hp'] ) && '' !== trim( (string) wp_unslash( $_POST['hp'] ) );
 	}
