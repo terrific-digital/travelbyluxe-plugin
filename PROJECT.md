@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.35.0
+**Current version:** 2.36.0
 
 ---
 
@@ -224,13 +224,16 @@ its `dbDelta` when ≠ `TF_VERSION`.
 `upd` (when User-Provided Data changes; pushed *before* the step/submit events), `form_step` on
 each Next (intermediate steps only — the final step is the `form_submission`),
 `form_submission` on submit, then the form's **intent as its own event** (e.g. `generate_lead`)
-immediately after `form_submission`. Every front-end page also gets
+immediately after `form_submission`. **Every** dataLayer event the plugin pushes (form.js + faq.js,
+incl. `faq_item_click`) carries **`event_origin: "td_wp_plugin"`** (added by a `tdPush()` wrapper,
+2.36.0). Every front-end page also gets
 `window.dataLayer = window.dataLayer || [];` printed early in `<head>` (wp_head priority 1):
 ```js
 { event:'upd', upd:{ fn, ln, em, ph, co } }   // see §3 "User-Provided Data"
 ```
 ```js
 { event:'form_visible'|'form_started'|'form_step'|'form_submission'|<intent e.g. 'generate_lead'>,
+  event_origin:'td_wp_plugin',   // on EVERY plugin event (incl. upd, faq_item_click)
   form_id, form_name, form_type:'Terrific Form', form_step?, form_intent?, form_fields:{ key: value } }
 // form_visible: fired once when the form first enters the viewport (no form_step/form_fields).
 // form_started: fired once on first field interaction (no form_step/form_fields).
@@ -367,6 +370,8 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **event_origin on all events** (2.36.0) — every dataLayer event the plugin pushes now carries
+  `event_origin: "td_wp_plugin"` (form.js + faq.js route through a `tdPush()` wrapper that stamps it).
 - **Pages "Slug" column** (2.35.0) — TD_Page_Slug adds a sortable **Slug** column to the admin Pages
   list table (after Title), so it's easy to tell which page a row is. Percent-decoded for readability.
 - **Plugins screen polish** (2.34.4–2.34.5) — added a **Settings** action link to the plugin row

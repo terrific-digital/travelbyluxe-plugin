@@ -3,6 +3,12 @@
 	'use strict';
 	window.dataLayer = window.dataLayer || [];
 
+	// Push to the dataLayer, stamping every plugin event with its origin.
+	function tdPush(obj) {
+		if (obj && typeof obj === 'object' && obj.event_origin === undefined) { obj.event_origin = 'td_wp_plugin'; }
+		window.dataLayer.push(obj);
+	}
+
 	// Read a field's submitted value (handles phone composites + multi-select).
 	function readValue(el) {
 		if (el.classList.contains('tf-phone-num')) {
@@ -159,7 +165,7 @@
 		});
 		if (!changed) { return; }
 		saveUpd(next);
-		window.dataLayer.push({ event: UPD.event || 'upd', upd: next });
+		tdPush({ event: UPD.event || 'upd', upd: next });
 	}
 
 	function collect(form) {
@@ -261,7 +267,7 @@
 		};
 		var intent = form.getAttribute('data-form-intent');
 		if (intent) { ev.form_intent = intent; }
-		window.dataLayer.push(ev);
+		tdPush(ev);
 	}
 
 	// Fire `form_started` once, the first time the user enters a value in any field.
@@ -276,7 +282,7 @@
 		};
 		var intent = form.getAttribute('data-form-intent');
 		if (intent) { ev.form_intent = intent; }
-		window.dataLayer.push(ev);
+		tdPush(ev);
 	}
 
 	function pushStep(form, stepNum) {
@@ -291,7 +297,7 @@
 		};
 		var intent = form.getAttribute('data-form-intent');
 		if (intent) { ev.form_intent = intent; }
-		window.dataLayer.push(ev);
+		tdPush(ev);
 	}
 
 	// Fired on every Next of a multi-step form: stores/updates the partial
@@ -435,10 +441,10 @@
 						var subIntent = form.getAttribute('data-form-intent');
 						var subEv = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'Terrific Form', form_fields: fields };
 						if (subIntent) { subEv.form_intent = subIntent; }
-						window.dataLayer.push(subEv);
+						tdPush(subEv);
 						// Fire the form's intent as its own event right after (e.g. generate_lead).
 						if (subIntent) {
-							window.dataLayer.push({
+							tdPush({
 								event: subIntent,
 								form_id: form.getAttribute('data-form-id'),
 								form_name: form.getAttribute('data-form-name'),

@@ -4,6 +4,12 @@
 	'use strict';
 	window.dataLayer = window.dataLayer || [];
 
+	// Push to the dataLayer, stamping every plugin event with its origin.
+	function tdPush(obj) {
+		if (obj && typeof obj === 'object' && obj.event_origin === undefined) { obj.event_origin = 'td_wp_plugin'; }
+		window.dataLayer.push(obj);
+	}
+
 	function toggle(item, btn, panel) {
 		var open = btn.getAttribute('aria-expanded') === 'true';
 		if (open) {
@@ -19,7 +25,7 @@
 		if (!item.__faqFired) {
 			item.__faqFired = true;
 			var title = (item.getAttribute('data-faq-title') || '').trim().toLowerCase();
-			window.dataLayer.push({ event: 'faq_item_click', faq_title: title });
+			tdPush({ event: 'faq_item_click', faq_title: title });
 		}
 	}
 
