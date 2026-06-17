@@ -43,7 +43,7 @@ class TD_Notes {
 				'Front-end “Edit form” pill for logged-in editors.',
 			) ),
 			array( '🎯', 'Intent &amp; actions', array(
-				'Per-form intent — Lead, Career Application, Contact Us, or Gated Content — added to dataLayer + webhook, and fired as its own event (e.g. <code>generate_lead</code>) after submit.',
+				'Per-form intent — Lead, Career Application, Contact Us, Gated Content, or Partnership Request — added to dataLayer + webhook, and fired as its own event (e.g. <code>generate_lead</code>) after submit.',
 				'Webhook action — global or custom URL; multi-step: final step only or every step.',
 				'Redirect action — to a URL or a WordPress page. Each action toggleable.',
 			) ),

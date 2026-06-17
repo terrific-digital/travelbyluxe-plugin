@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.38.1
+**Current version:** 2.38.2
 
 ---
 
@@ -327,7 +327,8 @@ CSS (e.g. `tbl-v3-native.css` had `.cta-section .tf-admin-edit{display:none}`) c
   **phone** field with IP-geolocated country dial-code dropdown, **dropdown** single/multi +
   **Label/Value** options table (value can differ from label).
 - **Intent** — per-form: **Lead** → `generate_lead`, **Career Application** → `career_application`,
-  **Contact Us** → `contact_us`, **Gated Content** → `gated_content` (2.34.0). Adds `form_intent` to
+  **Contact Us** → `contact_us`, **Gated Content** → `gated_content` (2.34.0), **Partnership Request**
+  → `partnership_request` (2.38.2). Adds `form_intent` to
   the dataLayer + webhook, **and** pushes the intent param as its own dataLayer event right after
   `form_submission`. Extend via the `terrific_forms/intents` filter.
 - **Placement** — shortcode `[terrific_form id="N"]` **and** a Gutenberg block "Terrific Form"
