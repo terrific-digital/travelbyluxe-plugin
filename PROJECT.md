@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.37.0
+**Current version:** 2.38.0
 
 ---
 
@@ -82,6 +82,8 @@ terrific-digital/
                                 answer in a collapsible body), drag-reorder, duplicate, icon actions
     faq-block.js                "Terrific FAQ" block editor (no build step)
     sortable.min.js             Bundled SortableJS 1.15.2 (no runtime CDN)
+  includes/free-email-domains.txt  ~4.7k free/personal email domains (HubSpot's block list), one per
+                                line; read by tf_free_email_domains() for the email "block free" option
 ```
 
 **Constants** (in `terrific-digital.php`): `TD_VERSION`, `TD_MENU` = `'terrific-digital'`,
@@ -112,6 +114,7 @@ terrific-digital/
   width: full|half|third, min, max, minlength, maxlength,
   multiple,                        // dropdown multi-select
   country_code, cc_show_name,      // phone: dial-code selector (default true); cc_show_name → "🇮🇱 Israel +972"
+  block_free,                      // email: block free/personal domains (require a work email; default off)
   min_from_today, max_from_today,  // date field bounds (days from today; 0 valid)
   step, default, prefix, suffix, show_scale, value_inline,   // slider
   html,                            // custom_html content
@@ -141,6 +144,13 @@ the server preserves the `ISO` sub-key casing.)
   opt into `value_inline` to show it **inline in the label** instead. Optional `prefix`/`suffix`
   (e.g. `$`, ` days` — leading/trailing spaces preserved) and `show_scale` (a `.tf-range-scale`
   min/max caption row). Values format with thousands separators. Submits the number under its `key`.
+
+**email `block_free`** (2.38.0) — when on, the form won't submit with a free/personal email; the
+field shows **"Please enter your work email address."** The renderer adds `data-block-free="1"` to the
+input; `form.js` validates the domain against `window.TF_FREE_DOMAINS` (a ~4.7k list localized **only**
+when a form on the page uses the option). Server backstop: `TF_Submissions::has_blocked_free_email()`
+silently drops a JS-bypassed free-domain submit (like the honeypot). Domains come from
+`tf_free_email_domains()` (filter `terrific_forms/free_email_domains`); `tf_is_free_email($email)` checks one.
 
 **Single `date` field** — also supports `min_from_today` / `max_from_today` (earliest/latest in
 days from today; 0 = today, blank = no limit); converted to the input's `min`/`max` client-side
@@ -376,6 +386,10 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **Email: block free domains** (2.38.0) — per-email-field "Block free email domains" option (default
+  off). Free/personal emails are rejected with "Please enter your work email address." (client-side
+  block + server backstop). List = HubSpot's ~4.7k domains in `includes/free-email-domains.txt`,
+  localized to JS only when a form needs it. See §3.
 - **Form & FAQ polish** (2.37.0) — (1) phone field `cc_show_name` option → dial-code selector shows
   the country name ("🇮🇱 Israel +972"); (2) FAQ per-list **"Open one at a time"** toggle
   (`_td_faq_single` → `data-single`); (3) FAQ accordion now **animates** open/close (grid-rows

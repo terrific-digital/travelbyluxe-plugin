@@ -30,6 +30,7 @@ class TD_Notes {
 				'Field types: text, email, phone, number, slider, date, textarea, dropdown, radio, checkbox, heading, paragraph, separator, custom HTML, hidden.',
 				'Phone field with IP-geolocated country dial-code selector (toggleable; can show the country name).',
 				'Dropdown with separate label/value options, single or multi-select.',
+				'Email field can block free/personal domains — require a work email (HubSpot’s ~4.7k list).',
 				'Slider with min/max/step/default, value bubble or inline, prefix/suffix &amp; scale.',
 				'Date field with earliest/latest bounds (days from today).',
 				'Per-step Next button text; per-type palette icons.',

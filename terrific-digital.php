@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific-digital.com
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.37.0
+ * Version:           2.38.0
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -11,7 +11,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.37.0' );
+define( 'TD_VERSION', '2.38.0' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -238,6 +238,31 @@ function tf_flag( $cc ) {
 	$cc = strtoupper( trim( (string) $cc ) );
 	if ( 2 !== strlen( $cc ) || ! ctype_alpha( $cc ) ) { return ''; }
 	return mb_chr( 0x1F1E6 + ( ord( $cc[0] ) - 65 ), 'UTF-8' ) . mb_chr( 0x1F1E6 + ( ord( $cc[1] ) - 65 ), 'UTF-8' );
+}
+
+/**
+ * Free / personal email domains (HubSpot's "domains to block" list, ~4.7k entries),
+ * loaded from includes/free-email-domains.txt. Filterable + statically cached.
+ */
+function tf_free_email_domains() {
+	static $list = null;
+	if ( null !== $list ) { return $list; }
+	$file = TF_DIR . 'includes/free-email-domains.txt';
+	$raw  = is_readable( $file ) ? file( $file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) : array();
+	$raw  = array_values( array_filter( array_map( function ( $d ) { return strtolower( trim( $d ) ); }, $raw ) ) );
+	$list = apply_filters( 'terrific_forms/free_email_domains', $raw );
+	return $list;
+}
+
+/** Is this email address on a free/personal domain? (domain-only, case-insensitive). */
+function tf_is_free_email( $email ) {
+	static $map = null;
+	if ( null === $map ) { $map = array_flip( tf_free_email_domains() ); }
+	$email = strtolower( trim( (string) $email ) );
+	$at    = strrpos( $email, '@' );
+	if ( false === $at ) { return false; }
+	$domain = substr( $email, $at + 1 );
+	return '' !== $domain && isset( $map[ $domain ] );
 }
 
 /** All request cookies as key=>value, minus WordPress auth/internal cookies. */

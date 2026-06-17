@@ -9,6 +9,20 @@
 		window.dataLayer.push(obj);
 	}
 
+	// Free/personal email domains (shipped as window.TF_FREE_DOMAINS only when a form needs it).
+	var FREE_DOMAINS = null;
+	function isFreeEmail(value) {
+		if (!window.TF_FREE_DOMAINS) { return false; }
+		if (!FREE_DOMAINS) {
+			FREE_DOMAINS = {};
+			for (var i = 0; i < window.TF_FREE_DOMAINS.length; i++) { FREE_DOMAINS[String(window.TF_FREE_DOMAINS[i]).toLowerCase()] = 1; }
+		}
+		var at = String(value).lastIndexOf('@');
+		if (at < 0) { return false; }
+		var dom = String(value).slice(at + 1).trim().toLowerCase();
+		return !!dom && FREE_DOMAINS[dom] === 1;
+	}
+
 	// Read a field's submitted value (handles phone composites + multi-select).
 	function readValue(el) {
 		if (el.classList.contains('tf-phone-num')) {
@@ -233,6 +247,7 @@
 				msg = 'This field is required.';
 			} else if (has) {
 				if (el.type === 'email' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(raw)) { msg = 'Enter a valid email address.'; }
+					else if (el.type === 'email' && el.getAttribute('data-block-free') === '1' && isFreeEmail(raw)) { msg = 'Please enter your work email address.'; }
 				var minl = parseInt(el.getAttribute('data-minlength'), 10);
 				var maxl = parseInt(el.getAttribute('data-maxlength'), 10);
 				if (!msg && minl && raw.length < minl) { msg = 'Must be at least ' + minl + ' characters.'; }

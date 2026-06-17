@@ -37,6 +37,21 @@ class TF_Submissions {
 		return tf_recaptcha_verify( $token );
 	}
 
+	/** True if a "block free domains" email field was submitted with a free/personal domain. */
+	protected static function has_blocked_free_email( $def, $fields ) {
+		if ( empty( $def['steps'] ) ) { return false; }
+		foreach ( $def['steps'] as $step ) {
+			foreach ( ( isset( $step['fields'] ) ? $step['fields'] : array() ) as $f ) {
+				if ( ( isset( $f['type'] ) ? $f['type'] : '' ) !== 'email' || empty( $f['block_free'] ) ) { continue; }
+				$key = isset( $f['key'] ) ? $f['key'] : '';
+				if ( '' !== $key && isset( $fields[ $key ] ) && is_string( $fields[ $key ] ) && tf_is_free_email( $fields[ $key ] ) ) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	/** Public: return the visitor's country code (for phone-field auto-select). Not page-cached. */
 	public static function handle_geo() {
 		nocache_headers();
@@ -274,6 +289,11 @@ class TF_Submissions {
 		}
 
 		$fields = self::clean_fields();
+		// Backstop: a free-domain email in a "block free" field is dropped like spam (the
+		// client already blocks it; this only catches JS-bypassed/bot submits).
+		if ( self::has_blocked_free_email( $def, $fields ) ) {
+			wp_send_json_success( array( 'submission_id' => 0, 'message' => $def['success_message'], 'redirect' => '' ) );
+		}
 		$ctx    = self::request_context( $post_id );
 		$token  = isset( $_POST['submission_token'] ) ? sanitize_text_field( wp_unslash( $_POST['submission_token'] ) ) : '';
 		$total  = count( $def['steps'] );
@@ -333,6 +353,7 @@ class TF_Submissions {
 		$step   = isset( $_POST['step'] ) ? max( 1, min( $total, (int) $_POST['step'] ) ) : 1;
 		$token  = isset( $_POST['submission_token'] ) ? sanitize_text_field( wp_unslash( $_POST['submission_token'] ) ) : '';
 		$fields = self::clean_fields();
+		if ( self::has_blocked_free_email( $def, $fields ) ) { wp_send_json_success( array( 'skipped' => 'free_email' ) ); }
 		$ctx    = self::request_context( $post_id );
 
 		// Create on first step / update on later steps (status stays "partial").

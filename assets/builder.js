@@ -61,7 +61,7 @@
 			required: false, show_label: true, width: 'full',
 			min: '', max: '', minlength: '', maxlength: '', multiple: false,
 			min_from_today: '', max_from_today: '',
-			step: '', default: '', prefix: '', suffix: '', show_scale: false, value_inline: false, html: '', country_code: true, cc_show_name: false,
+			step: '', default: '', prefix: '', suffix: '', show_scale: false, value_inline: false, html: '', country_code: true, cc_show_name: false, block_free: false,
 			options: HAS_OPTIONS[type] ? [{ label: 'Option 1', value: 'Option 1' }, { label: 'Option 2', value: 'Option 2' }] : []
 		};
 		f.key = slug(f.label);
@@ -222,6 +222,8 @@
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-vinline"' + (f.value_inline ? ' checked' : '') + '> Show value in the label (instead of a bubble)</label>' : '';
 		var htmlRow = (f.type === 'custom_html') ?
 			'<label class="tf-b-row">Custom HTML<textarea class="tf-b-html" rows="6" spellcheck="false" placeholder="&lt;div&gt;…&lt;/div&gt;" style="font-family:monospace">' + escArea(f.html) + '</textarea></label>' : '';
+		var emailRow = (f.type === 'email') ?
+			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-blockfree"' + (f.block_free ? ' checked' : '') + '> Block free email domains (require a work email)</label>' : '';
 		var ccRow = (f.type === 'tel') ?
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-cc"' + ((f.country_code !== false) ? ' checked' : '') + '> Country-code selector</label>' +
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-ccname"' + (f.cc_show_name ? ' checked' : '') + '> Show country name in the selector</label>' : '';
@@ -273,7 +275,7 @@
 				labelRow +
 				showLabelRow +
 				keyRow +
-				placeRow + numberRow + sliderRow + lengthRow + dateRow + htmlRow + optionsRow + ccRow + widthRow + reqRow +
+				placeRow + numberRow + sliderRow + lengthRow + dateRow + htmlRow + optionsRow + ccRow + emailRow + widthRow + reqRow +
 			'</div>';
 
 		var editBtn = card.querySelector('.tf-b-edit');
@@ -335,6 +337,7 @@
 		// phone: country-code selector toggle
 		var ccEl = card.querySelector('.tf-b-cc'); if (ccEl) { ccEl.addEventListener('change', function () { f.country_code = ccEl.checked; sync(); }); }
 		var ccnEl = card.querySelector('.tf-b-ccname'); if (ccnEl) { ccnEl.addEventListener('change', function () { f.cc_show_name = ccnEl.checked; sync(); }); }
+		var bfEl = card.querySelector('.tf-b-blockfree'); if (bfEl) { bfEl.addEventListener('change', function () { f.block_free = bfEl.checked; sync(); }); }
 		var ph = card.querySelector('.tf-b-ph'); if (ph) { ph.addEventListener('input', function () { f.placeholder = ph.value; sync(); }); }
 		var req = card.querySelector('.tf-b-req'); if (req) { req.addEventListener('change', function () { f.required = req.checked; sync(); }); }
 		var sl = card.querySelector('.tf-b-showlabel'); if (sl) { sl.addEventListener('change', function () { f.show_label = sl.checked; sync(); }); }

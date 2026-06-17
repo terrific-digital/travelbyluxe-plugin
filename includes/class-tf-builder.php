@@ -329,6 +329,7 @@ class TF_Builder {
 					'multiple'    => ! empty( $f['multiple'] ), // dropdown: multi-choice
 					'country_code' => ! array_key_exists( 'country_code', $f ) || ! empty( $f['country_code'] ), // phone: default on
 					'cc_show_name' => ! empty( $f['cc_show_name'] ), // phone: show country name in the dial-code selector
+					'block_free'   => ! empty( $f['block_free'] ), // email: block free/personal domains (require a work email)
 
 					// Date bounds for the `date` field (days from today; 0 = today).
 					'min_from_today' => $int_or_blank( isset( $f['min_from_today'] ) ? $f['min_from_today'] : '' ),

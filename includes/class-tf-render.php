@@ -81,9 +81,26 @@ class TF_Render {
 		wp_enqueue_style( 'tf-form' );
 		wp_enqueue_script( 'tf-form' );
 		if ( tf_recaptcha_enabled() ) { wp_enqueue_script( 'tf-recaptcha' ); }
+		// Ship the free-domains list to JS once per request, only when a form here blocks them.
+		static $free_localized = false;
+		if ( ! $free_localized && self::def_blocks_free( $def ) ) {
+			$free_localized = true;
+			wp_localize_script( 'tf-form', 'TF_FREE_DOMAINS', array_values( tf_free_email_domains() ) );
+		}
 		self::$instances++;
 
 		return self::markup( $def, $post_id );
+	}
+
+	/** Does this form definition have an email field set to block free domains? */
+	protected static function def_blocks_free( $def ) {
+		if ( empty( $def['steps'] ) ) { return false; }
+		foreach ( $def['steps'] as $step ) {
+			foreach ( ( isset( $step['fields'] ) ? $step['fields'] : array() ) as $f ) {
+				if ( ( isset( $f['type'] ) ? $f['type'] : '' ) === 'email' && ! empty( $f['block_free'] ) ) { return true; }
+			}
+		}
+		return false;
 	}
 
 	protected static function markup( $def, $post_id, $preview = false ) {
@@ -225,6 +242,7 @@ class TF_Render {
 			if ( ! empty( $f['minlength'] ) ) { $extra .= ' minlength="' . esc_attr( $f['minlength'] ) . '" data-minlength="' . esc_attr( $f['minlength'] ) . '"'; }
 			if ( ! empty( $f['maxlength'] ) ) { $extra .= ' maxlength="' . esc_attr( $f['maxlength'] ) . '" data-maxlength="' . esc_attr( $f['maxlength'] ) . '"'; }
 		}
+		if ( 'email' === $type && ! empty( $f['block_free'] ) ) { $extra .= ' data-block-free="1"'; } // require a work email
 
 		ob_start();
 		echo '<div class="tf-field tf-field-' . esc_attr( $type ) . ' tf-w-' . esc_attr( $width ) . '">';
