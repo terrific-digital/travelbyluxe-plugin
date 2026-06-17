@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.38.0
+**Current version:** 2.38.1
 
 ---
 
@@ -308,7 +308,9 @@ link — new forms are created from the Forms list screen's own "Add New" button
 **Front-end "Edit form" link:** every rendered form prepends a small `.tf-edit-link` pill — the
 colour **Terrific "t" brand mark** + "Edit form" — linking to that form's editor. Shown only to
 logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in preview or
-`is_admin()` (block-editor SSR) contexts. Hidden from visitors.
+`is_admin()` (block-editor SSR) contexts. Hidden from visitors. The element is only emitted for
+those editors, so form.css forces it visible with `display !important` (2.38.1) — theme/custom-LP
+CSS (e.g. `tbl-v3-native.css` had `.cta-section .tf-admin-edit{display:none}`) can't suppress it.
 
 **Honeypot (anti-bot):** every rendered form includes an off-screen `.tf-hp` field
 (`name="tf_hp"`, the bait label "Email"). form.js posts its value as `hp`; if non-empty,
