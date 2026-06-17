@@ -88,6 +88,7 @@ class TD_Notes {
 				'Settings: global webhook URL, reCAPTCHA v3, Store Session Data, User-Provided Data.',
 				'Dashboard with feature cards (Forms, Code Snippets, FAQ Lists), live counts, version &amp; last-updated date.',
 				'Top-level Terrific Digital menu (brand “t” icon); admin features gated on <code>edit_pages</code>.',
+				'Adds a sortable “Slug” column to the Pages list, so you can tell which page is which at a glance.',
 			) ),
 		);
 	}

@@ -6,7 +6,7 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
-**Current version:** 2.34.5
+**Current version:** 2.35.0
 
 ---
 
@@ -47,6 +47,8 @@ terrific-digital/
                                 4 inject locations + conditions; output-buffer injection (template_redirect)
     class-td-notes.php          "Notes" admin page: a hand-maintained card grid summarizing every
                                 plugin feature in short (submenu under TD_MENU, last; edit_pages)
+    class-td-page-slug.php      Adds a sortable "Slug" column to the admin Pages list table
+                                (manage_pages_columns; orderby=name; non-ASCII slugs decoded)
     class-td-faq.php            "FAQ" feature: td_faq CPT (reusable Q&A accordion lists); admin
                                 builder meta box, shortcode [terrific_faq id="N"] + "Terrific FAQ"
                                 block, "used on these pages" finder, front-end accordion + dataLayer
@@ -365,6 +367,8 @@ logged-in users who `current_user_can( 'edit_post', $post_id )`, and never in pr
   pushed as its own dataLayer event (e.g. `generate_lead`); previously the intent was only a
   property. Also: every front-end page prints `window.dataLayer = window.dataLayer || [];` early in
   `<head>` (wp_head priority 1).
+- **Pages "Slug" column** (2.35.0) — TD_Page_Slug adds a sortable **Slug** column to the admin Pages
+  list table (after Title), so it's easy to tell which page a row is. Percent-decoded for readability.
 - **Plugins screen polish** (2.34.4–2.34.5) — added a **Settings** action link to the plugin row
   (`plugin_action_links_*` → `admin.php?page=tf-settings`); set `Plugin URI` to
   **https://terrific-digital.com**; and made "Visit plugin site" open in a new tab
