@@ -1,0 +1,57 @@
+name: Release
+
+# Triggered when a vX.Y.Z tag is pushed. Builds a clean terrific-digital.zip
+# (proper folder root, excludes dev/SCM files) and attaches it to a GitHub
+# release. The plugin's update checker (PUC) on each WordPress site reads
+# that ZIP as the update artifact.
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the tag
+        uses: actions/checkout@v4
+
+      - name: Verify the tag matches TD_VERSION in the plugin
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          FILE_VERSION=$(grep -E "define\( 'TD_VERSION', '" terrific-digital.php | sed -E "s/.*'([0-9.]+)'.*/\1/")
+          echo "tag:  $TAG"
+          echo "file: $FILE_VERSION"
+          if [ "$TAG" != "$FILE_VERSION" ]; then
+            echo "::error::Tag v$TAG does not match TD_VERSION '$FILE_VERSION' in terrific-digital.php"
+            exit 1
+          fi
+
+      - name: Build terrific-digital.zip
+        run: |
+          # Stage the plugin under a top-level 'terrific-digital/' folder so the ZIP
+          # extracts to wp-content/plugins/terrific-digital/ on each site.
+          STAGE=$(mktemp -d)
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.gitignore' \
+            --exclude='.claude' \
+            --exclude='PROJECT.md' \
+            --exclude='master_emqjrcyekf@*' \
+            --exclude='*.zip' \
+            --exclude='node_modules' \
+            ./ "$STAGE/terrific-digital/"
+          ( cd "$STAGE" && zip -rq "$GITHUB_WORKSPACE/terrific-digital.zip" terrific-digital )
+          unzip -l terrific-digital.zip | head -20
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            terrific-digital.zip \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
