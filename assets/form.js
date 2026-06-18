@@ -329,6 +329,37 @@
 		tdPush(ev);
 	}
 
+	// Fire the form_submission dataLayer event (plus the form's intent event right
+	// after) when a configured non-last step is completed. Builder UI exposes a per-step
+	// "Fires form_submission" radio; default is the last step, in which case the submit
+	// handler still owns this path (so we no-op here). Idempotent across re-clicks via
+	// form.__tfSubFired.
+	function maybeFireEarlySubmission(form, stepNum) {
+		if (form.__tfSubFired) { return; }
+		var configured = parseInt(form.getAttribute('data-submission-step'), 10) || 0;
+		var total = parseInt(form.getAttribute('data-total-steps'), 10) || 0;
+		// 0/missing → fall back to last-step semantics; equal to total → handled by submit.
+		if (!configured || configured >= total) { return; }
+		if (stepNum !== configured) { return; }
+		updateUpd(form); // upd precedes form_submission, same ordering as the submit handler
+		var fields = collect(form, stepNum);
+		var intent = form.getAttribute('data-form-intent');
+		var ev = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'Terrific Form', form_fields: fields };
+		if (intent) { ev.form_intent = intent; }
+		tdPush(ev);
+		if (intent) {
+			tdPush({
+				event: intent,
+				form_id: form.getAttribute('data-form-id'),
+				form_name: form.getAttribute('data-form-name'),
+				form_type: 'Terrific Form',
+				form_intent: intent,
+				form_fields: fields
+			});
+		}
+		form.__tfSubFired = true;
+	}
+
 	// Fired on every Next of a multi-step form: stores/updates the partial
 	// submission server-side (so abandoned forms are still captured).
 	function sendStep(form, stepNum) {
@@ -431,6 +462,11 @@
 				if (!validateStep(cur)) { return; }
 				pushStep(form, n);          // fire form_step on every progression
 				sendStep(form, n);
+				// If this step is configured as the form_submission firing point
+				// (and it's NOT the last step — that path runs via the submit handler),
+				// fire form_submission + intent here. Marks the form so the final
+				// submit doesn't double-fire them.
+				maybeFireEarlySubmission(form, n);
 				showStep(form, n + 1);
 			} else if (back) {
 				e.preventDefault();
@@ -467,20 +503,26 @@
 				fetch(window.TF_FORM.ajax, { method: 'POST', body: body, credentials: 'same-origin' })
 					.then(function (r) { return r.json(); })
 					.then(function (res) {
-						var subIntent = form.getAttribute('data-form-intent');
-						var subEv = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'Terrific Form', form_fields: fields };
-						if (subIntent) { subEv.form_intent = subIntent; }
-						tdPush(subEv);
-						// Fire the form's intent as its own event right after (e.g. generate_lead).
-						if (subIntent) {
-							tdPush({
-								event: subIntent,
-								form_id: form.getAttribute('data-form-id'),
-								form_name: form.getAttribute('data-form-name'),
-								form_type: 'Terrific Form',
-								form_intent: subIntent,
-								form_fields: fields
-							});
+						// Skip the dataLayer pushes if a configured non-last step already fired
+						// them via maybeFireEarlySubmission — the server-side submit itself still
+						// runs (this is just event de-duping for analytics).
+						if (!form.__tfSubFired) {
+							var subIntent = form.getAttribute('data-form-intent');
+							var subEv = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'Terrific Form', form_fields: fields };
+							if (subIntent) { subEv.form_intent = subIntent; }
+							tdPush(subEv);
+							// Fire the form's intent as its own event right after (e.g. generate_lead).
+							if (subIntent) {
+								tdPush({
+									event: subIntent,
+									form_id: form.getAttribute('data-form-id'),
+									form_name: form.getAttribute('data-form-name'),
+									form_type: 'Terrific Form',
+									form_intent: subIntent,
+									form_fields: fields
+								});
+							}
+							form.__tfSubFired = true;
 						}
 						var redirect = res && res.data && res.data.redirect;
 						if (redirect) { setTimeout(function () { window.location.href = redirect; }, 250); return; }

@@ -40,6 +40,11 @@
 .tf-b-step-title { flex: 1 1 50%; min-width: 0; }
 .tf-b-step-next { flex: 1 1 40%; min-width: 0; }
 .tf-b-step-last { background: #f0f0f1; color: #646970; border-radius: 3px; padding: 5px 12px; font-size: 11px; font-weight: 600; letter-spacing: .05em; white-space: nowrap; }
+/* Per-step "Fires form_submission" radio — compact pill in the step header. */
+.tf-b-submit-step-label { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: #50575e; background: #fff; border: 1px solid #dcdcde; border-radius: 999px; padding: 4px 10px; white-space: nowrap; cursor: pointer; user-select: none; }
+.tf-b-submit-step-label:hover { border-color: #2271b1; color: #2271b1; }
+.tf-b-submit-step-label input { margin: 0; }
+.tf-b-submit-step-label:has(input:checked) { background: #e7f1fb; border-color: #2271b1; color: #1d4d8a; }
 .tf-b-del-step { color: #b32d2e !important; white-space: nowrap; }
 .tf-b-fields { min-height: 60px; padding: 10px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
 .tf-b-fields:empty::after { content: 'Drop fields here'; flex: 0 0 100%; text-align: center; color: #aaa; padding: 18px; border: 2px dashed #dcdcde; border-radius: 4px; }

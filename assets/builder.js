@@ -41,17 +41,35 @@
 	}
 
 	// The final step submits (no Next button), so show a "LAST STEP" tag there instead
-	// of the Next-button text input. Re-evaluated whenever steps are added/removed.
+	// of the Next-button text input. Also keeps the per-step "Fires form_submission"
+	// radios in sync: 1-based value matches the step index; checks the step the user
+	// explicitly picked, or — if they never picked — the current last step (so adding
+	// steps slides the default along automatically).
 	function refreshStepNextFields() {
 		if (!root) { return; }
 		var steps = root.querySelectorAll('.tf-b-step');
+		var total = steps.length;
+		// def.submission_step is null until the user picks a radio. Out-of-range stored
+		// values (e.g. the previously-picked step was deleted) fall back to "last step".
+		var explicit = parseInt((def && def.submission_step) || 0, 10);
+		if (!explicit || explicit < 1 || explicit > total) { explicit = 0; }
+		var resolved = explicit || total;
 		steps.forEach(function (st, i) {
-			var isLast = (i === steps.length - 1);
+			var n = i + 1;
+			var isLast = (i === total - 1);
 			var nextInput = st.querySelector('.tf-b-step-next');
 			var lastTag = st.querySelector('.tf-b-step-last');
 			if (nextInput) { nextInput.style.display = isLast ? 'none' : ''; }
 			if (lastTag) { lastTag.style.display = isLast ? '' : 'none'; }
+			var radio = st.querySelector('.tf-b-submit-step');
+			if (radio) {
+				radio.value = String(n);
+				radio.checked = (n === resolved);
+			}
 		});
+		// If the previously-stored step was deleted (out of range), forget the explicit
+		// pick so the default tracks "last step" again.
+		if (def && !explicit) { def.submission_step = null; def.__submitStepExplicit = false; }
 	}
 
 	// A fresh field object of the given type (used by both drag-add and click-add).
@@ -135,6 +153,10 @@
 		try { def = JSON.parse(root.getAttribute('data-def')); } catch (e) { def = null; }
 		if (!def || !def.steps) { def = { type: 'regular', steps: [{ title: '', fields: [] }] }; }
 		def.type = currentType();
+		// A saved submission_step is treated as an explicit user pick — sticky across
+		// step add/remove. When absent, the renderer defaults to the last step and
+		// the builder follows along automatically.
+		def.__submitStepExplicit = !!parseInt(def.submission_step || 0, 10);
 		// index fields
 		def.steps.forEach(function (s) { (s.fields || []).forEach(function (f) { if (!f.id) { f.id = uid(); } fieldMap[f.id] = f; }); });
 	}
@@ -161,7 +183,26 @@
 		});
 		def.type = currentType();
 		def.steps = steps.length ? steps : [{ title: '', fields: [] }];
-		hidden.value = JSON.stringify({ type: def.type, steps: def.steps });
+		// Record an EXPLICIT user choice for the submission step. When the user hasn't
+		// picked one we leave def.submission_step null, and the server defaults to the
+		// last step at save/render time — so "default = last step" tracks step changes
+		// without needing the user to re-click after every add/remove.
+		var total = def.steps.length;
+		var payload = { type: def.type, steps: def.steps };
+		if ('multistep' === def.type && def.__submitStepExplicit) {
+			var checked = root.querySelector('.tf-b-submit-step:checked');
+			var chosen = checked ? parseInt(checked.value, 10) : 0;
+			if (chosen && chosen >= 1 && chosen <= total) {
+				def.submission_step = chosen;
+				payload.submission_step = chosen;
+			} else {
+				def.submission_step = null;
+				def.__submitStepExplicit = false;
+			}
+		} else {
+			def.submission_step = null;
+		}
+		hidden.value = JSON.stringify(payload);
 		schedulePreview();
 	}
 
@@ -390,6 +431,7 @@
 				'<span class="tf-b-step-n">' + (multi ? 'Step ' + (idx + 1) : 'Fields') + '</span>' +
 				(multi ? '<input type="text" class="tf-b-step-title" placeholder="Step title (optional)" value="' + esc(step.title) + '">' : '<input type="hidden" class="tf-b-step-title" value="">') +
 				(multi ? '<input type="text" class="tf-b-step-next" placeholder="Next button: Next →" title="Next button text for this step" value="' + esc(step.next_text) + '">' : '') +
+				(multi ? '<label class="tf-b-submit-step-label" title="Fire the form_submission dataLayer event after this step (and the intent event right after). Only one step can do this; default is the last step."><input type="radio" name="tf-b-submit-step" class="tf-b-submit-step" value="' + (idx + 1) + '"> Fires form_submission</label>' : '') +
 				(multi ? '<span class="tf-b-step-last" title="The final step submits the form (uses the Submit button text)">LAST STEP</span>' : '') +
 				(multi ? '<button type="button" class="tf-b-del-step button-link">Remove step</button>' : '') +
 			'</div>' +
@@ -398,6 +440,7 @@
 		(step.fields || []).forEach(function (f) { list.appendChild(fieldCard(f)); });
 		var t = el.querySelector('.tf-b-step-title'); if (t) { t.addEventListener('input', sync); }
 		var nx = el.querySelector('.tf-b-step-next'); if (nx) { nx.addEventListener('input', sync); }
+		var rs = el.querySelector('.tf-b-submit-step'); if (rs) { rs.addEventListener('change', function () { if (def) { def.__submitStepExplicit = true; } sync(); }); }
 		var ds = el.querySelector('.tf-b-del-step'); if (ds) { ds.addEventListener('click', function () { el.remove(); refreshStepNextFields(); sync(); }); }
 		// Clicking anywhere in a step makes it the target for click-to-add.
 		el.addEventListener('mousedown', function () { setActive(el); });

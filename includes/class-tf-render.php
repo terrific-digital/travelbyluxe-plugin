@@ -106,6 +106,10 @@ class TF_Render {
 	protected static function markup( $def, $post_id, $preview = false ) {
 		$is_multi     = ( 'multistep' === $def['type'] && count( $def['steps'] ) > 1 );
 		$total        = count( $def['steps'] );
+		// Which step fires the form_submission event? Defaults to the last step
+		// (preserves the historical behaviour). Clamp to a valid step index.
+		$submit_step  = isset( $def['submission_step'] ) ? (int) $def['submission_step'] : $total;
+		$submit_step  = max( 1, min( $total, $submit_step ) );
 		$uid          = 'tf-' . $post_id . '-' . self::$instances;
 		$intent       = $preview ? '' : tf_form_intent_param( $post_id );
 		$step_webhook = ! $preview && $is_multi && tf_form_has_step_webhook( $post_id );
@@ -146,6 +150,7 @@ class TF_Render {
 			data-post-id="<?php echo (int) $post_id; ?>"
 			data-multistep="<?php echo $is_multi ? '1' : '0'; ?>"
 			data-total-steps="<?php echo (int) $total; ?>"
+			<?php if ( $is_multi ) : ?>data-submission-step="<?php echo (int) $submit_step; ?>"<?php endif; ?>
 			novalidate>
 
 			<?php if ( $is_multi ) : ?>

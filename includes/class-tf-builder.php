@@ -293,6 +293,17 @@ class TF_Builder {
 			'steps' => array(),
 		);
 		$steps = isset( $def['steps'] ) && is_array( $def['steps'] ) ? $def['steps'] : array();
+		// Only multistep forms can override which step fires the form_submission event.
+		// An explicit submission_step is clamped into [1, step count] and stored; absent
+		// or invalid → leave it unset so the renderer defaults to "last step" at read
+		// time (so the default tracks step add/remove without needing a re-save).
+		if ( 'multistep' === $out['type'] && isset( $def['submission_step'] ) ) {
+			$step_count      = max( 1, count( $steps ) );
+			$submission_step = (int) $def['submission_step'];
+			if ( $submission_step >= 1 && $submission_step <= $step_count ) {
+				$out['submission_step'] = $submission_step;
+			}
+		}
 		foreach ( $steps as $step ) {
 			$s = array(
 				'title'     => isset( $step['title'] ) ? sanitize_text_field( $step['title'] ) : '',
