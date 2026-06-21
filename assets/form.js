@@ -323,11 +323,12 @@
 			form_name: form.getAttribute('data-form-name'),
 			form_type: 'Terrific Form',
 			form_step: stepNum,
-			// True when this transition advances the visitor onto the final step.
-			// Lets analytics separate "reached the last step" (count of form_step with
-			// final_step=true) from "completed the form" (count of form_submission) —
-			// the gap is final-step abandonment.
-			final_step: total > 0 && ( stepNum + 1 ) === total,
+			// True only on the form_step event that's fired after the visitor completes
+			// the FINAL step (i.e. on form submission). Lets analytics distinguish
+			// "reached and completed the last step" (form_step with final_step=true)
+			// from "submitted the form" (form_submission) — they typically match, but
+			// the form_submission event can be moved earlier by the per-step radio.
+			final_step: total > 0 && stepNum === total,
 			form_fields: collect(form, stepNum)
 		};
 		var intent = form.getAttribute('data-form-intent');
@@ -487,6 +488,13 @@
 			if (!validateStep(activeStep)) { return; }
 			var fields = collect(form);
 			updateUpd(form); // capture/push `upd` before the form_submission event
+			// Fire the final form_step event (with final_step:true) right after the user
+			// completes the last step. Multistep only — regular forms have no concept of
+			// "step progression" so they keep their historical "no form_step" behaviour.
+			if (form.getAttribute('data-multistep') === '1') {
+				var totalSteps = parseInt(form.getAttribute('data-total-steps'), 10) || 0;
+				if (totalSteps > 0) { pushStep(form, totalSteps); }
+			}
 			var btn = form.querySelector('.tf-submit');
 			if (btn) { btn.disabled = true; btn.classList.add('tf-loading'); }
 
