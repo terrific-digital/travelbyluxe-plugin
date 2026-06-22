@@ -75,6 +75,7 @@ class TF_CPT_Manager {
 			if ( 'title' === $k ) {
 				$new['tf_id']        = 'Form ID';
 				$new['tf_intent']    = 'Intent';
+				$new['tf_actions']   = 'Actions';
 				$new['tf_shortcode'] = 'Shortcode';
 				$new['tf_subs']      = 'Submissions';
 			}
@@ -95,6 +96,43 @@ class TF_CPT_Manager {
 			if ( $param ) {
 				echo '<br><code style="font-size:11px">' . esc_html( $param ) . '</code>';
 			}
+		}
+		if ( 'tf_actions' === $col ) {
+			$actions = tf_get_actions( $post_id );
+			$chips   = array();
+			foreach ( $actions as $a ) {
+				$type    = isset( $a['type'] ) ? $a['type'] : '';
+				$enabled = ! empty( $a['enabled'] );
+				if ( 'webhook' === $type ) {
+					$cfg     = isset( $a['config'] ) ? $a['config'] : array();
+					$source  = ( isset( $cfg['source'] ) && 'global' === $cfg['source'] ) ? 'Global webhook' : 'Webhook';
+					$trigger = ( isset( $cfg['trigger'] ) ? $cfg['trigger'] : 'final' ) === 'every' ? ' · every step' : '';
+					$label   = $source . $trigger;
+					$bg      = $enabled ? '#e7f1fb' : '#f0f0f1';
+					$fg      = $enabled ? '#1d4d8a' : '#787c82';
+					$bd      = $enabled ? '#c8d6e8' : '#dcdcde';
+				} elseif ( 'redirect' === $type ) {
+					$cfg   = isset( $a['config'] ) ? $a['config'] : array();
+					$mode  = ( isset( $cfg['mode'] ) && 'page' === $cfg['mode'] ) ? 'Redirect to page' : 'Redirect to URL';
+					$label = $mode;
+					$bg    = $enabled ? '#fff4e6' : '#f0f0f1';
+					$fg    = $enabled ? '#8a4a00' : '#787c82';
+					$bd    = $enabled ? '#f5d7a8' : '#dcdcde';
+				} else {
+					continue;
+				}
+				$title = $enabled ? $label : ( $label . ' (disabled)' );
+				$chips[] = sprintf(
+					'<span title="%s" style="display:inline-block;margin:1px 3px 1px 0;padding:2px 8px;border:1px solid %s;border-radius:999px;background:%s;color:%s;font-size:11px;font-weight:600;line-height:1.5;%s">%s</span>',
+					esc_attr( $title ),
+					esc_attr( $bd ),
+					esc_attr( $bg ),
+					esc_attr( $fg ),
+					$enabled ? '' : 'opacity:.65;text-decoration:line-through',
+					esc_html( $label )
+				);
+			}
+			echo $chips ? implode( '', $chips ) : '<em style="color:#999">—</em>'; // phpcs:ignore WordPress.Security.EscapeOutput
 		}
 		if ( 'tf_shortcode' === $col ) {
 			echo '<code>[terrific_form id="' . esc_attr( $post_id ) . '"]</code>';
