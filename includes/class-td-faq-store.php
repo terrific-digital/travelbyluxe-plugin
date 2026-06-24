@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * post still exists in wp_posts (so the Edit screen, list table, capability
  * checks, trash/restore, etc. work as before) — but the FAQ's configuration
  * (stable faq_id, items, open-one-at-a-time toggle) lives in its own table
- * `{prefix}td_faqs`. That lets you mirror FAQ lists between environments
+ * `{prefix}td_faq_lists`. That lets you mirror FAQ lists between environments
  * (e.g. Cloudways "Selected Tables" staging→prod) by copying one focused
  * table instead of the whole wp_postmeta.
  *
@@ -25,11 +25,11 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  */
 class TD_FAQ_Store {
 
-	const DB_VERSION = '1.0';
+	const DB_VERSION = '2.0';
 
 	public static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'td_faqs';
+		return $wpdb->prefix . 'td_faq_lists';
 	}
 
 	public static function init() {
@@ -42,9 +42,23 @@ class TD_FAQ_Store {
 
 	public static function maybe_install() {
 		if ( get_option( 'td_faqs_db_version' ) === self::DB_VERSION ) { return; }
+		self::rename_legacy_table();
 		self::create_table();
 		self::migrate_from_postmeta();
 		update_option( 'td_faqs_db_version', self::DB_VERSION );
+	}
+
+	/** v2.0 (plugin v2.48.0): wp_td_faqs → wp_td_faq_lists. RENAME preserves data. */
+	protected static function rename_legacy_table() {
+		global $wpdb;
+		$new = self::table();
+		$old = $wpdb->prefix . 'td_faqs';
+		if ( $new === $old ) { return; }
+		$has_new = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $new ) );
+		$has_old = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $old ) );
+		if ( $has_old && ! $has_new ) {
+			$wpdb->query( "RENAME TABLE `$old` TO `$new`" ); // phpcs:ignore
+		}
 	}
 
 	public static function create_table() {

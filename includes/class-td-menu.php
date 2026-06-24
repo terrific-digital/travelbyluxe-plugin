@@ -125,7 +125,7 @@ class TD_Menu {
 		$forms = wp_count_posts( TF_CPT );
 		$total_forms = isset( $forms->publish ) ? (int) $forms->publish : 0;
 		global $wpdb;
-		$subs = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $wpdb->prefix . 'tf_submissions' );
+		$subs = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . TF_Submissions::table() );
 		$snip_counts  = wp_count_posts( TD_Snippets::CPT );
 		$total_snips  = isset( $snip_counts->publish ) ? (int) $snip_counts->publish : 0;
 		$active_snips = count( get_posts( array( 'post_type' => TD_Snippets::CPT, 'post_status' => 'publish', 'numberposts' => -1, 'fields' => 'ids', 'meta_key' => '_td_snippet_enabled', 'meta_value' => '1' ) ) );

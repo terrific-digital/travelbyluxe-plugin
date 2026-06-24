@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * on any page via a shortcode or a Gutenberg block. Restricted to users who can edit
  * pages (edit_pages — same model as the rest of the Terrific Digital plugin).
  *
- * Each FAQ list is a `td_faq` post. Configuration lives in `{prefix}td_faqs`
+ * Each FAQ list is a `td_faq` post. Configuration lives in `{prefix}td_faq_lists`
  * (see TD_FAQ_Store): the stable faq_id (`faq_{postID}_{6hex}`), the items list
  * ([{ q, a }]) and the "open one at a time" toggle. Render-tracking telemetry
  * (`_td_faq_seen`) stays in postmeta — it's per-environment runtime data, not

@@ -18,7 +18,7 @@ class TF_CPT_Manager {
 	/** Number of submissions stored for a form. */
 	protected static function subs_count( $post_id ) {
 		global $wpdb;
-		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}tf_submissions WHERE form_post_id = %d", $post_id ) );
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . TF_Submissions::table() . ' WHERE form_post_id = %d', $post_id ) );
 	}
 
 	/** Submissions screen URL filtered to one form. */

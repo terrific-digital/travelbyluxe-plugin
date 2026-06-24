@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  */
 class TF_Revisions {
 
-	/** Snapshot keys → wp_tf_forms columns. `type` is implicit (lives in the definition JSON). */
+	/** Snapshot keys → wp_td_forms columns. `type` is implicit (lives in the definition JSON). */
 	const FIELDS = array(
 		'definition'  => 'definition',
 		'intent'      => 'intent',
@@ -24,7 +24,8 @@ class TF_Revisions {
 	);
 
 	public static function init() {
-		add_action( 'admin_init', array( __CLASS__, 'maybe_create_table' ) );
+		// init:5 (not admin_init) so the table is renamed before anything reads it.
+		add_action( 'init', array( __CLASS__, 'maybe_create_table' ), 5 );
 		// Capture AFTER the builder has written its meta (TF_Builder::save runs at 20).
 		add_action( 'save_post_' . TF_CPT, array( __CLASS__, 'on_save' ), 30, 1 );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'meta_box' ) );
@@ -36,11 +37,27 @@ class TF_Revisions {
 
 	public static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'tf_form_revisions';
+		return $wpdb->prefix . 'td_form_revisions';
 	}
 
 	public static function maybe_create_table() {
-		if ( get_option( 'tf_revisions_db_version' ) !== TF_VERSION ) { self::create_table(); }
+		if ( get_option( 'tf_revisions_db_version' ) !== TF_VERSION ) {
+			self::rename_legacy_table();
+			self::create_table();
+		}
+	}
+
+	/** Plugin v2.48.0: wp_tf_form_revisions → wp_td_form_revisions. RENAME preserves data. */
+	protected static function rename_legacy_table() {
+		global $wpdb;
+		$new = self::table();
+		$old = $wpdb->prefix . 'tf_form_revisions';
+		if ( $new === $old ) { return; }
+		$has_new = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $new ) );
+		$has_old = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $old ) );
+		if ( $has_old && ! $has_new ) {
+			$wpdb->query( "RENAME TABLE `$old` TO `$new`" ); // phpcs:ignore
+		}
 	}
 
 	public static function create_table() {
@@ -146,7 +163,7 @@ class TF_Revisions {
 		}
 	}
 
-	/** Write a decoded snapshot back onto a form (wp_tf_forms row + post title). */
+	/** Write a decoded snapshot back onto a form (wp_td_forms row + post title). */
 	public static function apply_snapshot( $post_id, $snap ) {
 		// Guard: a malformed/empty snapshot must never blank a form's data.
 		if ( ! is_array( $snap ) || ! array_key_exists( 'definition', $snap ) ) { return false; }

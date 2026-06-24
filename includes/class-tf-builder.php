@@ -92,7 +92,7 @@ class TF_Builder {
 
 	public static function render_usage( $post ) {
 		global $wpdb;
-		$count    = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}tf_submissions WHERE form_post_id = %d", $post->ID ) );
+		$count    = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . TF_Submissions::table() . ' WHERE form_post_id = %d', $post->ID ) );
 		$subs_url = add_query_arg( array( 'page' => 'tf-submissions', 'form' => $post->ID ), admin_url( 'admin.php' ) );
 		?>
 		<p style="margin-top:0"><strong>Submissions</strong></p>

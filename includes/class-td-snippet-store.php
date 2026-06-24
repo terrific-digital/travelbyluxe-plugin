@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  *
  * Same architecture as TF_Forms / TD_FAQ_Store: the td_snippet CPT post stays
  * in wp_posts (for the Edit screen, list table, capability checks, etc.) and
- * the configuration moves into {prefix}td_snippets — so snippets can be
+ * the configuration moves into {prefix}td_code_snippets — so snippets can be
  * mirrored staging→prod via a single-table copy in Cloudways' "Selected Tables"
  * without touching wp_postmeta.
  *
@@ -22,11 +22,11 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  */
 class TD_Snippet_Store {
 
-	const DB_VERSION = '1.0';
+	const DB_VERSION = '2.0';
 
 	public static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'td_snippets';
+		return $wpdb->prefix . 'td_code_snippets';
 	}
 
 	public static function init() {
@@ -36,9 +36,23 @@ class TD_Snippet_Store {
 
 	public static function maybe_install() {
 		if ( get_option( 'td_snippets_db_version' ) === self::DB_VERSION ) { return; }
+		self::rename_legacy_table();
 		self::create_table();
 		self::migrate_from_postmeta();
 		update_option( 'td_snippets_db_version', self::DB_VERSION );
+	}
+
+	/** v2.0 (plugin v2.48.0): wp_td_snippets → wp_td_code_snippets. RENAME preserves data. */
+	protected static function rename_legacy_table() {
+		global $wpdb;
+		$new = self::table();
+		$old = $wpdb->prefix . 'td_snippets';
+		if ( $new === $old ) { return; }
+		$has_new = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $new ) );
+		$has_old = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $old ) );
+		if ( $has_old && ! $has_new ) {
+			$wpdb->query( "RENAME TABLE `$old` TO `$new`" ); // phpcs:ignore
+		}
 	}
 
 	public static function create_table() {

@@ -15,7 +15,9 @@ class TF_Submissions {
 		add_action( 'wp_ajax_tf_geo', array( __CLASS__, 'handle_geo' ) );
 		add_action( 'wp_ajax_nopriv_tf_geo', array( __CLASS__, 'handle_geo' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
-		add_action( 'admin_init', array( __CLASS__, 'maybe_create_table' ) );
+		// init:5 (not admin_init) so the table is renamed before any front-end
+		// submission tries to write to it after a plugin upgrade.
+		add_action( 'init', array( __CLASS__, 'maybe_create_table' ), 5 );
 		add_action( 'admin_post_tf_export', array( __CLASS__, 'export_csv' ) );
 		add_action( 'admin_post_tf_delete', array( __CLASS__, 'delete_single' ) );
 	}
@@ -236,11 +238,27 @@ class TF_Submissions {
 
 	public static function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'tf_submissions';
+		return $wpdb->prefix . 'td_form_submissions';
 	}
 
 	public static function maybe_create_table() {
-		if ( get_option( 'tf_db_version' ) !== TF_VERSION ) { self::create_table(); }
+		if ( get_option( 'tf_db_version' ) !== TF_VERSION ) {
+			self::rename_legacy_table();
+			self::create_table();
+		}
+	}
+
+	/** Plugin v2.48.0: wp_tf_submissions → wp_td_form_submissions. RENAME preserves data. */
+	protected static function rename_legacy_table() {
+		global $wpdb;
+		$new = self::table();
+		$old = $wpdb->prefix . 'tf_submissions';
+		if ( $new === $old ) { return; }
+		$has_new = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $new ) );
+		$has_old = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $old ) );
+		if ( $has_old && ! $has_new ) {
+			$wpdb->query( "RENAME TABLE `$old` TO `$new`" ); // phpcs:ignore
+		}
 	}
 
 	public static function create_table() {
