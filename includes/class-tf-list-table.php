@@ -78,7 +78,12 @@ class TF_List_Table extends WP_List_Table {
 	}
 
 	protected function get_bulk_actions() {
-		return array( 'delete' => 'Delete' );
+		return array(
+			'flag_test' => 'Mark as Test',
+			'flag_spam' => 'Mark as Spam',
+			'unflag'    => 'Clear flag',
+			'delete'    => 'Delete',
+		);
 	}
 
 	public function column_cb( $item ) {
@@ -91,11 +96,24 @@ class TF_List_Table extends WP_List_Table {
 			add_query_arg( array( 'action' => 'tf_delete', 'id' => $item->id ), admin_url( 'admin-post.php' ) ),
 			'tf_delete_' . $item->id
 		);
-		$actions = array(
-			'view'   => sprintf( '<a href="%s">View</a>', esc_url( $view ) ),
-			'delete' => sprintf( '<a href="%s" onclick="return confirm(\'Delete this submission?\')" style="color:#b32d2e">Delete</a>', esc_url( $del ) ),
-		);
-		return sprintf( '<a href="%s"><strong>#%d</strong></a>', esc_url( $view ), $item->id ) . $this->row_actions( $actions );
+		$cur_flag = isset( $item->flag ) ? TF_Submissions::normalize_flag( $item->flag ) : '';
+
+		// Row actions: show "switch to" links for each flag state that isn't current.
+		$actions = array( 'view' => sprintf( '<a href="%s">View</a>', esc_url( $view ) ) );
+		foreach ( array( 'test', 'spam', '' ) as $flag_val ) {
+			if ( $cur_flag === $flag_val ) { continue; }
+			$key   = ( '' === $flag_val ) ? 'unflag' : 'flag_' . $flag_val;
+			$label = ( '' === $flag_val ) ? 'Unflag' : ( 'Mark as ' . TF_Submissions::FLAGS[ $flag_val ] );
+			$actions[ $key ] = sprintf( '<a href="%s">%s</a>', esc_url( TF_Submissions::flag_url( $item->id, $flag_val ) ), esc_html( $label ) );
+		}
+		$actions['delete'] = sprintf( '<a href="%s" onclick="return confirm(\'Delete this submission?\')" style="color:#b32d2e">Delete</a>', esc_url( $del ) );
+
+		$badge = '';
+		if ( $cur_flag ) {
+			$bg = 'spam' === $cur_flag ? '#b32d2e' : '#946800';
+			$badge = '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.04em;color:#fff;background:' . $bg . ';text-transform:uppercase">' . esc_html( TF_Submissions::FLAGS[ $cur_flag ] ) . '</span>';
+		}
+		return sprintf( '<a href="%s"><strong>#%d</strong></a>', esc_url( $view ), $item->id ) . $badge . $this->row_actions( $actions );
 	}
 
 	public function column_created_at( $item ) {
@@ -122,16 +140,33 @@ class TF_List_Table extends WP_List_Table {
 		return isset( $item->$column_name ) ? esc_html( $item->$column_name ) : '';
 	}
 
-	/** Form + intent filters above the table. */
+	/** Form + intent + flag filters above the table. */
 	protected function extra_tablenav( $which ) {
 		if ( 'top' !== $which ) { return; }
 		$selected_form   = isset( $_REQUEST['form'] ) ? (int) $_REQUEST['form'] : 0;
 		$selected_intent = isset( $_REQUEST['intent'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['intent'] ) ) : '';
+		$selected_flag   = isset( $_REQUEST['flag'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['flag'] ) ) : '';
 		echo '<div class="alignleft actions">';
 		TF_Submissions::forms_dropdown( $selected_form );
 		self::intent_dropdown( $selected_intent );
+		self::flag_dropdown( $selected_flag );
 		submit_button( 'Filter', 'button', 'filter_action', false );
 		echo '</div>';
+	}
+
+	/** Flag filter: "all" / "active" (unflagged) / "test" / "spam". */
+	protected static function flag_dropdown( $selected ) {
+		$options = array(
+			''       => 'All flags',
+			'active' => 'Active (unflagged)',
+			'test'   => 'Test',
+			'spam'   => 'Spam',
+		);
+		echo '<select name="flag" style="margin-left:6px">';
+		foreach ( $options as $val => $label ) {
+			printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $selected, $val, false ), esc_html( $label ) );
+		}
+		echo '</select>';
 	}
 
 	/** Intent dropdown — options come from tf_intents() (param → label). */
@@ -150,18 +185,25 @@ class TF_List_Table extends WP_List_Table {
 		echo '</select>';
 	}
 
-	/** Handle bulk delete before rows are fetched. */
+	/** Handle bulk delete / flag changes before rows are fetched. */
 	protected function process_bulk_action() {
-		if ( 'delete' !== $this->current_action() ) { return; }
+		$action = $this->current_action();
+		if ( ! in_array( $action, array( 'delete', 'flag_test', 'flag_spam', 'unflag' ), true ) ) { return; }
 		check_admin_referer( 'bulk-' . $this->_args['plural'] );
 		if ( ! current_user_can( 'edit_pages' ) ) { return; }
 		$ids = isset( $_REQUEST['sub'] ) ? array_map( 'intval', (array) $_REQUEST['sub'] ) : array();
-		if ( $ids ) {
-			global $wpdb;
-			$table = TF_Submissions::table();
-			$in    = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		if ( ! $ids ) { return; }
+
+		global $wpdb;
+		$table = TF_Submissions::table();
+		$in    = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		if ( 'delete' === $action ) {
 			$wpdb->query( $wpdb->prepare( "DELETE FROM $table WHERE id IN ($in)", $ids ) ); // phpcs:ignore
+			return;
 		}
+		$flag = 'flag_test' === $action ? 'test' : ( 'flag_spam' === $action ? 'spam' : '' );
+		$wpdb->query( $wpdb->prepare( "UPDATE $table SET flag = %s WHERE id IN ($in)", array_merge( array( $flag ), $ids ) ) ); // phpcs:ignore
 	}
 
 	public function prepare_items() {
@@ -174,6 +216,7 @@ class TF_List_Table extends WP_List_Table {
 		$paged    = max( 1, (int) $this->get_pagenum() );
 		$form     = isset( $_REQUEST['form'] ) ? (int) $_REQUEST['form'] : 0;
 		$intent   = isset( $_REQUEST['intent'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['intent'] ) ) : '';
+		$flag     = isset( $_REQUEST['flag'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['flag'] ) ) : '';
 
 		$orderby_allowed = array( 'id', 'created_at' );
 		$orderby = isset( $_REQUEST['orderby'] ) && in_array( $_REQUEST['orderby'], $orderby_allowed, true ) ? $_REQUEST['orderby'] : 'created_at';
@@ -183,8 +226,13 @@ class TF_List_Table extends WP_List_Table {
 		$args    = array();
 		if ( $form )   { $clauses[] = 'form_post_id = %d'; $args[] = $form; }
 		if ( $intent ) { $clauses[] = 'intent = %s';       $args[] = $intent; }
+		if ( 'active' === $flag ) {
+			$clauses[] = "flag = ''";
+		} elseif ( in_array( $flag, array( 'test', 'spam' ), true ) ) {
+			$clauses[] = 'flag = %s'; $args[] = $flag;
+		}
 		$where = $clauses ? ( 'WHERE ' . implode( ' AND ', $clauses ) ) : '';
-		$where_sql = $where ? $wpdb->prepare( $where, $args ) : ''; // phpcs:ignore
+		$where_sql = ( $where && $args ) ? $wpdb->prepare( $where, $args ) : $where; // phpcs:ignore
 
 		$total = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table $where_sql" ); // phpcs:ignore
 

@@ -20,6 +20,7 @@ class TF_Submissions {
 		add_action( 'init', array( __CLASS__, 'maybe_create_table' ), 5 );
 		add_action( 'admin_post_tf_export', array( __CLASS__, 'export_csv' ) );
 		add_action( 'admin_post_tf_delete', array( __CLASS__, 'delete_single' ) );
+		add_action( 'admin_post_tf_flag', array( __CLASS__, 'handle_flag' ) );
 	}
 
 	/** Honeypot tripped? Bots fill the hidden secondary_email field; humans never see it. */
@@ -279,12 +280,14 @@ class TF_Submissions {
 			status VARCHAR(20) NOT NULL DEFAULT 'completed',
 			last_step INT NOT NULL DEFAULT 0,
 			token VARCHAR(64) NOT NULL DEFAULT '',
+			flag VARCHAR(16) NOT NULL DEFAULT '',
 			updated_at DATETIME NULL,
 			created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
 			PRIMARY KEY (id),
 			KEY form_post_id (form_post_id),
 			KEY token (token),
 			KEY status (status),
+			KEY flag (flag),
 			KEY created_at (created_at)
 		) $charset;";
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -451,6 +454,46 @@ class TF_Submissions {
 		exit;
 	}
 
+	/* ----------------------------------------------------------------- Flagging */
+
+	/** Allowed flag values. Empty string clears the flag. */
+	const FLAGS = array( '' => 'Active', 'test' => 'Test', 'spam' => 'Spam' );
+
+	/** Normalize a flag value: 'test' / 'spam' / '' (anything else collapses to ''). */
+	public static function normalize_flag( $flag ) {
+		$flag = is_string( $flag ) ? strtolower( $flag ) : '';
+		return in_array( $flag, array( 'test', 'spam' ), true ) ? $flag : '';
+	}
+
+	/** Set the flag on a single submission row. Returns true on success. */
+	public static function set_flag( $id, $flag ) {
+		global $wpdb;
+		$id = (int) $id;
+		if ( ! $id ) { return false; }
+		return false !== $wpdb->update( self::table(), array( 'flag' => self::normalize_flag( $flag ) ), array( 'id' => $id ), array( '%s' ), array( '%d' ) );
+	}
+
+	/** admin_post handler: tf_flag — toggle a single submission's flag. */
+	public static function handle_flag() {
+		$id   = isset( $_REQUEST['id'] ) ? (int) $_REQUEST['id'] : 0;
+		$flag = isset( $_REQUEST['flag'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['flag'] ) ) : '';
+		if ( ! current_user_can( 'edit_pages' ) || ! $id ) { wp_die( 'Not allowed' ); }
+		check_admin_referer( 'tf_flag_' . $id );
+		self::set_flag( $id, $flag );
+		// Preserve any list-table filters the user had open.
+		$return = isset( $_REQUEST['_wp_http_referer'] ) ? wp_unslash( $_REQUEST['_wp_http_referer'] ) : self::page_url();
+		wp_safe_redirect( $return );
+		exit;
+	}
+
+	/** Build a nonced URL that flips a submission's flag (used by row + detail actions). */
+	public static function flag_url( $id, $flag ) {
+		return wp_nonce_url(
+			add_query_arg( array( 'action' => 'tf_flag', 'id' => $id, 'flag' => $flag ), admin_url( 'admin-post.php' ) ),
+			'tf_flag_' . $id
+		);
+	}
+
 	/* --------------------------------------------------------------- CSV export */
 	public static function export_csv() {
 		if ( ! current_user_can( 'edit_pages' ) ) { wp_die( 'Not allowed' ); }
@@ -559,10 +602,29 @@ class TF_Submissions {
 		$cookies = ( is_array( $meta ) && isset( $meta['cookies'] ) ) ? $meta['cookies'] : array();
 		$session = ( is_array( $meta ) && isset( $meta['session'] ) ) ? $meta['session'] : array();
 
-		$del = wp_nonce_url( add_query_arg( array( 'action' => 'tf_delete', 'id' => $r->id ), admin_url( 'admin-post.php' ) ), 'tf_delete_' . $r->id );
+		$del      = wp_nonce_url( add_query_arg( array( 'action' => 'tf_delete', 'id' => $r->id ), admin_url( 'admin-post.php' ) ), 'tf_delete_' . $r->id );
+		$cur_flag = isset( $r->flag ) ? self::normalize_flag( $r->flag ) : '';
 		?>
-		<h1 class="wp-heading-inline">Submission #<?php echo (int) $r->id; ?></h1>
+		<h1 class="wp-heading-inline">Submission #<?php echo (int) $r->id; ?>
+			<?php if ( $cur_flag ) : ?>
+				<span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:3px 10px;border-radius:999px;vertical-align:middle;margin-left:6px;color:#fff;background:<?php echo 'spam' === $cur_flag ? '#b32d2e' : '#946800'; ?>">
+					<?php echo esc_html( self::FLAGS[ $cur_flag ] ); ?>
+				</span>
+			<?php endif; ?>
+		</h1>
 		<a href="<?php echo esc_url( $back ); ?>" class="page-title-action">&larr; Back to submissions</a>
+		<?php
+		// Flag actions — show "switch to" buttons for whichever states aren't the current one.
+		foreach ( array( 'test', 'spam', '' ) as $flag_val ) {
+			if ( $cur_flag === $flag_val ) { continue; }
+			$label = ( '' === $flag_val ) ? 'Clear flag' : 'Mark as ' . self::FLAGS[ $flag_val ];
+			printf(
+				'<a href="%s" class="page-title-action">%s</a>',
+				esc_url( self::flag_url( $r->id, $flag_val ) ),
+				esc_html( $label )
+			);
+		}
+		?>
 		<a href="<?php echo esc_url( $del ); ?>" class="page-title-action" style="color:#b32d2e" onclick="return confirm('Delete this submission?')">Delete</a>
 		<hr class="wp-header-end">
 
