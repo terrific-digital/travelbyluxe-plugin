@@ -111,19 +111,19 @@ class TD_Snippets {
 
 	public static function column( $col, $post_id ) {
 		if ( 'td_type' === $col ) {
-			$t = get_post_meta( $post_id, '_td_snippet_type', true ) ?: 'html';
+			$t = TD_Snippet_Store::get_field( $post_id, 'code_type', 'html' );
 			echo esc_html( isset( self::TYPES[ $t ] ) ? self::TYPES[ $t ] : 'HTML' );
 		}
 		if ( 'td_loc' === $col ) {
-			$loc = get_post_meta( $post_id, '_td_snippet_location', true );
+			$loc = TD_Snippet_Store::get_field( $post_id, 'location', '' );
 			echo isset( self::LOCATIONS[ $loc ] ) ? wp_kses( self::LOCATIONS[ $loc ], array() ) : '—';
 		}
 		if ( 'td_cond' === $col ) {
-			$c = get_post_meta( $post_id, '_td_snippet_condition', true );
+			$c = TD_Snippet_Store::get_field( $post_id, 'condition_type', 'all' );
 			echo esc_html( isset( self::CONDITIONS[ $c ] ) ? self::CONDITIONS[ $c ] : 'On all pages' );
 		}
 		if ( 'td_on' === $col ) {
-			$on = get_post_meta( $post_id, '_td_snippet_enabled', true );
+			$on = TD_Snippet_Store::get_field( $post_id, 'enabled', 0 );
 			echo $on
 				? '<span style="color:#1e7e34;font-weight:600">● On</span>'
 				: '<span style="color:#b32d2e">● Off</span>';
@@ -138,8 +138,8 @@ class TD_Snippets {
 	}
 
 	public static function box_code( $post ) {
-		$code = get_post_meta( $post->ID, '_td_snippet_code', true );
-		$type = get_post_meta( $post->ID, '_td_snippet_type', true ) ?: 'html';
+		$code = TD_Snippet_Store::get_field( $post->ID, 'code', '' );
+		$type = TD_Snippet_Store::get_field( $post->ID, 'code_type', 'html' );
 		wp_nonce_field( 'td_snippet_save', 'td_snippet_nonce' );
 		echo '<p style="margin:0 0 10px"><label><strong>Code type</strong> ';
 		echo '<select name="td_snippet_type" style="margin-left:6px">';
@@ -152,13 +152,13 @@ class TD_Snippets {
 	}
 
 	public static function box_cfg( $post ) {
-		$enabled   = get_post_meta( $post->ID, '_td_snippet_enabled', true );
-		$location  = get_post_meta( $post->ID, '_td_snippet_location', true ) ?: 'before_head_close';
-		$condition = get_post_meta( $post->ID, '_td_snippet_condition', true ) ?: 'all';
-		$pages     = (array) get_post_meta( $post->ID, '_td_snippet_pages', true );
-		$url       = get_post_meta( $post->ID, '_td_snippet_url', true );
+		$enabled   = TD_Snippet_Store::get_field( $post->ID, 'enabled', 0 );
+		$location  = TD_Snippet_Store::get_field( $post->ID, 'location', 'before_head_close' );
+		$condition = TD_Snippet_Store::get_field( $post->ID, 'condition_type', 'all' );
+		$pages     = TD_Snippet_Store::get_pages( $post->ID );
+		$url       = TD_Snippet_Store::get_field( $post->ID, 'url_match', '' );
 		?>
-		<p><label><input type="checkbox" name="td_snippet_enabled" value="1" <?php checked( $enabled, '1' ); ?>> <strong>Enabled</strong></label></p>
+		<p><label><input type="checkbox" name="td_snippet_enabled" value="1" <?php checked( (bool) $enabled ); ?>> <strong>Enabled</strong></label></p>
 
 		<p style="margin-bottom:4px"><strong>Inject location</strong></p>
 		<?php foreach ( self::LOCATIONS as $val => $lbl ) : ?>
@@ -221,24 +221,20 @@ class TD_Snippets {
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
 		if ( ! current_user_can( 'edit_post', $post_id ) ) { return; }
 
-		// Code stored raw. wp_slash counters update_post_meta's unslash.
-		if ( isset( $_POST['td_snippet_code'] ) ) {
-			update_post_meta( $post_id, '_td_snippet_code', wp_slash( wp_unslash( $_POST['td_snippet_code'] ) ) );
-		}
-		$type = isset( $_POST['td_snippet_type'] ) ? sanitize_key( wp_unslash( $_POST['td_snippet_type'] ) ) : 'html';
-		update_post_meta( $post_id, '_td_snippet_type', isset( self::TYPES[ $type ] ) ? $type : 'html' );
-		update_post_meta( $post_id, '_td_snippet_enabled', empty( $_POST['td_snippet_enabled'] ) ? '' : '1' );
-
-		$loc = isset( $_POST['td_snippet_location'] ) ? sanitize_key( wp_unslash( $_POST['td_snippet_location'] ) ) : 'before_head_close';
-		update_post_meta( $post_id, '_td_snippet_location', isset( self::LOCATIONS[ $loc ] ) ? $loc : 'before_head_close' );
-
-		$cond = isset( $_POST['td_snippet_condition'] ) ? sanitize_key( wp_unslash( $_POST['td_snippet_condition'] ) ) : 'all';
-		update_post_meta( $post_id, '_td_snippet_condition', isset( self::CONDITIONS[ $cond ] ) ? $cond : 'all' );
-
+		$type  = isset( $_POST['td_snippet_type'] ) ? sanitize_key( wp_unslash( $_POST['td_snippet_type'] ) ) : 'html';
+		$loc   = isset( $_POST['td_snippet_location'] ) ? sanitize_key( wp_unslash( $_POST['td_snippet_location'] ) ) : 'before_head_close';
+		$cond  = isset( $_POST['td_snippet_condition'] ) ? sanitize_key( wp_unslash( $_POST['td_snippet_condition'] ) ) : 'all';
 		$pages = isset( $_POST['td_snippet_pages'] ) ? array_values( array_filter( array_map( 'intval', (array) wp_unslash( $_POST['td_snippet_pages'] ) ) ) ) : array();
-		update_post_meta( $post_id, '_td_snippet_pages', $pages );
 
-		update_post_meta( $post_id, '_td_snippet_url', isset( $_POST['td_snippet_url'] ) ? sanitize_text_field( wp_unslash( $_POST['td_snippet_url'] ) ) : '' );
+		TD_Snippet_Store::save( $post_id, array(
+			'code'           => isset( $_POST['td_snippet_code'] ) ? (string) wp_unslash( $_POST['td_snippet_code'] ) : '',
+			'code_type'      => isset( self::TYPES[ $type ] ) ? $type : 'html',
+			'enabled'        => ! empty( $_POST['td_snippet_enabled'] ),
+			'location'       => isset( self::LOCATIONS[ $loc ] ) ? $loc : 'before_head_close',
+			'condition_type' => isset( self::CONDITIONS[ $cond ] ) ? $cond : 'all',
+			'pages'          => wp_json_encode( $pages ),
+			'url_match'      => isset( $_POST['td_snippet_url'] ) ? sanitize_text_field( wp_unslash( $_POST['td_snippet_url'] ) ) : '',
+		) );
 	}
 
 	/* ------------------------------------------------------------ Front-end */
@@ -250,15 +246,19 @@ class TD_Snippets {
 		return ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
 	}
 
-	/** Does a snippet's condition match the current request? */
-	protected static function matches( $post_id ) {
-		$cond = get_post_meta( $post_id, '_td_snippet_condition', true ) ?: 'all';
+	/** Does a snippet row (array from the store) match the current request? */
+	protected static function matches_row( $row ) {
+		$cond = (string) ( $row['condition_type'] ?? 'all' );
 		if ( 'all' === $cond ) { return true; }
 		if ( 'specific' === $cond ) {
-			$pages = array_map( 'intval', (array) get_post_meta( $post_id, '_td_snippet_pages', true ) );
+			$pages = array();
+			if ( ! empty( $row['pages'] ) ) {
+				$pages = json_decode( (string) $row['pages'], true );
+				$pages = is_array( $pages ) ? array_map( 'intval', $pages ) : array();
+			}
 			return in_array( (int) get_queried_object_id(), $pages, true );
 		}
-		$needle = (string) get_post_meta( $post_id, '_td_snippet_url', true );
+		$needle = (string) ( $row['url_match'] ?? '' );
 		if ( '' === $needle ) { return 'url_not_contains' === $cond; } // empty needle: "contains"→no, "not contains"→yes
 		$hit = ( false !== stripos( self::current_url(), $needle ) );
 		return ( 'url_contains' === $cond ) ? $hit : ! $hit;
@@ -266,19 +266,17 @@ class TD_Snippets {
 
 	/** Collect enabled + matching snippets for this request. */
 	protected static function active_for_request() {
-		$out  = array();
-		$snips = get_posts( array( 'post_type' => self::CPT, 'post_status' => 'publish', 'numberposts' => 200, 'orderby' => 'date', 'order' => 'ASC' ) );
-		foreach ( $snips as $s ) {
-			if ( ! get_post_meta( $s->ID, '_td_snippet_enabled', true ) ) { continue; }
-			if ( ! self::matches( $s->ID ) ) { continue; }
-			$code = (string) get_post_meta( $s->ID, '_td_snippet_code', true );
+		$out = array();
+		foreach ( TD_Snippet_Store::active_rows() as $row ) {
+			if ( ! self::matches_row( $row ) ) { continue; }
+			$code = (string) ( $row['code'] ?? '' );
 			if ( '' === trim( $code ) ) { continue; }
 			// JavaScript snippets are raw JS — wrap them in a <script> tag.
-			if ( 'js' === ( get_post_meta( $s->ID, '_td_snippet_type', true ) ?: 'html' ) ) {
+			if ( 'js' === ( $row['code_type'] ?? 'html' ) ) {
 				$code = "<script>\n" . $code . "\n</script>";
 			}
 			$out[] = array(
-				'location' => get_post_meta( $s->ID, '_td_snippet_location', true ) ?: 'before_head_close',
+				'location' => (string) ( $row['location'] ?? 'before_head_close' ),
 				'code'     => $code,
 			);
 		}
