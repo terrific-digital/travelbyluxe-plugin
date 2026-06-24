@@ -252,6 +252,9 @@
 		var numberRow = (f.type === 'number') ?
 			'<div class="tf-b-row2"><label class="tf-b-row">Min value<input type="number" class="tf-b-min" value="' + esc(f.min) + '"></label>' +
 			'<label class="tf-b-row">Max value<input type="number" class="tf-b-max" value="' + esc(f.max) + '"></label></div>' : '';
+		var hiddenRow = (f.type === 'hidden') ?
+			'<label class="tf-b-row">Default value<input type="text" class="tf-b-default" value="' + esc(f.default) + '" placeholder="(empty)"></label>' +
+			'<p class="tf-b-hint" style="margin-top:-6px">Sent on submit and pushed in <code>form_fields</code>. Static text only — no shortcodes or per-visitor expressions.</p>' : '';
 		var sliderRow = (f.type === 'slider') ?
 			'<div class="tf-b-row2"><label class="tf-b-row">Minimum<input type="number" class="tf-b-min" value="' + esc(f.min) + '" placeholder="0"></label>' +
 			'<label class="tf-b-row">Maximum<input type="number" class="tf-b-max" value="' + esc(f.max) + '" placeholder="100"></label></div>' +
@@ -316,7 +319,7 @@
 				labelRow +
 				showLabelRow +
 				keyRow +
-				placeRow + numberRow + sliderRow + lengthRow + dateRow + htmlRow + optionsRow + ccRow + emailRow + widthRow + reqRow +
+				placeRow + numberRow + sliderRow + hiddenRow + lengthRow + dateRow + htmlRow + optionsRow + ccRow + emailRow + widthRow + reqRow +
 			'</div>';
 
 		var editBtn = card.querySelector('.tf-b-edit');

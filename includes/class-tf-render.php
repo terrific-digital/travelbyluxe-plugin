@@ -250,14 +250,16 @@ class TF_Render {
 		}
 		if ( 'email' === $type && ! empty( $f['block_free'] ) ) { $extra .= ' data-block-free="1"'; } // require a work email
 
+		// Hidden fields render without the .tf-field wrapper so they don't claim a flex/grid
+		// slot in the form layout (the wrapper itself was the source of the empty gap).
+		// collect() in form.js keys off [data-key] directly, so no wrapper is needed.
+		if ( 'hidden' === $type ) {
+			$hidden_default = isset( $f['default'] ) ? (string) $f['default'] : '';
+			return '<input type="hidden" ' . $attrs . ' value="' . esc_attr( $hidden_default ) . '">';
+		}
+
 		ob_start();
 		echo '<div class="tf-field tf-field-' . esc_attr( $type ) . ' tf-w-' . esc_attr( $width ) . '">';
-
-		if ( 'hidden' === $type ) {
-			echo '<input type="hidden" ' . $attrs . '>'; // phpcs:ignore
-			echo '</div>';
-			return ob_get_clean();
-		}
 
 		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html' ), true ) && ! $slider_inline ) {
 			echo '<label class="tf-label" for="' . esc_attr( $id ) . '">' . esc_html( $label ) . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</label>';

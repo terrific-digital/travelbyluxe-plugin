@@ -347,7 +347,12 @@ class TF_Builder {
 					'max_from_today' => $int_or_blank( isset( $f['max_from_today'] ) ? $f['max_from_today'] : '' ),
 					// Slider range + display.
 					'step'        => $num_or_blank( isset( $f['step'] ) ? $f['step'] : '' ),
-					'default'     => $num_or_blank( isset( $f['default'] ) ? $f['default'] : '' ),
+					// Slider defaults are numeric; hidden fields accept any text. Other field
+					// types don't use `default` today (the model still carries it, but the
+					// renderer ignores it).
+					'default'     => ( 'hidden' === $type )
+						? sanitize_text_field( isset( $f['default'] ) ? (string) $f['default'] : '' )
+						: $num_or_blank( isset( $f['default'] ) ? $f['default'] : '' ),
 					// Strip tags but keep surrounding spaces (a suffix like " days" needs its leading space).
 					'prefix'      => isset( $f['prefix'] ) ? preg_replace( '/[\r\n\t]+/', ' ', wp_kses( (string) $f['prefix'], array() ) ) : '',
 					'suffix'      => isset( $f['suffix'] ) ? preg_replace( '/[\r\n\t]+/', ' ', wp_kses( (string) $f['suffix'], array() ) ) : '',
