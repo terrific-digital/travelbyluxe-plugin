@@ -85,7 +85,7 @@ class TF_CPT_Manager {
 
 	public static function column_content( $col, $post_id ) {
 		if ( 'tf_id' === $col ) {
-			echo '<code>' . esc_html( get_post_meta( $post_id, '_tf_form_id', true ) ) . '</code>';
+			echo '<code>' . esc_html( TF_Forms::get_form_id( $post_id ) ) . '</code>';
 		}
 		if ( 'tf_intent' === $col ) {
 			$intents = tf_intents();

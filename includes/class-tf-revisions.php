@@ -14,14 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  */
 class TF_Revisions {
 
-	/** Meta keys captured in a snapshot, in restore order. */
-	const META_KEYS = array(
-		'definition'  => '_tf_definition',
-		'type'        => '_tf_type',
-		'intent'      => '_tf_intent',
-		'submit_text' => '_tf_submit_text',
-		'success'     => '_tf_success',
-		'actions'     => '_tf_actions',
+	/** Snapshot keys → wp_tf_forms columns. `type` is implicit (lives in the definition JSON). */
+	const FIELDS = array(
+		'definition'  => 'definition',
+		'intent'      => 'intent',
+		'submit_text' => 'submit_text',
+		'success'     => 'success_message',
+		'actions'     => 'actions',
 	);
 
 	public static function init() {
@@ -82,9 +81,10 @@ class TF_Revisions {
 
 	/** Build a snapshot array of the form's current persisted state. */
 	public static function snapshot_of( $post_id ) {
+		$row  = TF_Forms::get_row( $post_id );
 		$snap = array( 'title' => get_post_field( 'post_title', $post_id ) );
-		foreach ( self::META_KEYS as $key => $meta_key ) {
-			$snap[ $key ] = (string) get_post_meta( $post_id, $meta_key, true );
+		foreach ( self::FIELDS as $key => $col ) {
+			$snap[ $key ] = $row && isset( $row[ $col ] ) ? (string) $row[ $col ] : '';
 		}
 		return $snap;
 	}
@@ -117,7 +117,7 @@ class TF_Revisions {
 		$user = wp_get_current_user();
 		$wpdb->insert( self::table(), array(
 			'form_post_id' => $post_id,
-			'form_id'      => (string) get_post_meta( $post_id, '_tf_form_id', true ),
+			'form_id'      => TF_Forms::get_form_id( $post_id ),
 			'title'        => (string) $snap['title'],
 			'snapshot'     => $json,
 			'author_id'    => $user ? (int) $user->ID : 0,
@@ -146,22 +146,15 @@ class TF_Revisions {
 		}
 	}
 
-	/**
-	 * Write a decoded snapshot back onto a form (meta + title).
-	 * _tf_definition / _tf_actions are JSON strings that must be wp_slash'd so
-	 * update_post_meta's internal unslash leaves escapes (\uXXXX) intact.
-	 */
+	/** Write a decoded snapshot back onto a form (wp_tf_forms row + post title). */
 	public static function apply_snapshot( $post_id, $snap ) {
-		// Guard: a malformed/empty snapshot must never blank a form's meta.
+		// Guard: a malformed/empty snapshot must never blank a form's data.
 		if ( ! is_array( $snap ) || ! array_key_exists( 'definition', $snap ) ) { return false; }
-		foreach ( self::META_KEYS as $key => $meta_key ) {
-			$val = isset( $snap[ $key ] ) ? (string) $snap[ $key ] : '';
-			if ( in_array( $meta_key, array( '_tf_definition', '_tf_actions' ), true ) ) {
-				update_post_meta( $post_id, $meta_key, wp_slash( $val ) );
-			} else {
-				update_post_meta( $post_id, $meta_key, $val );
-			}
+		$update = array();
+		foreach ( self::FIELDS as $key => $col ) {
+			$update[ $col ] = isset( $snap[ $key ] ) ? (string) $snap[ $key ] : '';
 		}
+		TF_Forms::save( $post_id, $update );
 		if ( isset( $snap['title'] ) && $snap['title'] !== get_post_field( 'post_title', $post_id ) ) {
 			wp_update_post( array( 'ID' => $post_id, 'post_title' => $snap['title'] ) );
 		}

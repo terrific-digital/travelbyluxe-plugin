@@ -48,7 +48,7 @@ class TF_Block {
 			$list[] = array(
 				'id'       => (string) $f->ID,
 				'title'    => get_the_title( $f ),
-				'form_id'  => get_post_meta( $f->ID, '_tf_form_id', true ),
+				'form_id'  => TF_Forms::get_form_id( $f->ID ),
 				'edit_url' => admin_url( 'post.php?post=' . $f->ID . '&action=edit' ),
 			);
 		}

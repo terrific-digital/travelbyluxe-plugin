@@ -81,14 +81,14 @@ class TF_Import_Export {
 		return array(
 			'tf_export_version' => self::VERSION,
 			'exported_at'       => gmdate( 'c' ),
-			'form_id'           => (string) get_post_meta( $post_id, '_tf_form_id', true ),
+			'form_id'           => TF_Forms::get_form_id( $post_id ),
 			'name'              => (string) $post->post_title,
 			'status'            => (string) $post->post_status,
 			'intent'            => tf_get_intent( $post_id ),
-			'submit_text'       => (string) get_post_meta( $post_id, '_tf_submit_text', true ),
-			'success_message'   => (string) get_post_meta( $post_id, '_tf_success', true ),
-			'wrapper_class'     => (string) get_post_meta( $post_id, '_tf_wrapper_class', true ),
-			'custom_css'        => (string) get_post_meta( $post_id, '_tf_custom_css', true ),
+			'submit_text'       => TF_Forms::get_submit_text( $post_id ),
+			'success_message'   => TF_Forms::get_success_message( $post_id ),
+			'wrapper_class'     => TF_Forms::get_wrapper_class( $post_id ),
+			'custom_css'        => TF_Forms::get_custom_css( $post_id ),
 			'definition'        => $definition,
 			'actions'           => tf_get_actions( $post_id ),
 		);
@@ -179,42 +179,32 @@ class TF_Import_Export {
 				'post_status' => $status,
 			), true );
 			if ( is_wp_error( $post_id ) ) { return $post_id; }
-			update_post_meta( $post_id, '_tf_form_id', $form_id );
 		} else {
 			wp_update_post( array( 'ID' => $post_id, 'post_title' => $title ) );
 		}
 
-		// Definition — re-sanitize through the builder's own helper so unknown field
-		// types / disallowed HTML can't sneak in.
+		// Re-sanitize definition + actions through the builder's own helpers so unknown
+		// field types / disallowed HTML can't sneak in via a hand-edited export.
 		$def = isset( $data['definition'] ) && is_array( $data['definition'] ) ? $data['definition'] : array();
-		if ( class_exists( 'TF_Builder' ) ) {
-			$def = TF_Builder::sanitize_def( $def );
-		}
-		update_post_meta( $post_id, '_tf_definition', wp_slash( wp_json_encode( $def ) ) );
-
-		// Settings.
-		$intents = tf_intents();
-		$intent  = isset( $data['intent'] ) && isset( $intents[ $data['intent'] ] ) ? $data['intent'] : 'lead';
-		update_post_meta( $post_id, '_tf_intent', $intent );
-
-		$submit_text = isset( $data['submit_text'] ) ? sanitize_text_field( $data['submit_text'] ) : '';
-		if ( '' !== $submit_text ) { update_post_meta( $post_id, '_tf_submit_text', $submit_text ); }
-
-		$success = isset( $data['success_message'] ) ? wp_kses_post( $data['success_message'] ) : '';
-		if ( '' !== $success ) { update_post_meta( $post_id, '_tf_success', $success ); }
-
-		$wrap = isset( $data['wrapper_class'] ) ? sanitize_text_field( $data['wrapper_class'] ) : '';
-		update_post_meta( $post_id, '_tf_wrapper_class', $wrap );
-
-		$css = isset( $data['custom_css'] ) ? str_replace( '<', '', (string) $data['custom_css'] ) : '';
-		update_post_meta( $post_id, '_tf_custom_css', $css );
-
-		// Actions — re-sanitize through the builder's helper if present.
+		if ( class_exists( 'TF_Builder' ) ) { $def = TF_Builder::sanitize_def( $def ); }
 		$actions = isset( $data['actions'] ) && is_array( $data['actions'] ) ? $data['actions'] : array();
 		if ( class_exists( 'TF_Builder' ) && method_exists( 'TF_Builder', 'sanitize_actions' ) ) {
 			$actions = TF_Builder::sanitize_actions( $actions );
 		}
-		update_post_meta( $post_id, '_tf_actions', wp_slash( wp_json_encode( $actions ) ) );
+
+		$intents = tf_intents();
+		$intent  = isset( $data['intent'] ) && isset( $intents[ $data['intent'] ] ) ? $data['intent'] : 'lead';
+
+		TF_Forms::save( $post_id, array(
+			'form_id'         => $form_id,
+			'definition'      => wp_json_encode( $def ),
+			'intent'          => $intent,
+			'submit_text'     => isset( $data['submit_text'] ) ? sanitize_text_field( $data['submit_text'] ) : '',
+			'success_message' => isset( $data['success_message'] ) ? wp_kses_post( $data['success_message'] ) : '',
+			'wrapper_class'   => isset( $data['wrapper_class'] ) ? sanitize_text_field( $data['wrapper_class'] ) : '',
+			'custom_css'      => isset( $data['custom_css'] ) ? str_replace( '<', '', (string) $data['custom_css'] ) : '',
+			'actions'         => wp_json_encode( $actions ),
+		) );
 
 		return array(
 			'action'  => $is_new ? 'created' : 'updated',
@@ -222,18 +212,9 @@ class TF_Import_Export {
 		);
 	}
 
-	/** Look up a Terrific Form CPT post by its stable _tf_form_id meta value. */
+	/** Look up a Terrific Form CPT post by its stable form_id. */
 	protected static function find_by_form_id( $form_id ) {
-		$q = new WP_Query( array(
-			'post_type'      => TF_CPT,
-			'post_status'    => array( 'publish', 'draft', 'private', 'pending', 'future' ),
-			'meta_key'       => '_tf_form_id',
-			'meta_value'     => $form_id,
-			'posts_per_page' => 1,
-			'fields'         => 'ids',
-			'no_found_rows'  => true,
-		) );
-		return ! empty( $q->posts ) ? (int) $q->posts[0] : 0;
+		return (int) TF_Forms::find_post_id_by_form_id( $form_id );
 	}
 
 	protected static function redirect_with( $args ) {

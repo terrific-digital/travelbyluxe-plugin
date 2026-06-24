@@ -135,13 +135,13 @@ class TF_Builder {
 	}
 
 	public static function render_settings( $post ) {
-		$form_id       = get_post_meta( $post->ID, '_tf_form_id', true );
+		$form_id       = TF_Forms::get_form_id( $post->ID );
 		$def           = tf_get_form( $post->ID );
 		$type          = isset( $def['type'] ) ? $def['type'] : 'regular';
 		$submit        = $def['submit_text'];
 		$success       = $def['success_message'];
-		$wrapper_class = get_post_meta( $post->ID, '_tf_wrapper_class', true );
-		$custom_css    = get_post_meta( $post->ID, '_tf_custom_css', true );
+		$wrapper_class = TF_Forms::get_wrapper_class( $post->ID );
+		$custom_css    = TF_Forms::get_custom_css( $post->ID );
 		?>
 		<p><strong>Form ID</strong><br>
 			<code><?php echo esc_html( $form_id ?: '(saved on first publish)' ); ?></code></p>
@@ -213,45 +213,46 @@ class TF_Builder {
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
 		if ( ! current_user_can( 'edit_post', $post_id ) ) { return; }
 
+		// Collect all touched fields, then write the row in one upsert.
+		$update = array();
+
 		if ( isset( $_POST['tf_definition'] ) ) {
-			// Validate JSON; store raw (already a JSON string from the builder).
-			$raw = wp_unslash( $_POST['tf_definition'] );
-			$decoded = json_decode( $raw, true );
+			$decoded = json_decode( wp_unslash( $_POST['tf_definition'] ), true );
 			if ( is_array( $decoded ) ) {
-				// wp_slash so WP's internal wp_unslash in update_metadata doesn't strip JSON escapes (\uXXXX).
-				update_post_meta( $post_id, '_tf_definition', wp_slash( wp_json_encode( self::sanitize_def( $decoded ) ) ) );
+				$update['definition'] = wp_json_encode( self::sanitize_def( $decoded ) );
 			}
 		}
-		if ( isset( $_POST['tf_type'] ) ) {
-			update_post_meta( $post_id, '_tf_type', in_array( $_POST['tf_type'], array( 'regular', 'multistep' ), true ) ? $_POST['tf_type'] : 'regular' );
-		}
+		// tf_type was historically a separate field; the source of truth is now `type`
+		// inside the definition JSON (sanitize_def normalises it), so no separate write.
 		if ( isset( $_POST['tf_intent'] ) ) {
 			$intent = sanitize_key( wp_unslash( $_POST['tf_intent'] ) );
-			update_post_meta( $post_id, '_tf_intent', array_key_exists( $intent, tf_intents() ) ? $intent : 'lead' );
+			$update['intent'] = array_key_exists( $intent, tf_intents() ) ? $intent : 'lead';
 		}
 		if ( isset( $_POST['tf_submit_text'] ) ) {
-			update_post_meta( $post_id, '_tf_submit_text', sanitize_text_field( wp_unslash( $_POST['tf_submit_text'] ) ) );
+			$update['submit_text'] = sanitize_text_field( wp_unslash( $_POST['tf_submit_text'] ) );
 		}
 		if ( isset( $_POST['tf_success'] ) ) {
-			update_post_meta( $post_id, '_tf_success', sanitize_textarea_field( wp_unslash( $_POST['tf_success'] ) ) );
+			$update['success_message'] = sanitize_textarea_field( wp_unslash( $_POST['tf_success'] ) );
 		}
 		if ( isset( $_POST['tf_wrapper_class'] ) ) {
 			$classes = preg_split( '/\s+/', sanitize_text_field( wp_unslash( $_POST['tf_wrapper_class'] ) ), -1, PREG_SPLIT_NO_EMPTY );
 			$classes = array_filter( array_map( 'sanitize_html_class', (array) $classes ) );
-			update_post_meta( $post_id, '_tf_wrapper_class', implode( ' ', $classes ) );
+			$update['wrapper_class'] = implode( ' ', $classes );
 		}
 		if ( isset( $_POST['tf_custom_css'] ) ) {
 			// CSS never needs '<' — stripping it prevents closing the <style> tag / HTML injection.
-			$css = str_replace( '<', '', (string) wp_unslash( $_POST['tf_custom_css'] ) );
-			update_post_meta( $post_id, '_tf_custom_css', $css );
+			$update['custom_css'] = str_replace( '<', '', (string) wp_unslash( $_POST['tf_custom_css'] ) );
 		}
-
-		// --- Actions list ---
 		if ( isset( $_POST['tf_actions'] ) ) {
 			$decoded = json_decode( wp_unslash( $_POST['tf_actions'] ), true );
-			$clean   = self::sanitize_actions( $decoded );
-			update_post_meta( $post_id, '_tf_actions', wp_slash( wp_json_encode( $clean ) ) );
-			// Clear legacy single-value metas now that the list is authoritative.
+			$update['actions'] = wp_json_encode( self::sanitize_actions( $decoded ) );
+		}
+
+		if ( $update ) { TF_Forms::save( $post_id, $update ); }
+
+		// Clear legacy single-value postmeta (pre-actions-list, pre-tf_forms) so they
+		// don't shadow the new table on lazy-fallback reads.
+		if ( isset( $_POST['tf_actions'] ) ) {
 			delete_post_meta( $post_id, '_tf_webhook_url' );
 			delete_post_meta( $post_id, '_tf_redirect_type' );
 			delete_post_meta( $post_id, '_tf_redirect_url' );

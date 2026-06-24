@@ -75,7 +75,7 @@ class TF_Render {
 		}
 		$def = tf_get_form( $post_id );
 		tf_ensure_form_id( $post_id );
-		$def['form_id'] = get_post_meta( $post_id, '_tf_form_id', true );
+		$def['form_id'] = TF_Forms::get_form_id( $post_id );
 
 		self::$enqueued = true;
 		wp_enqueue_style( 'tf-form' );
@@ -114,8 +114,8 @@ class TF_Render {
 		$intent       = $preview ? '' : tf_form_intent_param( $post_id );
 		$step_webhook = ! $preview && $is_multi && tf_form_has_step_webhook( $post_id );
 		// Per-form styling (settings fields): a wrapper class + scoped Custom CSS.
-		$wrapper_class = ( $post_id && ! $preview ) ? (string) get_post_meta( $post_id, '_tf_wrapper_class', true ) : '';
-		$custom_css    = ( $post_id && ! $preview ) ? (string) get_post_meta( $post_id, '_tf_custom_css', true ) : '';
+		$wrapper_class = ( $post_id && ! $preview ) ? TF_Forms::get_wrapper_class( $post_id ) : '';
+		$custom_css    = ( $post_id && ! $preview ) ? TF_Forms::get_custom_css( $post_id ) : '';
 
 		ob_start();
 		if ( '' !== trim( $custom_css ) ) {

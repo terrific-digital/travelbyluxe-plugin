@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific-digital.com
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.44.0
+ * Version:           2.45.0
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -12,7 +12,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.44.0' );
+define( 'TD_VERSION', '2.45.0' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -40,6 +40,7 @@ require_once TF_DIR . 'includes/class-tf-submissions.php';
 require_once TF_DIR . 'includes/class-tf-revisions.php';
 require_once TF_DIR . 'includes/class-tf-block.php';
 require_once TF_DIR . 'includes/class-tf-import-export.php';
+require_once TF_DIR . 'includes/class-tf-forms.php';
 
 /**
  * Auto-update from the private GitHub repo terrific-digital/wordpress-plugin.
@@ -89,6 +90,7 @@ add_action( 'plugins_loaded', function () {
 	TF_Revisions::init();
 	TF_Block::init();
 	TF_Import_Export::init();
+	TF_Forms::init();
 } );
 
 /**
@@ -123,8 +125,12 @@ register_activation_hook( __FILE__, function () {
 	require_once TF_DIR . 'includes/class-tf-submissions.php';
 	require_once TF_DIR . 'includes/class-tf-revisions.php';
 	require_once TF_DIR . 'includes/class-tf-cpt.php';
+	require_once TF_DIR . 'includes/class-tf-forms.php';
 	TF_Submissions::create_table();
 	TF_Revisions::create_table();
+	TF_Forms::create_table();
+	TF_Forms::migrate_from_postmeta();
+	update_option( 'tf_forms_db_version', TF_Forms::DB_VERSION );
 	TF_CPT_Manager::register();
 	flush_rewrite_rules();
 } );
@@ -133,24 +139,24 @@ register_deactivation_hook( __FILE__, function () { flush_rewrite_rules(); } );
 /* ------------------------------------------------------------------ Helpers */
 
 function tf_get_form( $post_id ) {
-	$json = get_post_meta( $post_id, '_tf_definition', true );
+	$json = TF_Forms::get_definition_json( $post_id );
 	$def  = $json ? json_decode( $json, true ) : null;
 	if ( ! is_array( $def ) ) {
 		$def = array( 'type' => 'regular', 'steps' => array( array( 'title' => '', 'fields' => array() ) ) );
 	}
-	$def['form_id']         = get_post_meta( $post_id, '_tf_form_id', true );
+	$def['form_id']         = TF_Forms::get_form_id( $post_id );
 	$def['form_name']       = get_the_title( $post_id );
 	$def['post_id']         = (int) $post_id;
-	$def['submit_text']     = get_post_meta( $post_id, '_tf_submit_text', true ) ?: 'Submit';
-	$def['success_message'] = get_post_meta( $post_id, '_tf_success', true ) ?: 'Thank you! Your submission has been received.';
+	$def['submit_text']     = TF_Forms::get_submit_text( $post_id ) ?: 'Submit';
+	$def['success_message'] = TF_Forms::get_success_message( $post_id ) ?: 'Thank you! Your submission has been received.';
 	return $def;
 }
 
 function tf_ensure_form_id( $post_id ) {
-	$id = get_post_meta( $post_id, '_tf_form_id', true );
+	$id = TF_Forms::get_form_id( $post_id );
 	if ( $id ) { return $id; }
 	$id = 'tf_' . $post_id . '_' . substr( md5( $post_id . wp_salt() ), 0, 6 );
-	update_post_meta( $post_id, '_tf_form_id', $id );
+	TF_Forms::save( $post_id, array( 'form_id' => $id ) );
 	return $id;
 }
 
@@ -386,7 +392,7 @@ function tf_intents() {
 
 /** A form's intent key (defaults to 'lead'). */
 function tf_get_intent( $post_id ) {
-	$intent = get_post_meta( $post_id, '_tf_intent', true );
+	$intent = TF_Forms::get_intent( $post_id );
 	$map    = tf_intents();
 	return ( $intent && isset( $map[ $intent ] ) ) ? $intent : 'lead';
 }
@@ -400,10 +406,12 @@ function tf_form_intent_param( $post_id ) {
 
 /**
  * A form's Actions list: ordered array of { type, enabled, config }.
- * Migrates the old single-value metas the first time if no list exists yet.
+ * Falls back to the very old single-value postmeta keys (used before the
+ * actions list existed) if nothing's been saved yet — keeps very old forms
+ * working through the wp_tf_forms migration.
  */
 function tf_get_actions( $post_id ) {
-	$json    = get_post_meta( $post_id, '_tf_actions', true );
+	$json    = TF_Forms::get_actions_json( $post_id );
 	$actions = $json ? json_decode( $json, true ) : array();
 	if ( ! is_array( $actions ) ) { $actions = array(); }
 
