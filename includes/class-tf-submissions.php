@@ -21,6 +21,7 @@ class TF_Submissions {
 		add_action( 'admin_post_tf_export', array( __CLASS__, 'export_csv' ) );
 		add_action( 'admin_post_tf_delete', array( __CLASS__, 'delete_single' ) );
 		add_action( 'admin_post_tf_flag', array( __CLASS__, 'handle_flag' ) );
+		add_action( 'wp_ajax_tf_flag', array( __CLASS__, 'ajax_flag' ) );
 	}
 
 	/** Honeypot tripped? Bots fill the hidden secondary_email field; humans never see it. */
@@ -409,6 +410,19 @@ class TF_Submissions {
 			array( __CLASS__, 'screen' )
 		);
 		add_action( "load-$hook", array( __CLASS__, 'screen_options' ) );
+		add_action( "load-$hook", array( __CLASS__, 'enqueue_list_assets' ) );
+	}
+
+	/** Enqueue the small JS that AJAX-toggles the Flag column icons. */
+	public static function enqueue_list_assets() {
+		// Only enqueue on the list view (not the detail/view=N drill-down).
+		if ( isset( $_GET['view'] ) ) { return; }
+		wp_enqueue_style( 'td-submissions-admin', TF_URL . 'assets/submissions-admin.css', array(), TF_VERSION );
+		wp_enqueue_script( 'td-submissions-admin', TF_URL . 'assets/submissions-admin.js', array(), TF_VERSION, true );
+		wp_localize_script( 'td-submissions-admin', 'TD_SUBS', array(
+			'ajax'  => admin_url( 'admin-ajax.php' ),
+			'nonce' => wp_create_nonce( 'tf_flag_ajax' ),
+		) );
 	}
 
 	/** Base admin URL of the Submissions screen (now nested under Terrific Digital). */
@@ -492,6 +506,21 @@ class TF_Submissions {
 			add_query_arg( array( 'action' => 'tf_flag', 'id' => $id, 'flag' => $flag ), admin_url( 'admin-post.php' ) ),
 			'tf_flag_' . $id
 		);
+	}
+
+	/**
+	 * AJAX flag endpoint — used by the click-to-flag icons on the list table.
+	 * Expects `id`, `flag`, and `_ajax_nonce` (from wp_create_nonce('tf_flag_ajax')).
+	 * Returns the new flag value on success.
+	 */
+	public static function ajax_flag() {
+		check_ajax_referer( 'tf_flag_ajax' );
+		if ( ! current_user_can( 'edit_pages' ) ) { wp_send_json_error( array( 'message' => 'Forbidden' ), 403 ); }
+		$id   = isset( $_POST['id'] ) ? (int) $_POST['id'] : 0;
+		$flag = isset( $_POST['flag'] ) ? sanitize_text_field( wp_unslash( $_POST['flag'] ) ) : '';
+		if ( ! $id ) { wp_send_json_error( array( 'message' => 'Missing id' ), 400 ); }
+		self::set_flag( $id, $flag );
+		wp_send_json_success( array( 'id' => $id, 'flag' => self::normalize_flag( $flag ) ) );
 	}
 
 	/* --------------------------------------------------------------- CSV export */

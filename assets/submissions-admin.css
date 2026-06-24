@@ -1,0 +1,22 @@
+/* Terrific Digital — Submissions list flag icons.
+ * Two clickable SVG icon buttons per row (flask = Test, prohibition = Spam)
+ * that AJAX-toggle the row's flag. Inactive = subtle grey; active fills the
+ * matching colour (amber for Test, red for Spam). */
+.tf-flag-cell { display: inline-flex; gap: 6px; align-items: center; }
+.tf-flag-btn  { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; border: 1px solid #dcdcde; background: #fff; border-radius: 6px; cursor: pointer; color: #a7aaad; transition: color .12s, border-color .12s, background .12s, box-shadow .12s; }
+.tf-flag-icon { width: 16px; height: 16px; display: block; }
+.tf-flag-btn:hover { color: #2c3338; border-color: #8c8f94; }
+.tf-flag-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #2271b1; }
+
+/* Active states: only the matching button lights up. */
+.tf-flag-is-test .tf-flag-btn-test { color: #fff; background: #dba617; border-color: #dba617; box-shadow: 0 1px 2px rgba(219,166,23,.35); }
+.tf-flag-is-test .tf-flag-btn-test:hover { background: #c69206; border-color: #c69206; }
+.tf-flag-is-spam .tf-flag-btn-spam { color: #fff; background: #d63638; border-color: #d63638; box-shadow: 0 1px 2px rgba(214,54,56,.35); }
+.tf-flag-is-spam .tf-flag-btn-spam:hover { background: #b32d2e; border-color: #b32d2e; }
+
+/* Mid-AJAX state: dim slightly so it's clear the click registered. */
+.tf-flag-busy .tf-flag-btn { opacity: .55; pointer-events: none; }
+
+/* When a row is flagged spam, fade the whole row so active submissions stand out. */
+tr:has(.tf-flag-is-spam) > td { opacity: .55; }
+tr:has(.tf-flag-is-spam):hover > td { opacity: 1; }

@@ -21,12 +21,41 @@ class TF_List_Table extends WP_List_Table {
 		return array(
 			'cb'         => '<input type="checkbox" />',
 			'id'         => 'ID',
+			'flag'       => 'Flag',
 			'created_at' => 'Date',
 			'status'     => 'Status',
 			'form'       => 'Form',
 			'intent'     => 'Intent',
 			'summary'    => 'Submission',
 			'source'     => 'Source',
+		);
+	}
+
+	public function column_flag( $item ) {
+		$cur = isset( $item->flag ) ? TF_Submissions::normalize_flag( $item->flag ) : '';
+		$cls = 'tf-flag-cell';
+		if ( 'test' === $cur ) { $cls .= ' tf-flag-is-test'; }
+		if ( 'spam' === $cur ) { $cls .= ' tf-flag-is-spam'; }
+
+		// Inline SVGs sized via CSS, currentColor inherits from the button.
+		// Test = Erlenmeyer flask. Spam = prohibition circle (universal "blocked").
+		$flask = '<svg class="tf-flag-icon" viewBox="0 0 24 24" aria-hidden="true">'
+			. '<path fill="currentColor" d="M9 2h6v2h-1v5.5l4.6 7.7c.8 1.3-.2 3-1.7 3H7.1c-1.5 0-2.5-1.7-1.7-3L10 9.5V4H9V2zm2 2v6.1L7.1 17h9.8L13 10.1V4h-2z"/>'
+			. '</svg>';
+		$no    = '<svg class="tf-flag-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">'
+			. '<circle cx="12" cy="12" r="9"/><line x1="6.2" y1="6.2" x2="17.8" y2="17.8"/>'
+			. '</svg>';
+
+		return sprintf(
+			'<span class="%s" data-id="%d" data-flag="%s">'
+				. '<button type="button" class="tf-flag-btn tf-flag-btn-test" data-set="test" aria-label="Mark as Test" title="Mark as Test">%s</button>'
+				. '<button type="button" class="tf-flag-btn tf-flag-btn-spam" data-set="spam" aria-label="Mark as Spam" title="Mark as Spam">%s</button>'
+			. '</span>',
+			esc_attr( $cls ),
+			(int) $item->id,
+			esc_attr( $cur ),
+			$flask, // phpcs:ignore — static SVG markup
+			$no
 		);
 	}
 
@@ -96,24 +125,11 @@ class TF_List_Table extends WP_List_Table {
 			add_query_arg( array( 'action' => 'tf_delete', 'id' => $item->id ), admin_url( 'admin-post.php' ) ),
 			'tf_delete_' . $item->id
 		);
-		$cur_flag = isset( $item->flag ) ? TF_Submissions::normalize_flag( $item->flag ) : '';
-
-		// Row actions: show "switch to" links for each flag state that isn't current.
-		$actions = array( 'view' => sprintf( '<a href="%s">View</a>', esc_url( $view ) ) );
-		foreach ( array( 'test', 'spam', '' ) as $flag_val ) {
-			if ( $cur_flag === $flag_val ) { continue; }
-			$key   = ( '' === $flag_val ) ? 'unflag' : 'flag_' . $flag_val;
-			$label = ( '' === $flag_val ) ? 'Unflag' : ( 'Mark as ' . TF_Submissions::FLAGS[ $flag_val ] );
-			$actions[ $key ] = sprintf( '<a href="%s">%s</a>', esc_url( TF_Submissions::flag_url( $item->id, $flag_val ) ), esc_html( $label ) );
-		}
-		$actions['delete'] = sprintf( '<a href="%s" onclick="return confirm(\'Delete this submission?\')" style="color:#b32d2e">Delete</a>', esc_url( $del ) );
-
-		$badge = '';
-		if ( $cur_flag ) {
-			$bg = 'spam' === $cur_flag ? '#b32d2e' : '#946800';
-			$badge = '<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.04em;color:#fff;background:' . $bg . ';text-transform:uppercase">' . esc_html( TF_Submissions::FLAGS[ $cur_flag ] ) . '</span>';
-		}
-		return sprintf( '<a href="%s"><strong>#%d</strong></a>', esc_url( $view ), $item->id ) . $badge . $this->row_actions( $actions );
+		$actions = array(
+			'view'   => sprintf( '<a href="%s">View</a>', esc_url( $view ) ),
+			'delete' => sprintf( '<a href="%s" onclick="return confirm(\'Delete this submission?\')" style="color:#b32d2e">Delete</a>', esc_url( $del ) ),
+		);
+		return sprintf( '<a href="%s"><strong>#%d</strong></a>', esc_url( $view ), $item->id ) . $this->row_actions( $actions );
 	}
 
 	public function column_created_at( $item ) {
@@ -145,7 +161,10 @@ class TF_List_Table extends WP_List_Table {
 		if ( 'top' !== $which ) { return; }
 		$selected_form   = isset( $_REQUEST['form'] ) ? (int) $_REQUEST['form'] : 0;
 		$selected_intent = isset( $_REQUEST['intent'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['intent'] ) ) : '';
-		$selected_flag   = isset( $_REQUEST['flag'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['flag'] ) ) : '';
+		// Default to "active" on a fresh landing so test/spam noise stays out of the
+		// working view. The user can still pick "All flags" — that submits flag='' as
+		// an explicit choice, which we respect (isset detects it).
+		$selected_flag = isset( $_REQUEST['flag'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['flag'] ) ) : 'active';
 		echo '<div class="alignleft actions">';
 		TF_Submissions::forms_dropdown( $selected_form );
 		self::intent_dropdown( $selected_intent );
@@ -216,7 +235,8 @@ class TF_List_Table extends WP_List_Table {
 		$paged    = max( 1, (int) $this->get_pagenum() );
 		$form     = isset( $_REQUEST['form'] ) ? (int) $_REQUEST['form'] : 0;
 		$intent   = isset( $_REQUEST['intent'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['intent'] ) ) : '';
-		$flag     = isset( $_REQUEST['flag'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['flag'] ) ) : '';
+		// Mirrors extra_tablenav: default to "active" so a fresh visit hides flagged rows.
+		$flag     = isset( $_REQUEST['flag'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['flag'] ) ) : 'active';
 
 		$orderby_allowed = array( 'id', 'created_at' );
 		$orderby = isset( $_REQUEST['orderby'] ) && in_array( $_REQUEST['orderby'], $orderby_allowed, true ) ? $_REQUEST['orderby'] : 'created_at';
