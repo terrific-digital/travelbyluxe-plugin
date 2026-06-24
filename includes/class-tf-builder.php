@@ -187,11 +187,18 @@ class TF_Builder {
 	}
 
 	public static function render_builder( $post ) {
-		$def  = tf_get_form( $post->ID );
-		$json = wp_json_encode( array(
+		$def     = tf_get_form( $post->ID );
+		$payload = array(
 			'type'  => isset( $def['type'] ) ? $def['type'] : 'regular',
 			'steps' => isset( $def['steps'] ) ? $def['steps'] : array( array( 'title' => '', 'fields' => array() ) ),
-		) );
+		);
+		// Pass the explicit submission_step through so the builder default-checks the
+		// right radio on load — without it, the UI silently fell back to "last step"
+		// after every page reload even when the user had saved a different choice.
+		if ( isset( $def['submission_step'] ) ) {
+			$payload['submission_step'] = (int) $def['submission_step'];
+		}
+		$json = wp_json_encode( $payload );
 		?>
 		<div id="tf-builder" data-def="<?php echo esc_attr( $json ); ?>">
 			<div class="tf-builder-loading">Loading builder…</div>
