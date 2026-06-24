@@ -6,9 +6,11 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * on any page via a shortcode or a Gutenberg block. Restricted to users who can edit
  * pages (edit_pages — same model as the rest of the Terrific Digital plugin).
  *
- * Each FAQ list is a `td_faq` post:
- *   _td_faq_id     static id `faq_{postID}_{6hex}` (front-end data attribute)
- *   _td_faq_items  JSON [ { q, a } ]  (q = question text, a = answer HTML — wp_kses_post)
+ * Each FAQ list is a `td_faq` post. Configuration lives in `{prefix}td_faqs`
+ * (see TD_FAQ_Store): the stable faq_id (`faq_{postID}_{6hex}`), the items list
+ * ([{ q, a }]) and the "open one at a time" toggle. Render-tracking telemetry
+ * (`_td_faq_seen`) stays in postmeta — it's per-environment runtime data, not
+ * configuration, and shouldn't travel with staging→prod table copies.
  *
  * Placement: [terrific_faq id="N"] and the "Terrific FAQ" block (server-rendered).
  * Front-end: an accessible accordion; opening an item fires a dataLayer
@@ -115,17 +117,15 @@ class TD_FAQ {
 
 	/** A FAQ list's items: array of [ 'q' => question, 'a' => answer ]. */
 	public static function get_items( $post_id ) {
-		$json  = get_post_meta( $post_id, '_td_faq_items', true );
-		$items = $json ? json_decode( $json, true ) : array();
-		return is_array( $items ) ? $items : array();
+		return TD_FAQ_Store::get_items( $post_id );
 	}
 
 	/** Ensure (and return) the list's stable front-end id. */
 	public static function ensure_id( $post_id ) {
-		$id = get_post_meta( $post_id, '_td_faq_id', true );
+		$id = TD_FAQ_Store::get_faq_id( $post_id );
 		if ( $id ) { return $id; }
 		$id = 'faq_' . $post_id . '_' . substr( md5( $post_id . wp_salt() ), 0, 6 );
-		update_post_meta( $post_id, '_td_faq_id', $id );
+		TD_FAQ_Store::save( $post_id, array( 'faq_id' => $id ) );
 		return $id;
 	}
 
@@ -181,7 +181,7 @@ class TD_FAQ {
 	}
 
 	public static function box_usage( $post ) {
-		$single = get_post_meta( $post->ID, '_td_faq_single', true );
+		$single = TD_FAQ_Store::get_open_single( $post->ID ) ? '1' : '';
 		?>
 		<p style="margin-top:0"><strong>Behaviour</strong></p>
 		<p><label><input type="checkbox" name="td_faq_single" value="1" <?php checked( $single, '1' ); ?>> Open one at a time <span class="description">(opening an item closes the others)</span></label></p>
@@ -297,13 +297,15 @@ class TD_FAQ {
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) { return; }
 		if ( ! current_user_can( 'edit_post', $post_id ) ) { return; }
 
+		$update = array(
+			'open_single' => ! empty( $_POST['td_faq_single'] ),
+		);
 		if ( isset( $_POST['td_faq_items'] ) ) {
 			$decoded = json_decode( wp_unslash( $_POST['td_faq_items'] ), true );
 			$clean   = self::sanitize_items( is_array( $decoded ) ? $decoded : array() );
-			// wp_slash so update_post_meta's internal wp_unslash doesn't strip JSON escapes.
-			update_post_meta( $post_id, '_td_faq_items', wp_slash( wp_json_encode( $clean ) ) );
+			$update['items'] = wp_json_encode( $clean );
 		}
-		update_post_meta( $post_id, '_td_faq_single', empty( $_POST['td_faq_single'] ) ? '' : '1' );
+		TD_FAQ_Store::save( $post_id, $update );
 		self::ensure_id( $post_id );
 	}
 
@@ -354,7 +356,7 @@ class TD_FAQ {
 		wp_enqueue_style( 'td-faq' );
 		wp_enqueue_script( 'td-faq' );
 
-		$single = get_post_meta( $post_id, '_td_faq_single', true ) ? ' data-single="1"' : '';
+		$single = TD_FAQ_Store::get_open_single( $post_id ) ? ' data-single="1"' : '';
 		$uid    = 'tdfaq-' . $post_id;
 		ob_start();
 		echo '<div class="td-faq" data-faq-id="' . esc_attr( $faq_id ) . '"' . $single . '>';

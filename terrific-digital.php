@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific-digital.com
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.45.0
+ * Version:           2.46.0
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -12,7 +12,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.45.0' );
+define( 'TD_VERSION', '2.46.0' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -41,6 +41,7 @@ require_once TF_DIR . 'includes/class-tf-revisions.php';
 require_once TF_DIR . 'includes/class-tf-block.php';
 require_once TF_DIR . 'includes/class-tf-import-export.php';
 require_once TF_DIR . 'includes/class-tf-forms.php';
+require_once TF_DIR . 'includes/class-td-faq-store.php';
 
 /**
  * Auto-update from the private GitHub repo terrific-digital/wordpress-plugin.
@@ -91,6 +92,7 @@ add_action( 'plugins_loaded', function () {
 	TF_Block::init();
 	TF_Import_Export::init();
 	TF_Forms::init();
+	TD_FAQ_Store::init();
 } );
 
 /**
@@ -126,11 +128,16 @@ register_activation_hook( __FILE__, function () {
 	require_once TF_DIR . 'includes/class-tf-revisions.php';
 	require_once TF_DIR . 'includes/class-tf-cpt.php';
 	require_once TF_DIR . 'includes/class-tf-forms.php';
+	require_once TF_DIR . 'includes/class-td-faq.php';
+	require_once TF_DIR . 'includes/class-td-faq-store.php';
 	TF_Submissions::create_table();
 	TF_Revisions::create_table();
 	TF_Forms::create_table();
 	TF_Forms::migrate_from_postmeta();
 	update_option( 'tf_forms_db_version', TF_Forms::DB_VERSION );
+	TD_FAQ_Store::create_table();
+	TD_FAQ_Store::migrate_from_postmeta();
+	update_option( 'td_faqs_db_version', TD_FAQ_Store::DB_VERSION );
 	TF_CPT_Manager::register();
 	flush_rewrite_rules();
 } );
