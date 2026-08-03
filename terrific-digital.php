@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific-digital.com
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.50.0
+ * Version:           2.50.1
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -12,7 +12,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.50.0' );
+define( 'TD_VERSION', '2.50.1' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -46,33 +46,35 @@ require_once TF_DIR . 'includes/class-td-snippet-store.php';
 require_once TF_DIR . 'includes/class-td-settings-store.php';
 
 /**
- * Auto-update from the private GitHub repo terrific-digital/wordpress-plugin.
+ * Auto-update from the public GitHub repo terrific-digital/wordpress-plugin.
  *
- * Each site adds its access token to wp-config.php:
- *   define( 'TERRIFIC_DIGITAL_GH_TOKEN', 'github_pat_…' );
+ * The repo is public, so no authentication is required — every site where the
+ * plugin is installed gets "Update available" through the normal WP flow with
+ * zero configuration.
  *
- * The token should be a fine-grained PAT scoped to ONLY the
- * terrific-digital/wordpress-plugin repo, with Contents: read + Metadata: read.
- * Without the constant the updater stays inactive (so dev sites don't try to
- * pull updates from a token they don't have).
+ * A GitHub token is OPTIONAL and only useful for raising the API rate limit on
+ * hosts that share an outbound IP across many sites (GitHub allows 60
+ * unauthenticated requests/hour per IP; PUC checks ~twice a day, so this is
+ * almost never a factor). If a site defines TERRIFIC_DIGITAL_GH_TOKEN we pass
+ * it through; otherwise the updater runs anonymously.
  *
  * Releases are cut by pushing a `vX.Y.Z` git tag — the release.yml workflow
  * builds a clean terrific-digital.zip and attaches it to the GitHub release;
  * PUC picks that ZIP up automatically.
  */
+require_once TF_DIR . 'vendor/plugin-update-checker/plugin-update-checker.php';
+$td_updater = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+	'https://github.com/terrific-digital/wordpress-plugin/',
+	__FILE__,
+	'terrific-digital'
+);
+$td_updater->setBranch( 'main' );
 if ( defined( 'TERRIFIC_DIGITAL_GH_TOKEN' ) && TERRIFIC_DIGITAL_GH_TOKEN ) {
-	require_once TF_DIR . 'vendor/plugin-update-checker/plugin-update-checker.php';
-	$td_updater = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-		'https://github.com/terrific-digital/wordpress-plugin/',
-		__FILE__,
-		'terrific-digital'
-	);
-	$td_updater->setBranch( 'main' );
 	$td_updater->setAuthentication( TERRIFIC_DIGITAL_GH_TOKEN );
-	// Prefer the release-asset ZIP (clean, properly-named folder) over GitHub's
-	// auto-generated source tarball (which has a hash-suffixed root folder name).
-	$td_updater->getVcsApi()->enableReleaseAssets();
 }
+// Prefer the release-asset ZIP (clean, properly-named folder) over GitHub's
+// auto-generated source tarball (which has a hash-suffixed root folder name).
+$td_updater->getVcsApi()->enableReleaseAssets();
 
 add_action( 'plugins_loaded', function () {
 	TD_Menu::init();
