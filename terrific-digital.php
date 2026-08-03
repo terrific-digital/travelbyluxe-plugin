@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific-digital.com
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.50.1
+ * Version:           2.50.2
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -12,7 +12,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.50.1' );
+define( 'TD_VERSION', '2.50.2' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -48,15 +48,15 @@ require_once TF_DIR . 'includes/class-td-settings-store.php';
 /**
  * Auto-update from the public GitHub repo terrific-digital/wordpress-plugin.
  *
- * The repo is public, so no authentication is required — every site where the
- * plugin is installed gets "Update available" through the normal WP flow with
- * zero configuration.
+ * The repo is public, so we NEVER send an authentication token. This is
+ * deliberate: GitHub validates any credential you present and rejects a bad
+ * one with 401 — so a stale/revoked TERRIFIC_DIGITAL_GH_TOKEN left in an old
+ * site's wp-config.php would *break* update checks (401) rather than be
+ * ignored. By not calling setAuthentication() at all, any leftover token
+ * constant is completely irrelevant: every site updates anonymously.
  *
- * A GitHub token is OPTIONAL and only useful for raising the API rate limit on
- * hosts that share an outbound IP across many sites (GitHub allows 60
- * unauthenticated requests/hour per IP; PUC checks ~twice a day, so this is
- * almost never a factor). If a site defines TERRIFIC_DIGITAL_GH_TOKEN we pass
- * it through; otherwise the updater runs anonymously.
+ * (A shared-IP host could in theory hit GitHub's 60 req/hr anonymous rate
+ * limit, but PUC checks ~twice a day, so it never matters in practice.)
  *
  * Releases are cut by pushing a `vX.Y.Z` git tag — the release.yml workflow
  * builds a clean terrific-digital.zip and attaches it to the GitHub release;
@@ -69,9 +69,6 @@ $td_updater = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
 	'terrific-digital'
 );
 $td_updater->setBranch( 'main' );
-if ( defined( 'TERRIFIC_DIGITAL_GH_TOKEN' ) && TERRIFIC_DIGITAL_GH_TOKEN ) {
-	$td_updater->setAuthentication( TERRIFIC_DIGITAL_GH_TOKEN );
-}
 // Prefer the release-asset ZIP (clean, properly-named folder) over GitHub's
 // auto-generated source tarball (which has a hash-suffixed root folder name).
 $td_updater->getVcsApi()->enableReleaseAssets();
