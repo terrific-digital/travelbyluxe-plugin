@@ -64,6 +64,11 @@ class TF_Render {
 			'nonce'     => wp_create_nonce( 'tf_submit' ),
 			'upd'       => TD_Upd::config(), // User-Provided Data capture (front-end identity object)
 			'recaptcha' => tf_recaptcha_enabled() ? array( 'site_key' => tf_recaptcha_site_key() ) : null,
+			// Front-end strings — translatable via the 'terrific_forms/i18n' filter or WP's
+			// i18n (so Hebrew/other LPs don't have to patch text with a MutationObserver).
+			'i18n'      => apply_filters( 'terrific_forms/i18n', array(
+				'submit_error' => __( 'Something went wrong. Please try again.', 'terrific-digital' ),
+			) ),
 		) );
 	}
 
@@ -189,10 +194,12 @@ class TF_Render {
 				</div>
 			<?php endforeach; ?>
 
-			<?php // Honeypot: hidden from people; bots that fill it get their submission silently dropped.
-			      // Field name is innocuous ("secondary_email") so naive bots won't recognize it as bait. ?>
-			<div class="tf-hp" aria-hidden="true">
-				<label>Secondary email<input type="email" name="secondary_email" tabindex="-1" autocomplete="off" value=""></label>
+			<?php // Honeypot: hidden from people; a filled value flags the submission as spam.
+			      // display:none (not just off-screen) + a non-semantic text field with a
+			      // meaningless name + autocomplete="one-time-code" so browser contact-autofill
+			      // (Chrome/Safari ignore autocomplete="off") never fills it and traps real leads. ?>
+			<div class="tf-hp" aria-hidden="true" style="display:none !important">
+				<label>Leave this field empty<input type="text" name="tf_extra_field" tabindex="-1" autocomplete="one-time-code" value=""></label>
 			</div>
 
 			<div class="tf-thankyou" hidden>

@@ -48,6 +48,25 @@
 		return h ? h.value : '';
 	}
 
+	// A localizable string with an English fallback. Strings come from
+	// window.TF_FORM.i18n (wp_localize_script), so Hebrew/other LPs can translate
+	// without page-level MutationObserver hacks.
+	function t(key, fallback) {
+		var i18n = window.TF_FORM && window.TF_FORM.i18n;
+		return (i18n && i18n[key]) || fallback;
+	}
+
+	// Fetch a live submit nonce from the cache-safe tf_nonce endpoint. The nonce baked
+	// into cached page HTML expires after 12–24h; trusting it 403s every submission on
+	// a stale cache. Falls back to the baked nonce if the endpoint is unreachable.
+	function freshNonce() {
+		if (!window.TF_FORM || !window.TF_FORM.ajax) { return Promise.resolve(''); }
+		return fetch(window.TF_FORM.ajax + '?action=tf_nonce', { credentials: 'same-origin' })
+			.then(function (r) { return r.json(); })
+			.then(function (res) { return (res && res.data && res.data.nonce) || window.TF_FORM.nonce; })
+			.catch(function () { return window.TF_FORM.nonce; });
+	}
+
 	// Resolve a Google reCAPTCHA v3 token for the given action (empty string when
 	// reCAPTCHA isn't enabled or grecaptcha failed to load — the server then decides).
 	function recaptchaToken(action) {
@@ -373,7 +392,6 @@
 		if (form.getAttribute('data-multistep') !== '1') { return; }
 		var body = new URLSearchParams();
 		body.append('action', 'tf_step');
-		body.append('nonce', window.TF_FORM.nonce);
 		body.append('post_id', form.getAttribute('data-post-id'));
 		body.append('step', stepNum);
 		body.append('submission_token', form.__tfToken);
@@ -385,7 +403,11 @@
 		body.append('page_ref', document.referrer || '');
 		body.append('platform', (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
 		body.append('language', navigator.language || '');
-		recaptchaToken('step').then(function (tok) {
+		// Fresh cache-safe nonce here too — partial-step pings would otherwise 403 on a
+		// stale cache exactly like the final submit did.
+		Promise.all([recaptchaToken('step'), freshNonce()]).then(function (parts) {
+			var tok = parts[0];
+			body.append('nonce', parts[1] || window.TF_FORM.nonce);
 			if (tok) { body.append('recaptcha_token', tok); }
 			fetch(window.TF_FORM.ajax, { method: 'POST', body: body, credentials: 'same-origin', keepalive: true }).catch(function () {});
 		});
@@ -500,7 +522,6 @@
 
 			var body = new URLSearchParams();
 			body.append('action', 'tf_submit');
-			body.append('nonce', window.TF_FORM.nonce);
 			body.append('post_id', form.getAttribute('data-post-id'));
 			body.append('submission_token', form.__tfToken);
 			body.append('hp', honeypot(form));
@@ -512,11 +533,29 @@
 			body.append('platform', (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
 			body.append('language', navigator.language || '');
 
-			recaptchaToken('submit').then(function (tok) {
+			function fail() {
+				if (btn) { btn.disabled = false; btn.classList.remove('tf-loading'); }
+				alert(t('submit_error', 'Something went wrong. Please try again.'));
+			}
+
+			// Resolve reCAPTCHA token + a fresh (cache-safe) nonce in parallel.
+			Promise.all([recaptchaToken('submit'), freshNonce()]).then(function (parts) {
+				var tok = parts[0];
+				body.append('nonce', parts[1] || window.TF_FORM.nonce);
 				if (tok) { body.append('recaptcha_token', tok); }
 				fetch(window.TF_FORM.ajax, { method: 'POST', body: body, credentials: 'same-origin' })
-					.then(function (r) { return r.json(); })
-					.then(function (res) {
+					.then(function (r) {
+						// A rejected nonce returns "-1" (valid JSON!) with HTTP 403. Capture
+						// both r.ok and the parsed body so a failure can't sail into the
+						// success path — the old code rendered -1 as a thank-you and lost the lead.
+						return r.json().then(
+							function (j) { return { ok: r.ok, res: j }; },
+							function () { return { ok: false, res: null }; }
+						);
+					})
+					.then(function (wrap) {
+						if (!wrap.ok || !wrap.res || wrap.res.success !== true) { fail(); return; }
+						var res = wrap.res;
 						// Skip the dataLayer pushes if a configured non-last step already fired
 						// them via maybeFireEarlySubmission — the server-side submit itself still
 						// runs (this is just event de-duping for analytics).
@@ -544,10 +583,7 @@
 						var ty = form.querySelector('.tf-thankyou');
 						if (ty) { ty.hidden = false; }
 					})
-					.catch(function () {
-						if (btn) { btn.disabled = false; btn.classList.remove('tf-loading'); }
-						alert('Something went wrong. Please try again.');
-					});
+					.catch(fail);
 			});
 		});
 	}

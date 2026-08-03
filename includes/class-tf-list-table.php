@@ -165,24 +165,32 @@ class TF_List_Table extends WP_List_Table {
 		// working view. The user can still pick "All flags" — that submits flag='' as
 		// an explicit choice, which we respect (isset detects it).
 		$selected_flag = isset( $_REQUEST['flag'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['flag'] ) ) : 'active';
+		$counts = TF_Submissions::flag_counts( $selected_form, $selected_intent );
 		echo '<div class="alignleft actions">';
 		TF_Submissions::forms_dropdown( $selected_form );
 		self::intent_dropdown( $selected_intent );
-		self::flag_dropdown( $selected_flag );
+		self::flag_dropdown( $selected_flag, $counts );
 		submit_button( 'Filter', 'button', 'filter_action', false );
 		echo '</div>';
 	}
 
-	/** Flag filter: "all" / "active" (unflagged) / "test" / "spam". */
-	protected static function flag_dropdown( $selected ) {
+	/**
+	 * Flag filter with live counts: "All (N) / Active (N) / Test (N) / Spam (N)".
+	 * Counts respect the form + intent filters, so the default "Active" view can never
+	 * hide test/spam rows without the operator seeing they exist.
+	 */
+	protected static function flag_dropdown( $selected, $counts = array() ) {
+		// value => [ label, count-key ]
 		$options = array(
-			''       => 'All flags',
-			'active' => 'Active (unflagged)',
-			'test'   => 'Test',
-			'spam'   => 'Spam',
+			''       => array( 'All flags',          'all' ),
+			'active' => array( 'Active (unflagged)', '' ),
+			'test'   => array( 'Test',               'test' ),
+			'spam'   => array( 'Spam',               'spam' ),
 		);
 		echo '<select name="flag" style="margin-left:6px">';
-		foreach ( $options as $val => $label ) {
+		foreach ( $options as $val => $meta ) {
+			list( $label, $ckey ) = $meta;
+			if ( isset( $counts[ $ckey ] ) ) { $label .= ' (' . (int) $counts[ $ckey ] . ')'; }
 			printf( '<option value="%s"%s>%s</option>', esc_attr( $val ), selected( $selected, $val, false ), esc_html( $label ) );
 		}
 		echo '</select>';

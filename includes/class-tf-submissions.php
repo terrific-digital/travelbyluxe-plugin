@@ -14,6 +14,8 @@ class TF_Submissions {
 		add_action( 'wp_ajax_nopriv_tf_step', array( __CLASS__, 'handle_step' ) );
 		add_action( 'wp_ajax_tf_geo', array( __CLASS__, 'handle_geo' ) );
 		add_action( 'wp_ajax_nopriv_tf_geo', array( __CLASS__, 'handle_geo' ) );
+		add_action( 'wp_ajax_tf_nonce', array( __CLASS__, 'handle_nonce' ) );
+		add_action( 'wp_ajax_nopriv_tf_nonce', array( __CLASS__, 'handle_nonce' ) );
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		// init:5 (not admin_init) so the table is renamed before any front-end
 		// submission tries to write to it after a plugin upgrade.
@@ -61,6 +63,33 @@ class TF_Submissions {
 		nocache_headers();
 		$geo = tf_geo_lookup( tf_client_ip() );
 		wp_send_json_success( array( 'country_code' => $geo['country_code'] ) );
+	}
+
+	/**
+	 * Cache-safe nonce refresh (like tf_geo). Landing pages are stored in full-page
+	 * cache (Varnish/Breeze) with a nonce baked into the HTML; WP nonces expire after
+	 * 12–24h, so a cached page eventually carries a dead nonce and every submission
+	 * 403s. form.js re-fetches a live nonce from this uncached endpoint at submit time.
+	 */
+	public static function handle_nonce() {
+		nocache_headers();
+		wp_send_json_success( array( 'nonce' => wp_create_nonce( 'tf_submit' ) ) );
+	}
+
+	/**
+	 * Store a submission that tripped a bot gate (honeypot / reCAPTCHA / blocked free
+	 * email), flagged 'spam' rather than silently discarded — browser autofill fills
+	 * off-screen honeypots, so real leads can land here and must remain recoverable in
+	 * admin. No webhooks/actions fire; callers still return the bot-facing fake-success
+	 * response so real bots learn nothing.
+	 */
+	protected static function store_flagged_spam( $post_id, $def ) {
+		$fields = self::clean_fields();
+		$ctx    = self::request_context( $post_id );
+		$token  = isset( $_POST['submission_token'] ) ? sanitize_text_field( wp_unslash( $_POST['submission_token'] ) ) : '';
+		$sub_id = self::store_submission( $post_id, $def, $fields, $ctx, 'completed', count( $def['steps'] ), $token );
+		if ( $sub_id ) { self::set_flag( $sub_id, 'spam' ); }
+		return $sub_id;
 	}
 
 	/**
@@ -305,15 +334,18 @@ class TF_Submissions {
 		}
 		$def = tf_get_form( $post_id );
 
-		// Honeypot or reCAPTCHA: pretend success but store nothing and fire no actions.
+		// Honeypot or reCAPTCHA: store the row flagged 'spam' (not discarded — autofill can
+		// trap real leads here) and return fake success, firing no actions.
 		if ( self::is_spam() || ! self::passes_recaptcha() ) {
+			self::store_flagged_spam( $post_id, $def );
 			wp_send_json_success( array( 'submission_id' => 0, 'message' => $def['success_message'], 'redirect' => '' ) );
 		}
 
 		$fields = self::clean_fields();
-		// Backstop: a free-domain email in a "block free" field is dropped like spam (the
-		// client already blocks it; this only catches JS-bypassed/bot submits).
+		// Backstop: a free-domain email in a "block free" field is flagged spam like the
+		// honeypot (kept, not discarded, so a real lead is never silently lost).
 		if ( self::has_blocked_free_email( $def, $fields ) ) {
+			self::store_flagged_spam( $post_id, $def );
 			wp_send_json_success( array( 'submission_id' => 0, 'message' => $def['success_message'], 'redirect' => '' ) );
 		}
 		$ctx    = self::request_context( $post_id );
@@ -477,6 +509,33 @@ class TF_Submissions {
 	public static function normalize_flag( $flag ) {
 		$flag = is_string( $flag ) ? strtolower( $flag ) : '';
 		return in_array( $flag, array( 'test', 'spam' ), true ) ? $flag : '';
+	}
+
+	/**
+	 * Count submissions per flag, honoring the active form/intent filters.
+	 * Returns [ 'all' => N, '' => N (active), 'test' => N, 'spam' => N ] — every key
+	 * always present (0 when none), so the flag dropdown can show live counts and the
+	 * default "Active" view never hides rows without a hint they exist.
+	 */
+	public static function flag_counts( $form = 0, $intent = '' ) {
+		global $wpdb;
+		$table = self::table();
+
+		$clauses = array();
+		$args    = array();
+		if ( $form )   { $clauses[] = 'form_post_id = %d'; $args[] = (int) $form; }
+		if ( $intent ) { $clauses[] = 'intent = %s';       $args[] = $intent; }
+		$where = $clauses ? ( 'WHERE ' . implode( ' AND ', $clauses ) ) : '';
+		$sql   = "SELECT flag, COUNT(*) AS n FROM $table $where GROUP BY flag";
+		$rows  = $args ? $wpdb->get_results( $wpdb->prepare( $sql, $args ) ) : $wpdb->get_results( $sql ); // phpcs:ignore
+
+		$counts = array( 'all' => 0, '' => 0, 'test' => 0, 'spam' => 0 );
+		foreach ( (array) $rows as $r ) {
+			$flag = self::normalize_flag( $r->flag );
+			$counts[ $flag ] += (int) $r->n;
+			$counts['all']  += (int) $r->n;
+		}
+		return $counts;
 	}
 
 	/** Set the flag on a single submission row. Returns true on success. */
