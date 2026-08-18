@@ -3,7 +3,7 @@
  * Plugin Name:       Terrific Digital
  * Plugin URI:        https://terrific-digital.com
  * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.50.2
+ * Version:           2.51.0
  * Author:            Terrific Digital
  * License:           GPL-2.0+
  * Text Domain:       terrific-digital
@@ -12,7 +12,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.50.2' );
+define( 'TD_VERSION', '2.51.0' );
 define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
 
 // Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -448,6 +448,21 @@ function tf_get_actions( $post_id ) {
 		}
 	}
 	return $actions;
+}
+
+/**
+ * Enabled custom dataLayer event names for a form (from "DataLayer Event" actions).
+ * These fire client-side after form_submission + the form's intent event, carrying
+ * the same parameters as the intent event. Returns an ordered list of names.
+ */
+function tf_form_datalayer_events( $post_id ) {
+	$names = array();
+	foreach ( tf_get_actions( $post_id ) as $a ) {
+		if ( empty( $a['enabled'] ) || ( isset( $a['type'] ) ? $a['type'] : '' ) !== 'datalayer' ) { continue; }
+		$name = isset( $a['config']['event'] ) ? trim( (string) $a['config']['event'] ) : '';
+		if ( '' !== $name ) { $names[] = $name; }
+	}
+	return $names;
 }
 
 /** True if the form has an enabled webhook action set to fire on every step. */

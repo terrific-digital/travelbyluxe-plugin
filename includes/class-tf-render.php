@@ -118,6 +118,7 @@ class TF_Render {
 		$uid          = 'tf-' . $post_id . '-' . self::$instances;
 		$intent       = $preview ? '' : tf_form_intent_param( $post_id );
 		$step_webhook = ! $preview && $is_multi && tf_form_has_step_webhook( $post_id );
+		$dl_events    = $preview ? array() : tf_form_datalayer_events( $post_id );
 		// Per-form styling (settings fields): a wrapper class + scoped Custom CSS.
 		$wrapper_class = ( $post_id && ! $preview ) ? TF_Forms::get_wrapper_class( $post_id ) : '';
 		$custom_css    = ( $post_id && ! $preview ) ? TF_Forms::get_custom_css( $post_id ) : '';
@@ -152,6 +153,7 @@ class TF_Render {
 			data-form-name="<?php echo esc_attr( $def['form_name'] ); ?>"
 			<?php if ( $intent ) : ?>data-form-intent="<?php echo esc_attr( $intent ); ?>"<?php endif; ?>
 			<?php if ( $step_webhook ) : ?>data-step-webhook="1"<?php endif; ?>
+			<?php if ( ! empty( $dl_events ) ) : ?>data-dl-events="<?php echo esc_attr( wp_json_encode( $dl_events ) ); ?>"<?php endif; ?>
 			data-post-id="<?php echo (int) $post_id; ?>"
 			data-multistep="<?php echo $is_multi ? '1' : '0'; ?>"
 			data-total-steps="<?php echo (int) $total; ?>"

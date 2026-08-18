@@ -355,6 +355,30 @@
 		tdPush(ev);
 	}
 
+	// Fire any custom "DataLayer Event" actions configured on the form. Each is pushed
+	// AFTER form_submission and the form's intent event, carrying the same parameters as
+	// the intent event (only `event` differs). Reads the JSON list output on the form.
+	function pushDlActions(form, fields) {
+		var raw = form.getAttribute('data-dl-events');
+		if (!raw) { return; }
+		var names;
+		try { names = JSON.parse(raw); } catch (e) { return; }
+		if (!Array.isArray(names)) { return; }
+		var intent = form.getAttribute('data-form-intent');
+		names.forEach(function (name) {
+			if (!name) { return; }
+			var ev = {
+				event: name,
+				form_id: form.getAttribute('data-form-id'),
+				form_name: form.getAttribute('data-form-name'),
+				form_type: 'Terrific Form',
+				form_fields: fields
+			};
+			if (intent) { ev.form_intent = intent; }
+			tdPush(ev);
+		});
+	}
+
 	// Fire the form_submission dataLayer event (plus the form's intent event right
 	// after) when a configured non-last step is completed. Builder UI exposes a per-step
 	// "Fires form_submission" radio; default is the last step, in which case the submit
@@ -383,6 +407,7 @@
 				form_fields: fields
 			});
 		}
+		pushDlActions(form, fields);
 		form.__tfSubFired = true;
 	}
 
@@ -575,6 +600,7 @@
 									form_fields: fields
 								});
 							}
+							pushDlActions(form, fields);
 							form.__tfSubFired = true;
 						}
 						var redirect = res && res.data && res.data.redirect;

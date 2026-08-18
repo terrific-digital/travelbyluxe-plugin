@@ -269,9 +269,12 @@ class TF_Builder {
 		if ( ! is_array( $actions ) ) { return $out; }
 		foreach ( $actions as $a ) {
 			$type = isset( $a['type'] ) ? sanitize_key( $a['type'] ) : '';
-			if ( ! in_array( $type, array( 'webhook', 'redirect' ), true ) ) { continue; }
-			if ( isset( $seen[ $type ] ) ) { continue; } // only one of each action type
-			$seen[ $type ] = true;
+			if ( ! in_array( $type, array( 'webhook', 'redirect', 'datalayer' ), true ) ) { continue; }
+			// webhook & redirect are singletons; datalayer events can repeat (fire many per form).
+			if ( 'datalayer' !== $type ) {
+				if ( isset( $seen[ $type ] ) ) { continue; } // only one of each singleton action type
+				$seen[ $type ] = true;
+			}
 			$enabled = ! empty( $a['enabled'] );
 			$cfg     = ( isset( $a['config'] ) && is_array( $a['config'] ) ) ? $a['config'] : array();
 			if ( 'webhook' === $type ) {
@@ -280,11 +283,15 @@ class TF_Builder {
 					'url'     => isset( $cfg['url'] ) ? esc_url_raw( $cfg['url'] ) : '',
 					'trigger' => ( isset( $cfg['trigger'] ) && 'every' === $cfg['trigger'] ) ? 'every' : 'final',
 				);
-			} else {
+			} elseif ( 'redirect' === $type ) {
 				$clean = array(
 					'mode'    => ( isset( $cfg['mode'] ) && 'page' === $cfg['mode'] ) ? 'page' : 'url',
 					'url'     => isset( $cfg['url'] ) ? esc_url_raw( $cfg['url'] ) : '',
 					'page_id' => isset( $cfg['page_id'] ) ? (int) $cfg['page_id'] : 0,
+				);
+			} else { // datalayer — a single custom dataLayer event name.
+				$clean = array(
+					'event' => isset( $cfg['event'] ) ? sanitize_text_field( $cfg['event'] ) : '',
 				);
 			}
 			$out[] = array( 'type' => $type, 'enabled' => $enabled, 'config' => $clean );

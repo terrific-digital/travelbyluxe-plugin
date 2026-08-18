@@ -118,6 +118,14 @@ class TF_CPT_Manager {
 					$bg    = $enabled ? '#fff4e6' : '#f0f0f1';
 					$fg    = $enabled ? '#8a4a00' : '#787c82';
 					$bd    = $enabled ? '#f5d7a8' : '#dcdcde';
+				} elseif ( 'datalayer' === $type ) {
+					$cfg   = isset( $a['config'] ) ? $a['config'] : array();
+					$event = isset( $cfg['event'] ) ? trim( (string) $cfg['event'] ) : '';
+					if ( '' === $event ) { continue; } // skip blank event names
+					$label = 'DL: ' . $event;
+					$bg    = $enabled ? '#eafaf1' : '#f0f0f1';
+					$fg    = $enabled ? '#0a6b3a' : '#787c82';
+					$bd    = $enabled ? '#bfe6cf' : '#dcdcde';
 				} else {
 					continue;
 				}

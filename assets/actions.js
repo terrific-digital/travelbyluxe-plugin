@@ -60,11 +60,20 @@
 			'<select class="tf-ac-page"' + ( mode === 'page' ? '' : ' disabled' ) + '>' + pageOptions( a.config.page_id || 0 ) + '</select>';
 	}
 
+	function datalayerBody( a, i ) {
+		return '' +
+			'<label class="tf-ac-field"><span class="tf-ac-flabel">Event name</span>' +
+				'<input type="text" class="widefat tf-ac-event" placeholder="e.g. lead_qualified" value="' + esc( a.config.event || '' ) + '"></label>' +
+			'<p class="description" style="margin:6px 0 0">Pushed to the dataLayer after <code>form_submission</code> and the form intent event, carrying the same parameters as the intent event.</p>';
+	}
+
+	var TITLES = { webhook: '🔗 Webhook', redirect: '↪️ Redirect', datalayer: '📊 DataLayer Event' };
+
 	function card( a, i ) {
 		var el = document.createElement( 'div' );
 		el.className = 'tf-action-card' + ( a.enabled ? '' : ' is-off' );
-		var title = a.type === 'webhook' ? '🔗 Webhook' : '↪️ Redirect';
-		var body = a.type === 'webhook' ? webhookBody( a, i ) : redirectBody( a, i );
+		var title = TITLES[ a.type ] || a.type;
+		var body = a.type === 'webhook' ? webhookBody( a, i ) : ( a.type === 'redirect' ? redirectBody( a, i ) : datalayerBody( a, i ) );
 		el.innerHTML =
 			'<div class="tf-action-head">' +
 				'<span class="tf-action-title">' + title + '</span>' +
@@ -91,7 +100,7 @@
 			if ( u ) { u.addEventListener( 'input', function () { a.config.url = u.value; sync(); } ); }
 			var tg = el.querySelector( '.tf-ac-trigger' );
 			if ( tg ) { tg.addEventListener( 'change', function () { a.config.trigger = tg.value; sync(); } ); }
-		} else {
+		} else if ( a.type === 'redirect' ) {
 			el.querySelectorAll( 'input[name="tf-mode-' + i + '"]' ).forEach( function ( r ) {
 				r.addEventListener( 'change', function () { a.config.mode = r.value; render(); } );
 			} );
@@ -99,6 +108,9 @@
 			if ( ru ) { ru.addEventListener( 'input', function () { a.config.url = ru.value; sync(); } ); }
 			var pg = el.querySelector( '.tf-ac-page' );
 			if ( pg ) { pg.addEventListener( 'change', function () { a.config.page_id = pg.value; sync(); } ); }
+		} else {
+			var ev = el.querySelector( '.tf-ac-event' );
+			if ( ev ) { ev.addEventListener( 'input', function () { a.config.event = ev.value; sync(); } ); }
 		}
 		return el;
 	}
@@ -108,11 +120,14 @@
 	}
 
 	function addAction( type ) {
-		if ( hasType( type ) ) { return; } // only one of each action type
+		// webhook & redirect are singletons; datalayer events can be added repeatedly.
+		if ( type !== 'datalayer' && hasType( type ) ) { return; }
 		if ( type === 'webhook' ) {
 			actions.push( { type: 'webhook', enabled: true, config: { source: data.globalWebhook ? 'global' : 'custom', url: '', trigger: 'final' } } );
-		} else {
+		} else if ( type === 'redirect' ) {
 			actions.push( { type: 'redirect', enabled: true, config: { mode: 'url', url: '', page_id: 0 } } );
+		} else {
+			actions.push( { type: 'datalayer', enabled: true, config: { event: '' } } );
 		}
 		render();
 	}
@@ -131,11 +146,11 @@
 		add.className = 'tf-add-action';
 		var hasWebhook = hasType( 'webhook' );
 		var hasRedirect = hasType( 'redirect' );
-		var allAdded = hasWebhook && hasRedirect;
 		add.innerHTML =
-			'<span class="tf-add-label">' + ( allAdded ? 'All actions added.' : 'Add action:' ) + '</span> ' +
+			'<span class="tf-add-label">Add action:</span> ' +
 			'<button type="button" class="button tf-add" data-type="webhook"' + ( hasWebhook ? ' disabled title="Already added"' : '' ) + '>＋ Webhook</button> ' +
-			'<button type="button" class="button tf-add" data-type="redirect"' + ( hasRedirect ? ' disabled title="Already added"' : '' ) + '>＋ Redirect</button>';
+			'<button type="button" class="button tf-add" data-type="redirect"' + ( hasRedirect ? ' disabled title="Already added"' : '' ) + '>＋ Redirect</button> ' +
+			'<button type="button" class="button tf-add" data-type="datalayer">＋ DataLayer Event</button>';
 		add.querySelectorAll( '.tf-add' ).forEach( function ( b ) {
 			b.addEventListener( 'click', function () { addAction( b.getAttribute( 'data-type' ) ); } );
 		} );
