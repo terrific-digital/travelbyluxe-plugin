@@ -6,19 +6,20 @@ builder with first‑class lead capture, tracking, and delivery. Built to replac
 bespoke per‑page form JavaScript with one maintainable, trackable system so every
 new landing page "just works" for leads + analytics.
 
+> 🔒 **This repo is public: never commit hostnames, IPs, usernames, paths to credential
+> files, or credentials. Keep them in `PROJECT.local.md`** (gitignored — verify with
+> `git check-ignore PROJECT.local.md` before committing).
+
 **Current version:** 2.38.2
 
 ---
 
 ## 1. Where everything lives
 
+Server, SSH and admin details: `PROJECT.local.md` (local only, never commit).
+
 | | |
 |---|---|
-| **Canonical source (work here)** | `/Users/matangaash/Claude/terrific-digital-plugin/` (git repo) |
-| **Deployed to** | Cloudways app `travelbyluxe-lp` → `wp-content/plugins/terrific-digital/` |
-| **Server SSH** | `ssh -i ~/.ssh/tbl_cloudways master_emqjrcyekf@46.101.96.39` |
-| **WP path** | `~/applications/mpggmnftkb/public_html` |
-| **WP admin** | https://wordpress-1636848-6491457.cloudwaysapps.com/wp-admin/ (creds in the LP repo `.cloudways-wp.local.md`) |
 | **Demo form** | form CPT post **62** (`tf_62_3ea8e1`) still exists; its old demo pages `/tf-demo/` & `/tf-block-demo/` were deleted. For testing, create a throwaway page with `[terrific_form id="62"]` (or 77) and delete it after. |
 | **Live landing page** | page **84** "Luxury Travel v3 (Native)" `/luxury-travel-v3-native/` — a custom template that `do_shortcode`s form **77** + FAQ list **88** (`faq_88_a5250f`). Its stored content is only the form shortcode; the rest is template-rendered (why the FAQ usage finder needed render-tracking). |
 
@@ -509,12 +510,14 @@ CSS (e.g. `tbl-v3-native.css` had `.cta-section .tf-admin-edit{display:none}`) c
 `applications` symlink). Don't scp to a relative `~/tmp.x`: the SFTP login is chrooted to a
 different root than the interactive shell, so a relative upload lands somewhere the `ssh` session
 can't `cp` from. Direct-to-dest avoids that:
+Connection values come from environment variables (defined in `PROJECT.local.md`, never here):
+`$TD_SSH` (user@host), `$TD_SSH_KEY` (private-key path), `$TD_WP_PATH` (WP root, relative to
+the SSH home dir).
 ```bash
-H=master_emqjrcyekf@46.101.96.39; K=~/.ssh/tbl_cloudways
-D=applications/mpggmnftkb/public_html/wp-content/plugins/terrific-digital
-scp -i $K <localfile> $H:$D/<relpath>          # e.g. assets/form.js, includes/class-x.php
-ssh -i $K $H 'P=~/applications/mpggmnftkb/public_html/wp-content/plugins/terrific-digital
-  php -l $P/<relpath>; cd ~/applications/mpggmnftkb/public_html && wp breeze purge --cache=all'
+: "${TD_SSH:?}" "${TD_SSH_KEY:?}" "${TD_WP_PATH:?}"   # fail fast if PROJECT.local.md env isn't loaded
+D="$TD_WP_PATH/wp-content/plugins/terrific-digital"
+scp -i "$TD_SSH_KEY" <localfile> "$TD_SSH:$D/<relpath>"   # e.g. assets/form.js, includes/class-x.php
+ssh -i "$TD_SSH_KEY" "$TD_SSH" "php -l ~/$D/<relpath>; cd ~/$TD_WP_PATH && wp breeze purge --cache=all"
 ```
 - `php` is **not** installed locally — lint on the server with `php -l`. `node --check` lints JS locally.
 - DB ops / inspection: `wp eval` / `wp eval-file` (heredoc with a **quoted** `<<"PHP"` delimiter to
@@ -527,8 +530,8 @@ ssh -i $K $H 'P=~/applications/mpggmnftkb/public_html/wp-content/plugins/terrifi
 an isolated `--user-data-dir`, a unique `--remote-debugging-port`; drive over the WebSocket):
 - Admin tests: log in at `/wp-login.php`, then `Page.navigate` to the screen. **Credential-safety:**
   the auto-mode classifier blocks writing the WP password into a file or command line. Pass it via an
-  env var the script reads from `process.env` — e.g.
-  `WP_USER=… WP_PASS="$(grep -oE … /tmp/tfadmin.js)" node /tmp/x.js` — so the literal never appears.
+  env var the script reads from `process.env` (exact invocation and where the password is read
+  from: `PROJECT.local.md`) — so the literal never appears.
 - Front-end behaviour: fill fields, click, read `window.dataLayer` (wrap `dataLayer.push` to record
   events; if a submit may redirect, stash records in `sessionStorage` so they survive the nav).
 - **Synthetic drag** (SortableJS): Sortable uses **pointer events** by default, which CDP's

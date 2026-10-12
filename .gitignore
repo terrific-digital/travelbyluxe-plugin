@@ -5,3 +5,9 @@ node_modules/
 # Local-only files that carry the GitHub PAT — must never be committed.
 github_token.txt
 How To Use.txt
+
+# Local-only infrastructure notes (hosts, IPs, SSH users, paths) — this repo is public.
+PROJECT.local.md
+
+# Claude Code per-machine settings (contain literal SSH commands).
+.claude/settings.local.json

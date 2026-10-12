@@ -40,7 +40,7 @@ jobs:
             --exclude='.gitignore' \
             --exclude='.claude' \
             --exclude='PROJECT.md' \
-            --exclude='master_emqjrcyekf@*' \
+            --exclude='*@*' \
             --exclude='*.zip' \
             --exclude='node_modules' \
             ./ "$STAGE/terrific-digital/"
