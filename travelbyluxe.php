@@ -65,7 +65,7 @@ require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-lead-links.php';
 /**
  * Auto-update from the public GitHub repo terrific-digital/travelbyluxe-plugin.
  *
- * (Forked from terrific-digital/wordpress-plugin at v2.51.0; the TD_*/TF_* symbols,
+ * (Forked from terrific-digital/wordpress-plugin at v2.51.0; the TD_ / TF_ symbols,
  * hooks, CPTs, tables and options are kept on purpose — the lead-routing module and
  * the leads app's payload mapping depend on them. See PROJECT.md.)
  *
