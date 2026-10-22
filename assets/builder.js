@@ -17,7 +17,12 @@
 		{ type: 'paragraph', label: 'Paragraph', icon: 'dashicons-media-text' },
 		{ type: 'separator', label: 'Separator', icon: 'dashicons-minus' },
 		{ type: 'custom_html', label: 'Custom HTML', icon: 'dashicons-editor-code' },
-		{ type: 'hidden', label: 'Hidden', icon: 'dashicons-hidden' }
+		{ type: 'hidden', label: 'Hidden', icon: 'dashicons-hidden' },
+		// Travel by Luxe field types (includes/tbl-fields.php, assets/tbl-fields.js).
+		{ type: 'consent', label: 'Consent', icon: 'dashicons-privacy' },
+		{ type: 'countries', label: 'Countries (TBL)', icon: 'dashicons-admin-site-alt3' },
+		{ type: 'destinations', label: 'Destinations (TBL)', icon: 'dashicons-location-alt' },
+		{ type: 'budget', label: 'Budget (TBL)', icon: 'dashicons-money-alt' }
 	];
 	var HAS_OPTIONS = { select: 1, radio: 1, checkbox: 1 };
 	// Static/display fields that carry no submitted value (and thus no data-layer key).
@@ -80,9 +85,18 @@
 			min: '', max: '', minlength: '', maxlength: '', multiple: false,
 			min_from_today: '', max_from_today: '',
 			step: '', default: '', prefix: '', suffix: '', show_scale: false, value_inline: false, html: '', country_code: true, cc_show_name: false, block_free: false,
+			// Travel by Luxe settings (blank = the defaults in includes/tbl-fields.php).
+			style: 'list', collapsed: false, trigger_text: '', max_label: '', countries: 'all', max_countries: '', countries_key: '',
+			currency: '', rate_adult: '', rate_child: '', rate_adult_day: '', rate_child_day: '', included_days: '', range_mult: '', country_rates: '',
+			adults_key: '', children_key: '', days_key: '', country_key: '',
 			options: HAS_OPTIONS[type] ? [{ label: 'Option 1', value: 'Option 1' }, { label: 'Option 2', value: 'Option 2' }] : []
 		};
 		f.key = slug(f.label);
+		// The TBL types have fixed keys the leads app and the booking rule read.
+		if (type === 'consent') { f.key = 'consent'; f.required = true; }
+		if (type === 'countries') { f.key = 'trip_country'; f.required = true; f.placeholder = 'Select countries'; }
+		if (type === 'destinations') { f.key = 'destinations'; f.placeholder = 'Tell us where — e.g. Verona, Lake Garda…'; }
+		if (type === 'budget') { f.key = 'budget'; }
 		return f;
 	}
 
@@ -141,10 +155,15 @@
 		if (o && typeof o === 'object') { return (o.value !== undefined && o.value !== '') ? o.value : (o.label || ''); }
 		return o || '';
 	}
-	function optRowHtml(o) {
+	// rich = radio/checkbox: a description (cards) and the two "open answer" flags.
+	function optRowHtml(o, rich) {
+		var obj = (o && typeof o === 'object') ? o : {};
 		return '<tr>' +
 			'<td><input type="text" class="tf-o-label" value="' + esc(optLabel(o)) + '"></td>' +
 			'<td><input type="text" class="tf-o-value" value="' + esc(optValue(o)) + '" placeholder="(= label)"></td>' +
+			(rich ? '<td><input type="text" class="tf-o-desc" value="' + esc(obj.description || '') + '" placeholder="cards only"></td>' +
+				'<td style="text-align:center"><input type="checkbox" class="tf-o-excl"' + (obj.exclusive ? ' checked' : '') + '></td>' +
+				'<td style="text-align:center"><input type="checkbox" class="tf-o-rev"' + (obj.reveals ? ' checked' : '') + '></td>' : '') +
 			'<td><button type="button" class="button-link tf-o-del" title="Remove">✕</button></td>' +
 			'</tr>';
 	}
@@ -247,7 +266,19 @@
 					'<button type="button" class="button-link tf-b-addopt">+ Add option</button>' +
 				'</div>';
 		} else if (HAS_OPTIONS[f.type]) {
-			optionsRow = '<label class="tf-b-row tf-b-opts-row">Options (one per line)<textarea class="tf-b-opts" rows="3">' + (f.options || []).map(optLabel).join('\n').replace(/</g, '&lt;') + '</textarea></label>';
+			optionsRow =
+				'<label class="tf-b-row">Style<select class="tf-b-prop" data-prop="style">' +
+					'<option value="list"' + ((f.style || 'list') === 'list' ? ' selected' : '') + '>List</option>' +
+					'<option value="pills"' + (f.style === 'pills' ? ' selected' : '') + '>Pills</option>' +
+					'<option value="cards"' + (f.style === 'cards' ? ' selected' : '') + '>Cards (title + description)</option>' +
+				'</select></label>' +
+				'<div class="tf-b-row"><span class="tf-b-rowlabel">Options</span>' +
+					'<table class="tf-b-opttable tf-b-opttable-rich"><thead><tr><th>Label</th><th>Value</th><th>Description</th>' +
+						'<th title="Picking it clears the other options, and picking any other clears it (“Not sure yet”)">Excl.</th>' +
+						'<th title="Reveals a free-text box under the options, submitted as key_other (“Somewhere else”)">Text</th><th></th></tr></thead>' +
+						'<tbody class="tf-b-optrows">' + (f.options || []).map(function (o) { return optRowHtml(o, true); }).join('') + '</tbody></table>' +
+					'<button type="button" class="button-link tf-b-addopt">+ Add option</button>' +
+				'</div>';
 		}
 		var numberRow = (f.type === 'number') ?
 			'<div class="tf-b-row2"><label class="tf-b-row">Min value<input type="number" class="tf-b-min" value="' + esc(f.min) + '"></label>' +
@@ -263,14 +294,45 @@
 			'<div class="tf-b-row2"><label class="tf-b-row">Value prefix<input type="text" class="tf-b-prefix" value="' + esc(f.prefix) + '" placeholder="e.g. $"></label>' +
 			'<label class="tf-b-row">Value suffix<input type="text" class="tf-b-suffix" value="' + esc(f.suffix) + '" placeholder="e.g. days"></label></div>' +
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-scale"' + (f.show_scale ? ' checked' : '') + '> Show min/max scale</label>' +
-			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-vinline"' + (f.value_inline ? ' checked' : '') + '> Show value in the label (instead of a bubble)</label>' : '';
+			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-vinline"' + (f.value_inline ? ' checked' : '') + '> Show value in the label (instead of a bubble)</label>' +
+			'<label class="tf-b-row">Label at the top of the range<input type="text" class="tf-b-prop" data-prop="max_label" value="' + esc(f.max_label) + '" placeholder="e.g. 10+ — shown and submitted at the maximum"></label>' : '';
 		var htmlRow = (f.type === 'custom_html') ?
 			'<label class="tf-b-row">Custom HTML<textarea class="tf-b-html" rows="6" spellcheck="false" placeholder="&lt;div&gt;…&lt;/div&gt;" style="font-family:monospace">' + escArea(f.html) + '</textarea></label>' : '';
 		var emailRow = (f.type === 'email') ?
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-blockfree"' + (f.block_free ? ' checked' : '') + '> Block free email domains (require a work email)</label>' : '';
 		var ccRow = (f.type === 'tel') ?
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-cc"' + ((f.country_code !== false) ? ' checked' : '') + '> Country-code selector</label>' +
-			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-ccname"' + (f.cc_show_name ? ' checked' : '') + '> Show country name in the selector</label>' : '';
+			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-ccname"' + (f.cc_show_name ? ' checked' : '') + '> Show country name in the selector</label>' +
+			'<label class="tf-b-row">Dial codes<select class="tf-b-prop" data-prop="countries">' +
+				'<option value="all"' + (f.countries !== 'curated' ? ' selected' : '') + '>Every country</option>' +
+				'<option value="curated"' + (f.countries === 'curated' ? ' selected' : '') + '>Travel by Luxe list (33 countries)</option>' +
+			'</select></label>' : '';
+		// Travel by Luxe settings per type.
+		var tblRow = '';
+		if (f.type === 'textarea') {
+			tblRow = '<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-prop" data-prop="collapsed"' + (f.collapsed ? ' checked' : '') + '> Hidden behind a button until clicked</label>' +
+				'<label class="tf-b-row">Button text<input type="text" class="tf-b-prop" data-prop="trigger_text" value="' + esc(f.trigger_text) + '" placeholder="Click here to write something for us"></label>';
+		} else if (f.type === 'countries') {
+			tblRow = '<label class="tf-b-row">Most countries a guest can pick<input type="number" min="0" class="tf-b-prop" data-prop="max_countries" value="' + esc(f.max_countries) + '" placeholder="blank = no limit"></label>' +
+				'<p class="tf-b-hint" style="margin-top:-6px">Submits the names under this key and the ISO codes under <code>key_code</code>. The shortcode\'s <code>country="Italy"</code> pre-ticks the page\'s country.</p>';
+		} else if (f.type === 'destinations') {
+			tblRow = '<label class="tf-b-row">Countries field key<input type="text" class="tf-b-prop" data-prop="countries_key" value="' + esc(f.countries_key) + '" placeholder="trip_country"></label>' +
+				'<p class="tf-b-hint" style="margin-top:-6px">Region pills follow the countries picked in that field (or the shortcode\'s preset). Ends with “Not sure yet” and “Somewhere else” (a text box, submitted as <code>key_other</code>). Use <code>{country}</code> in the label.</p>';
+		} else if (f.type === 'budget') {
+			var numRow = function (prop, label, ph) { return '<label class="tf-b-row">' + label + '<input type="number" step="any" class="tf-b-prop" data-prop="' + prop + '" value="' + esc(f[prop]) + '" placeholder="' + ph + '"></label>'; };
+			tblRow = '<div class="tf-b-row2"><label class="tf-b-row">Currency<input type="text" class="tf-b-prop" data-prop="currency" value="' + esc(f.currency) + '" placeholder="€"></label>' + numRow('range_mult', 'Top of the range (× floor)', '5') + '</div>' +
+				'<div class="tf-b-row2">' + numRow('rate_adult', 'Per adult', '5000') + numRow('rate_child', 'Per child', '3000') + '</div>' +
+				'<div class="tf-b-row2">' + numRow('rate_adult_day', 'Per adult per extra day', '700') + numRow('rate_child_day', 'Per child per extra day', '500') + '</div>' +
+				'<div class="tf-b-row2">' + numRow('included_days', 'Days included', '7') + numRow('step', 'Slider step', '1000') + '</div>' +
+				'<label class="tf-b-row">Dearer countries (name: adult, child, adult/day, child/day)<textarea class="tf-b-prop" data-prop="country_rates" rows="3" placeholder="France: 10000, 6000, 1400, 1000&#10;Switzerland: 10000, 6000, 1400, 1000">' + escArea(f.country_rates) + '</textarea></label>' +
+				'<div class="tf-b-row2"><label class="tf-b-row">Adults field key<input type="text" class="tf-b-prop" data-prop="adults_key" value="' + esc(f.adults_key) + '" placeholder="adults"></label>' +
+				'<label class="tf-b-row">Children field key<input type="text" class="tf-b-prop" data-prop="children_key" value="' + esc(f.children_key) + '" placeholder="children"></label></div>' +
+				'<div class="tf-b-row2"><label class="tf-b-row">Trip length field key<input type="text" class="tf-b-prop" data-prop="days_key" value="' + esc(f.days_key) + '" placeholder="trip_length"></label>' +
+				'<label class="tf-b-row">Countries field key<input type="text" class="tf-b-prop" data-prop="country_key" value="' + esc(f.country_key) + '" placeholder="trip_country"></label></div>' +
+				'<p class="tf-b-hint" style="margin-top:-6px">The slider\'s floor is adults × rate + children × rate, plus every day beyond the included days; a dearer country in the trip raises every rate. Also submits <code>key_label</code>, <code>key_min</code> and <code>key_at_min</code>.</p>';
+		} else if (f.type === 'consent') {
+			tblRow = '<p class="tf-b-hint">A single tick box. Links in the text are kept (Terms &amp; Conditions, Privacy Policy). Submits <code>yes</code>.</p>';
+		}
 		var lengthRow = ( ['text', 'email', 'tel', 'textarea'].indexOf(f.type) >= 0 ) ?
 			'<div class="tf-b-row2"><label class="tf-b-row">Min length<input type="number" min="0" class="tf-b-minlen" value="' + esc(f.minlength) + '"></label>' +
 			'<label class="tf-b-row">Max length<input type="number" min="0" class="tf-b-maxlen" value="' + esc(f.maxlength) + '"></label></div>' : '';
@@ -278,10 +340,10 @@
 			'<div class="tf-b-row2"><label class="tf-b-row">Earliest (days from today)<input type="number" class="tf-b-minfromtoday" value="' + esc(f.min_from_today) + '" placeholder="(no limit)"></label>' +
 			'<label class="tf-b-row">Latest (days from today)<input type="number" class="tf-b-maxfromtoday" value="' + esc(f.max_from_today) + '" placeholder="(no limit)"></label></div>' +
 			'<p class="tf-b-hint" style="margin-top:-6px"><strong>0</strong> = today. Blank = no limit. E.g. earliest 0 blocks past dates; latest 90 caps at 90 days out.</p>' : '';
-		var noPlace = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, slider: 1 };
+		var noPlace = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, slider: 1, budget: 1, consent: 1 };
 		var placeRow = noPlace[f.type] ? '' :
 			'<label class="tf-b-row">Placeholder<input type="text" class="tf-b-ph" value="' + esc(f.placeholder) + '"></label>';
-		var noReq = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, slider: 1 };
+		var noReq = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, slider: 1, budget: 1 };
 		var reqRow = noReq[f.type] ? '' :
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-req"' + (f.required ? ' checked' : '') + '> Required</label>';
 		var widthRow = (f.type === 'hidden') ? '' :
@@ -290,20 +352,20 @@
 				'<option value="half"' + ('half' === f.width ? ' selected' : '') + '>Half (1/2)</option>' +
 				'<option value="third"' + ('third' === f.width ? ' selected' : '') + '>Third (1/3)</option>' +
 			'</select></label>';
-		var noShowLabel = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1 };
+		var noShowLabel = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, consent: 1 };
 		var showLabelRow = noShowLabel[f.type] ? '' :
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-showlabel"' + ((f.show_label !== false) ? ' checked' : '') + '> Show label</label>';
 		// Label/Key rows: static fields have no key; paragraph edits multi-line text; html/separator have no label.
 		var labelRow;
-		if (f.type === 'paragraph') {
-			labelRow = '<label class="tf-b-row">Text<textarea class="tf-b-label" rows="3">' + escArea(f.label) + '</textarea></label>';
+		if (f.type === 'paragraph' || f.type === 'consent') {
+			labelRow = '<label class="tf-b-row">' + (f.type === 'consent' ? 'Text (links allowed)' : 'Text') + '<textarea class="tf-b-label" rows="3">' + escArea(f.label) + '</textarea></label>';
 		} else if (f.type === 'custom_html' || f.type === 'separator') {
 			labelRow = '';
 		} else {
 			labelRow = '<label class="tf-b-row">Label<input type="text" class="tf-b-label" value="' + esc(f.label) + '"></label>';
 		}
 		var keyRow = STATIC_TYPES[f.type] ? '' :
-			'<label class="tf-b-row">Key (data layer)<input type="text" class="tf-b-key" value="' + esc(f.key) + '"></label>';
+			'<label class="tf-b-row">Key (data layer)<input type="text" class="tf-b-key" value="' + esc(f.key) + '"' + ({ consent: 1, countries: 1, destinations: 1, budget: 1 }[f.type] ? ' data-auto="0"' : '') + '></label>';
 		card.innerHTML =
 			'<div class="tf-b-field-head">' +
 				'<span class="tf-b-handle dashicons dashicons-move"></span>' +
@@ -319,7 +381,7 @@
 				labelRow +
 				showLabelRow +
 				keyRow +
-				placeRow + numberRow + sliderRow + hiddenRow + lengthRow + dateRow + htmlRow + optionsRow + ccRow + emailRow + widthRow + reqRow +
+				placeRow + numberRow + sliderRow + hiddenRow + lengthRow + dateRow + htmlRow + optionsRow + ccRow + emailRow + tblRow + widthRow + reqRow +
 			'</div>';
 
 		var editBtn = card.querySelector('.tf-b-edit');
@@ -385,6 +447,11 @@
 		var ph = card.querySelector('.tf-b-ph'); if (ph) { ph.addEventListener('input', function () { f.placeholder = ph.value; sync(); }); }
 		var req = card.querySelector('.tf-b-req'); if (req) { req.addEventListener('change', function () { f.required = req.checked; sync(); }); }
 		var sl = card.querySelector('.tf-b-showlabel'); if (sl) { sl.addEventListener('change', function () { f.show_label = sl.checked; sync(); }); }
+		// Travel by Luxe settings: every control with data-prop writes straight onto the field.
+		card.querySelectorAll('.tf-b-prop').forEach(function (el) {
+			var prop = el.getAttribute('data-prop');
+			el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', function () { f[prop] = el.type === 'checkbox' ? el.checked : el.value; sync(); });
+		});
 		// radio/checkbox: one label per line (value = label)
 		var opts = card.querySelector('.tf-b-opts');
 		if (opts) {
@@ -410,16 +477,22 @@
 			var tbody = table.querySelector('.tf-b-optrows');
 			var readTable = function () {
 				f.options = Array.prototype.map.call(tbody.querySelectorAll('tr'), function (tr) {
-					return { label: tr.querySelector('.tf-o-label').value, value: tr.querySelector('.tf-o-value').value };
+					var o = { label: tr.querySelector('.tf-o-label').value, value: tr.querySelector('.tf-o-value').value };
+					var d = tr.querySelector('.tf-o-desc'), x = tr.querySelector('.tf-o-excl'), v = tr.querySelector('.tf-o-rev');
+					if (d) { o.description = d.value; }
+					if (x) { o.exclusive = x.checked; }
+					if (v) { o.reveals = v.checked; }
+					return o;
 				}).filter(function (o) { return o.label !== '' || o.value !== ''; });
 				sync();
 			};
 			table.addEventListener('input', readTable);
+			table.addEventListener('change', readTable); // the Excl./Text checkboxes
 			tbody.addEventListener('click', function (e) {
 				if (e.target.closest('.tf-o-del')) { e.target.closest('tr').remove(); readTable(); }
 			});
 			card.querySelector('.tf-b-addopt').addEventListener('click', function () {
-				tbody.insertAdjacentHTML('beforeend', optRowHtml({ label: '', value: '' }));
+				tbody.insertAdjacentHTML('beforeend', optRowHtml({ label: '', value: '' }, table.classList.contains('tf-b-opttable-rich')));
 			});
 		}
 		return card;
@@ -499,7 +572,9 @@
 	}
 
 	function defaultLabel(t) {
-		var m = { text: 'Text', email: 'Email Address', tel: 'Phone', number: 'Number', slider: 'Slider', date: 'Date', textarea: 'Message', select: 'Select', radio: 'Choose one', checkbox: 'Select all that apply', heading: 'Section heading', paragraph: 'Your paragraph text…', separator: 'Separator', custom_html: 'Custom HTML', hidden: 'Hidden value' };
+		var m = { text: 'Text', email: 'Email Address', tel: 'Phone', number: 'Number', slider: 'Slider', date: 'Date', textarea: 'Message', select: 'Select', radio: 'Choose one', checkbox: 'Select all that apply', heading: 'Section heading', paragraph: 'Your paragraph text…', separator: 'Separator', custom_html: 'Custom HTML', hidden: 'Hidden value',
+			consent: 'I agree to the <a href="/terms-conditions/" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a> and <a href="/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.',
+			countries: 'Where would you like to travel?', destinations: 'Where in {country} calls to you?', budget: 'Your investment' };
 		return m[t] || 'Field';
 	}
 

@@ -36,6 +36,8 @@ class TD_Notes {
 				'Per-step Next button text; per-type palette icons.',
 				'Sticky side-by-side live preview — renders the real form as you edit (toggleable, drag-resizable).',
 				'Per-form Wrapper CSS class + Custom CSS (output in a scoped style tag) for one-off styling.',
+				'<strong>Travel by Luxe types:</strong> Consent (tick box with links), Countries (multi-picker, ISO codes), Destinations (region pills that follow the countries, “Not sure yet” / “Somewhere else”), Budget (slider whose floor follows adults, children, trip length and country). Radio/checkbox groups can render as pills or cards; sliders can label their top (“10+”); textareas can hide behind a button; phone fields can use the 33-country list. <code>{country}</code> in a label or step title follows the chosen countries.',
+				'Wrapper class <code>tbl-lux</code> applies the site\'s petrol/gold form theme; the shortcode takes <code>country="Italy"</code> / <code>countries="Italy,France"</code> to pre-tick the page\'s country.',
 			) ),
 			array( '📍', 'Placement', array(
 				'Shortcode <code>[tbl_form id="N"]</code>.',

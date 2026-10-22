@@ -1,0 +1,176 @@
+/* Travel by Luxe form theme — the petrol/gold inquiry form from the site's
+   css/msf-form.css, applied to the plugin's own markup. Scoped to a form whose
+   Wrapper CSS class (Form Settings) includes `tbl-lux`; forms without it keep
+   the neutral form.css look. Colours fall back to the site's own variables
+   (--gold, --green, --serif, --sans) when the page defines them. */
+.tf-form.tbl-lux {
+	--tbl-gold: var(--gold, #a98545);
+	--tbl-gold-light: var(--gold-light, #c0a063);
+	--tbl-green: var(--green, #123536);
+	--tbl-white: #fff;
+	--tbl-serif: var(--serif, 'Newsreader', Georgia, serif);
+	--tbl-sans: var(--sans, 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif);
+	--tbl-radius: var(--radius-btn, 2px);
+	--tbl-pill: var(--radius-pill, 999px);
+	--tbl-card: var(--radius-card, 6px);
+	--tbl-error: #e57373;
+	max-width: 520px;
+	margin: 0 auto;
+	text-align: left;
+	color: var(--tbl-white);
+	font-family: var(--tbl-sans);
+}
+
+/* Progress */
+.tf-form.tbl-lux .tf-progress { margin-bottom: 28px; }
+.tf-form.tbl-lux .tf-progress-meta { font-size: 12px; opacity: 1; margin-bottom: 10px; }
+.tf-form.tbl-lux .tf-progress-step { letter-spacing: .1em; text-transform: uppercase; font-weight: 600; color: rgba(255,255,255,.75); }
+.tf-form.tbl-lux .tf-progress-pct { color: rgba(255,255,255,.55); }
+.tf-form.tbl-lux .tf-progress-bar { height: 8px; border-radius: var(--tbl-pill); background: rgba(255,255,255,.22); }
+.tf-form.tbl-lux .tf-progress-fill { background: var(--tbl-gold); border-radius: var(--tbl-pill); }
+
+/* Step titles + static text */
+.tf-form.tbl-lux .tf-step-title { font-family: var(--tbl-serif); font-size: 22px; font-weight: 500; color: var(--tbl-white); margin: 0 0 4px; }
+.tf-form.tbl-lux .tf-paragraph { font-size: 14px; color: rgba(255,255,255,.5); margin: 0 0 20px; }
+.tf-form.tbl-lux .tf-heading { font-family: var(--tbl-serif); font-size: 17px; font-weight: 500; color: var(--tbl-white); letter-spacing: .005em; margin: 22px 0 12px; line-height: 1.3; }
+.tf-form.tbl-lux .tf-heading::after { content: ''; display: block; width: 28px; height: 2px; background: var(--tbl-gold); margin-top: 8px; border-radius: 2px; }
+.tf-form.tbl-lux .tf-field-heading { margin-bottom: 0; }
+.tf-form.tbl-lux .tf-field-heading + .tf-field-paragraph .tf-paragraph { margin-top: -4px; }
+.tf-form.tbl-lux .tf-separator { border-top-color: rgba(255,255,255,.08); margin: 10px 0 6px; }
+
+/* Confirmation banner — a paragraph field with the `tf-confirmed` Wrapper class in its text? No: use custom HTML
+   with <div class="tf-confirmed">…</div> (see the inquiry form definition). */
+.tf-form.tbl-lux .tf-confirmed { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 24px; padding: 14px 16px 14px 14px; border-radius: var(--tbl-card); border-left: 3px solid var(--tbl-gold); background: linear-gradient(90deg, rgba(196,167,97,.2) 0%, rgba(196,167,97,.06) 100%); }
+.tf-form.tbl-lux .tf-confirmed-icon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--tbl-gold); color: var(--tbl-green); font-size: 14px; font-weight: 700; line-height: 28px; text-align: center; margin-top: 1px; }
+.tf-form.tbl-lux .tf-confirmed p { margin: 0; line-height: 1.45; }
+.tf-form.tbl-lux .tf-confirmed p:first-child { font-size: 15px; font-weight: 500; color: rgba(255,255,255,.92); margin-bottom: 4px; }
+.tf-form.tbl-lux .tf-confirmed p + p { font-size: 14px; color: rgba(255,255,255,.68); }
+
+/* Fields */
+.tf-form.tbl-lux .tf-fields { column-gap: 12px; }
+.tf-form.tbl-lux .tf-field { margin-bottom: 14px; }
+.tf-form.tbl-lux .tf-field.tf-w-half { flex: 0 0 calc((100% - 12px) / 2); }
+.tf-form.tbl-lux .tf-label { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.7); margin-bottom: 7px; letter-spacing: .02em; }
+.tf-form.tbl-lux .tf-req { color: var(--tbl-gold); }
+.tf-form.tbl-lux .tf-input,
+.tf-form.tbl-lux .tf-phone-cc {
+	padding: 14px 20px; border: 1px solid rgba(255,255,255,.15); border-radius: var(--tbl-radius);
+	background: rgba(255,255,255,.08); color: var(--tbl-white); font-family: var(--tbl-sans); font-size: 15px;
+	transition: border-color .3s, background .3s;
+}
+.tf-form.tbl-lux .tf-input::placeholder { color: rgba(255,255,255,.4); }
+.tf-form.tbl-lux .tf-input:focus, .tf-form.tbl-lux .tf-phone-cc:focus { border-color: var(--tbl-gold); background: rgba(255,255,255,.12); box-shadow: none; outline: none; }
+.tf-form.tbl-lux .tf-input option, .tf-form.tbl-lux .tf-phone-cc option { color: #1c2b33; background: #fff; }
+.tf-form.tbl-lux .tf-phone { gap: 8px; }
+.tf-form.tbl-lux .tf-phone-cc { padding-left: 12px; padding-right: 8px; max-width: 150px; }
+.tf-form.tbl-lux .tf-hint { color: rgba(255,255,255,.5); }
+.tf-form.tbl-lux input.tf-input[type="date"] { color-scheme: dark; cursor: pointer; }
+
+/* Errors */
+.tf-form.tbl-lux .tf-field.tf-has-error .tf-label { color: #f0a898; }
+.tf-form.tbl-lux .tf-field.tf-has-error .tf-input,
+.tf-form.tbl-lux .tf-field.tf-has-error .tf-countries-trigger { border-color: var(--tbl-error); box-shadow: 0 0 0 1px rgba(229,115,115,.35); }
+.tf-form.tbl-lux .tf-field.tf-has-error .tf-options { outline: 1px solid rgba(229,115,115,.45); outline-offset: 4px; border-radius: 10px; }
+.tf-form.tbl-lux .tf-error { color: #f0a898; }
+
+/* Sliders */
+.tf-form.tbl-lux .tf-slider { gap: 12px; }
+.tf-form.tbl-lux .tf-range { -webkit-appearance: none; appearance: none; height: 6px; border-radius: var(--tbl-pill); background: rgba(255,255,255,.2); border: 0; padding: 0; margin: 14px 0 8px; }
+.tf-form.tbl-lux .tf-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--tbl-gold); border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); transition: transform .15s; }
+.tf-form.tbl-lux .tf-range::-webkit-slider-thumb:hover { transform: scale(1.1); }
+.tf-form.tbl-lux .tf-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--tbl-gold); border: 2px solid #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+.tf-form.tbl-lux .tf-range::-moz-range-track { height: 6px; border-radius: var(--tbl-pill); background: rgba(255,255,255,.2); }
+.tf-form.tbl-lux .tf-range-val { color: var(--tbl-gold); font-weight: 600; }
+.tf-form.tbl-lux .tf-range-scale { font-size: .75rem; color: rgba(255,255,255,.6); }
+
+/* Budget */
+.tf-form.tbl-lux .tf-budget-note { font-size: 13px; color: rgba(255,255,255,.7); margin: -2px 0 4px; }
+.tf-form.tbl-lux .tf-budget-min { font-size: 12px; color: rgba(255,255,255,.75); font-weight: 500; margin-top: 4px; }
+
+/* Choice groups: list (base), pills, cards */
+.tf-form.tbl-lux .tf-options { gap: 6px; }
+.tf-form.tbl-lux .tf-opt { border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.05); color: rgba(255,255,255,.75); border-radius: var(--tbl-card); }
+.tf-form.tbl-lux .tf-opt:hover { border-color: var(--tbl-gold); color: var(--tbl-white); }
+.tf-form.tbl-lux .tf-opt input { accent-color: var(--tbl-gold); }
+
+.tf-form.tbl-lux .tf-style-pills .tf-opt { padding: 6px 11px; border-radius: var(--tbl-pill); font-size: 12px; line-height: 1.3; user-select: none; transition: all .2s; }
+.tf-form.tbl-lux .tf-style-pills .tf-opt input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
+.tf-form.tbl-lux .tf-style-pills .tf-opt:hover { background: rgba(169,133,69,.08); }
+.tf-form.tbl-lux .tf-style-pills .tf-opt.is-selected,
+.tf-form.tbl-lux .tf-style-pills .tf-opt:has(input:checked) { background: var(--tbl-gold); border-color: var(--tbl-gold); color: var(--tbl-green); font-weight: 600; }
+.tf-form.tbl-lux .tf-style-pills .tf-opt--open { border-style: dashed; border-color: rgba(255,255,255,.28); background: transparent; font-style: italic; }
+.tf-form.tbl-lux .tf-style-pills .tf-opt--open.is-selected,
+.tf-form.tbl-lux .tf-style-pills .tf-opt--open:has(input:checked) { border-style: solid; font-style: normal; }
+.tf-form.tbl-lux .tf-dest-group { flex: 1 0 100%; margin: 10px 0 2px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+.tf-form.tbl-lux .tf-dest-group:first-child { margin-top: 0; }
+.tf-form.tbl-lux .tf-reveal { margin-top: 12px; }
+
+.tf-form.tbl-lux .tf-style-cards { flex-direction: column; gap: 8px; }
+.tf-form.tbl-lux .tf-style-cards .tf-opt { display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px; border-color: rgba(255,255,255,.15); background: rgba(255,255,255,.04); border-radius: var(--tbl-card); font-size: 14px; line-height: 1.45; user-select: none; transition: all .2s; }
+.tf-form.tbl-lux .tf-style-cards .tf-opt input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
+.tf-form.tbl-lux .tf-style-cards .tf-opt:hover { border-color: rgba(169,133,69,.5); background: rgba(169,133,69,.06); }
+.tf-form.tbl-lux .tf-style-cards .tf-opt.is-selected,
+.tf-form.tbl-lux .tf-style-cards .tf-opt:has(input:checked) { border-color: var(--tbl-gold); background: rgba(169,133,69,.12); color: var(--tbl-white); }
+.tf-form.tbl-lux .tf-card-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: border-color .2s; }
+.tf-form.tbl-lux .tf-style-cards .tf-opt.is-selected .tf-card-dot,
+.tf-form.tbl-lux .tf-style-cards .tf-opt:has(input:checked) .tf-card-dot { border-color: var(--tbl-gold); }
+.tf-form.tbl-lux .tf-style-cards .tf-opt.is-selected .tf-card-dot::after,
+.tf-form.tbl-lux .tf-style-cards .tf-opt:has(input:checked) .tf-card-dot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--tbl-gold); display: block; }
+.tf-form.tbl-lux .tf-opt-desc { color: rgba(255,255,255,.65); font-weight: 400; }
+
+/* A plain checkbox list on the dark theme (accommodation opt-out) */
+.tf-form.tbl-lux .tf-style-list .tf-opt { border: 0; background: transparent; padding: 4px 0; font-size: 13px; color: rgba(255,255,255,.6); }
+.tf-form.tbl-lux .tf-style-list .tf-opt input { width: 14px; height: 14px; }
+
+/* Consent */
+.tf-form.tbl-lux .tf-consent { display: flex; align-items: flex-start; gap: 9px; margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: rgba(255,255,255,.45); cursor: pointer; }
+.tf-form.tbl-lux .tf-consent input { flex: 0 0 auto; width: 15px; height: 15px; margin: 1px 0 0; accent-color: var(--tbl-gold); cursor: pointer; }
+.tf-form.tbl-lux .tf-consent a { color: var(--tbl-gold); text-decoration: underline; text-underline-offset: 2px; }
+.tf-form.tbl-lux .tf-consent a:hover { color: var(--tbl-gold-light); }
+.tf-form.tbl-lux .tf-field.tf-has-error .tf-consent { color: #f0a898; }
+.tf-form.tbl-lux .tf-field.tf-has-error .tf-consent input { outline: 1px solid var(--tbl-error); outline-offset: 2px; }
+
+/* Countries picker */
+.tf-form.tbl-lux .tf-countries-control { position: relative; }
+.tf-form.tbl-lux .tf-countries-trigger { text-align: left; cursor: pointer; width: 100%; }
+.tf-form.tbl-lux .tf-countries-trigger.is-placeholder { color: rgba(255,255,255,.4); }
+.tf-form.tbl-lux .tf-countries.is-open .tf-countries-trigger { border-color: var(--tbl-gold); background: rgba(255,255,255,.12); }
+.tf-form.tbl-lux .tf-countries-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.tf-form.tbl-lux .tf-countries-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid rgba(169,133,69,.55); border-radius: var(--tbl-pill); background: rgba(169,133,69,.16); color: var(--tbl-white); font-family: var(--tbl-sans); font-size: 12px; cursor: pointer; transition: background .2s, border-color .2s; }
+.tf-form.tbl-lux .tf-countries-chip:hover { background: rgba(169,133,69,.28); border-color: var(--tbl-gold); }
+.tf-form.tbl-lux .tf-countries-chip-x { font-size: 14px; line-height: 1; opacity: .8; }
+.tf-form.tbl-lux .tf-countries-hint { margin-top: 6px; font-size: 12px; color: rgba(255,255,255,.55); }
+.tf-form.tbl-lux .tf-countries-panel { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20; max-height: 260px; overflow: auto; border: 1px solid rgba(255,255,255,.18); border-radius: 4px; background: #1a3a3b; box-shadow: 0 12px 32px rgba(0,0,0,.35); }
+.tf-form.tbl-lux .tf-countries-option { display: flex; align-items: center; gap: 10px; padding: 11px 14px; margin: 0; color: rgba(255,255,255,.88); font-size: 14px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,.06); user-select: none; transition: background .15s; }
+.tf-form.tbl-lux .tf-countries-option:last-child { border-bottom: 0; }
+.tf-form.tbl-lux .tf-countries-option:hover:not(.is-disabled) { background: rgba(255,255,255,.06); }
+.tf-form.tbl-lux .tf-countries-option.is-selected { color: var(--tbl-white); background: rgba(169,133,69,.14); }
+.tf-form.tbl-lux .tf-countries-option.is-disabled { opacity: .38; cursor: not-allowed; }
+.tf-form.tbl-lux .tf-countries-option input { width: 16px; height: 16px; accent-color: var(--tbl-gold); flex-shrink: 0; }
+
+/* Collapsed textarea ("Click here to write something for us") */
+.tf-form.tbl-lux .tf-collapsed-trigger { display: inline-flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; border: 1px solid rgba(169,133,69,.45); border-radius: var(--tbl-radius); background: rgba(169,133,69,.1); color: var(--tbl-gold); font-family: var(--tbl-sans); font-size: 13px; font-weight: 500; letter-spacing: .02em; cursor: pointer; text-align: left; transition: background .2s, border-color .2s, color .2s, transform .2s; }
+.tf-form.tbl-lux .tf-collapsed-trigger:hover { background: rgba(169,133,69,.18); border-color: var(--tbl-gold); color: var(--tbl-gold-light); transform: translateY(-1px); }
+.tf-form.tbl-lux .tf-collapsed-trigger svg { flex-shrink: 0; }
+.tf-form.tbl-lux textarea.tf-collapsed { min-height: 3.25em; resize: none; overflow-y: hidden; line-height: 1.5; padding: 12px 16px; }
+
+/* Buttons */
+.tf-form.tbl-lux .tf-actions { justify-content: space-between; gap: 16px; margin-top: 24px; }
+.tf-form.tbl-lux .tf-next, .tf-form.tbl-lux .tf-submit { flex: 1; padding: 15px 28px; background: var(--tbl-gold); color: var(--tbl-green); border-radius: var(--tbl-radius); font-family: var(--tbl-sans); font-size: 14px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; transition: background .3s, transform .2s; }
+.tf-form.tbl-lux .tf-next:hover, .tf-form.tbl-lux .tf-submit:hover { background: var(--tbl-gold-light); transform: translateY(-1px); }
+.tf-form.tbl-lux .tf-back { order: -1; background: none; border: 0; color: rgba(255,255,255,.45); font-size: 14px; padding: 6px 0; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.tf-form.tbl-lux .tf-back:hover { color: rgba(255,255,255,.8); }
+
+/* Thank-you (inline, when a form has no redirect) */
+.tf-form.tbl-lux .tf-check { background: var(--tbl-gold); color: var(--tbl-green); }
+
+/* Editors' "Edit form" pill stays readable on the dark band */
+.tf-form.tbl-lux .tf-admin-edit, .tbl-lux .tf-admin-edit { text-align: left; }
+
+@media (max-width: 600px) {
+	.tf-form.tbl-lux .tf-field.tf-w-half { flex: 0 0 100%; }
+	.tf-form.tbl-lux .tf-heading { font-size: 16px; margin-top: 18px; }
+}
+
+/* Step changes scroll the form to the top; the site's nav is fixed (--tbl-nav-h). */
+.tf-form.tbl-lux { scroll-margin-top: calc(var(--tbl-nav-h, 72px) + 16px); }

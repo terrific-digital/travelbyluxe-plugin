@@ -8,6 +8,10 @@ class TF_Render {
 
 	protected static $enqueued = false;
 	protected static $instances = 0;
+	/** Countries preset by the shortcode (country="…" / countries="…") for the form being rendered. */
+	protected static $preset = array();
+	/** Extra wrapper classes from the shortcode's class="…". */
+	protected static $extra_class = '';
 
 	public static function init() {
 		add_shortcode( 'tbl_form', array( __CLASS__, 'shortcode' ) );
@@ -52,6 +56,14 @@ class TF_Render {
 		if ( ! wp_script_is( 'tf-form', 'registered' ) ) {
 			wp_register_script( 'tf-form', TF_URL . 'assets/form.js', array(), TF_VERSION, true );
 		}
+		// Travel by Luxe: the petrol/gold theme (scoped to the tbl-lux wrapper class) and the
+		// behaviour of the countries / destinations / budget / consent field types.
+		if ( ! wp_style_is( 'tf-tbl-theme', 'registered' ) ) {
+			wp_register_style( 'tf-tbl-theme', TF_URL . 'assets/tbl-theme.css', array( 'tf-form' ), TF_VERSION );
+		}
+		if ( ! wp_script_is( 'tf-tbl-fields', 'registered' ) ) {
+			wp_register_script( 'tf-tbl-fields', TF_URL . 'assets/tbl-fields.js', array( 'tf-form' ), TF_VERSION, true );
+		}
 		// Google reCAPTCHA v3 API (loaded only when a form actually renders, below).
 		if ( ! wp_script_is( 'tf-recaptcha', 'registered' ) && tf_recaptcha_enabled() ) {
 			wp_register_script( 'tf-recaptcha', 'https://www.google.com/recaptcha/api.js?render=' . rawurlencode( tf_recaptcha_site_key() ), array(), null, true ); // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Google CDN, version-less
@@ -71,11 +83,29 @@ class TF_Render {
 				'submit_error' => __( 'Something went wrong. Please try again.', 'travelbyluxe' ),
 			) ),
 		) );
+		wp_localize_script( 'tf-tbl-fields', 'TF_TBL', array(
+			'destinations' => tbl_destinations(),
+			'openPills'    => tbl_destinations_open_pills(),
+			'i18n'         => apply_filters( 'travelbyluxe/fields_i18n', array(
+				'yourDestination' => __( 'your destination', 'travelbyluxe' ),
+				'selectCountries' => __( 'Select one or more countries', 'travelbyluxe' ),
+				'oneSelected'     => __( '1 country selected', 'travelbyluxe' ),
+				'nSelected'       => __( 'countries selected', 'travelbyluxe' ),
+				'budgetNote'      => __( 'Total trip investment based on', 'travelbyluxe' ),
+				'over'            => __( 'over', 'travelbyluxe' ),
+				'minimum'         => __( 'Minimum', 'travelbyluxe' ),
+			) ),
+		) );
 	}
 
 	public static function shortcode( $atts ) {
-		$atts = shortcode_atts( array( 'id' => 0 ), $atts, 'tbl_form' );
+		$atts = shortcode_atts( array( 'id' => 0, 'country' => '', 'countries' => '', 'class' => '' ), $atts, 'tbl_form' );
 		$post_id = (int) $atts['id'];
+		// country="Italy" / countries="Italy,France": pre-tick the page's own countries in a
+		// `countries` field, render the `destinations` pills and {country} templates for them,
+		// and let the budget floor see them. The guest can still change the selection.
+		self::$preset      = tbl_valid_countries( '' !== $atts['countries'] ? $atts['countries'] : $atts['country'] );
+		self::$extra_class = implode( ' ', array_filter( array_map( 'sanitize_html_class', preg_split( '/\s+/', (string) $atts['class'] ) ) ) );
 		if ( ! $post_id || get_post_type( $post_id ) !== TF_CPT ) {
 			return current_user_can( 'edit_posts' ) ? '<!-- TBL Forms: invalid form id -->' : '';
 		}
@@ -86,6 +116,8 @@ class TF_Render {
 		self::$enqueued = true;
 		wp_enqueue_style( 'tf-form' );
 		wp_enqueue_script( 'tf-form' );
+		wp_enqueue_style( 'tf-tbl-theme' );
+		wp_enqueue_script( 'tf-tbl-fields' );
 		if ( tf_recaptcha_enabled() ) { wp_enqueue_script( 'tf-recaptcha' ); }
 		// Ship the free-domains list to JS once per request, only when a form here blocks them.
 		static $free_localized = false;
@@ -95,7 +127,10 @@ class TF_Render {
 		}
 		self::$instances++;
 
-		return self::markup( $def, $post_id );
+		$html = self::markup( $def, $post_id );
+		self::$preset      = array();
+		self::$extra_class = '';
+		return $html;
 	}
 
 	/** Does this form definition have an email field set to block free domains? */
@@ -121,7 +156,9 @@ class TF_Render {
 		$step_webhook = ! $preview && $is_multi && tf_form_has_step_webhook( $post_id );
 		$dl_events    = $preview ? array() : tf_form_datalayer_events( $post_id );
 		// Per-form styling (settings fields): a wrapper class + scoped Custom CSS.
-		$wrapper_class = ( $post_id && ! $preview ) ? TF_Forms::get_wrapper_class( $post_id ) : '';
+		$wrapper_class = trim( ( ( $post_id && ! $preview ) ? TF_Forms::get_wrapper_class( $post_id ) : '' ) . ' ' . self::$extra_class );
+		$handoff       = ! $preview && $post_id && tf_form_has_handoff( $post_id ); // "Thank-you summary" action
+		$preset        = self::$preset;
 		$custom_css    = ( $post_id && ! $preview ) ? TF_Forms::get_custom_css( $post_id ) : '';
 
 		ob_start();
@@ -155,6 +192,8 @@ class TF_Render {
 			<?php if ( $intent ) : ?>data-form-intent="<?php echo esc_attr( $intent ); ?>"<?php endif; ?>
 			<?php if ( $step_webhook ) : ?>data-step-webhook="1"<?php endif; ?>
 			<?php if ( ! empty( $dl_events ) ) : ?>data-dl-events="<?php echo esc_attr( wp_json_encode( $dl_events ) ); ?>"<?php endif; ?>
+			<?php if ( $handoff ) : ?>data-handoff="1"<?php endif; ?>
+			<?php if ( $preset ) : ?>data-preset-countries="<?php echo esc_attr( implode( ',', $preset ) ); ?>"<?php endif; ?>
 			data-post-id="<?php echo (int) $post_id; ?>"
 			data-multistep="<?php echo $is_multi ? '1' : '0'; ?>"
 			data-total-steps="<?php echo (int) $total; ?>"
@@ -175,7 +214,7 @@ class TF_Render {
 				$n = $i + 1; ?>
 				<div class="tf-step<?php echo 0 === $i ? ' is-active' : ''; ?>" data-step="<?php echo (int) $n; ?>">
 					<?php if ( ! empty( $step['title'] ) ) : ?>
-						<h3 class="tf-step-title"><?php echo esc_html( $step['title'] ); ?></h3>
+						<h3 class="tf-step-title"<?php echo false !== strpos( $step['title'], '{country}' ) ? ' data-template="' . esc_attr( $step['title'] ) . '"' : ''; ?>><?php echo esc_html( tbl_template( $step['title'], $preset ) ); ?></h3>
 					<?php endif; ?>
 					<div class="tf-fields">
 						<?php foreach ( $step['fields'] as $field ) {
@@ -214,6 +253,37 @@ class TF_Render {
 		return ob_get_clean();
 	}
 
+	/** Region pills for the given countries plus the two "open" answers — mirrors pillsHtml() in tbl-fields.js. */
+	public static function destination_pills_html( $names, $key ) {
+		$data  = tbl_destinations();
+		$multi = count( $names ) > 1;
+		$pill  = function ( $value, $text, $group, $open ) use ( $key ) {
+			$attrs = '';
+			if ( $group ) { $attrs .= ' data-group="' . esc_attr( $group ) . '"'; }
+			if ( ! empty( $open['exclusive'] ) ) { $attrs .= ' data-exclusive="1"'; }
+			if ( ! empty( $open['reveals'] ) ) { $attrs .= ' data-reveals="1"'; }
+			return '<label class="tf-opt' . ( $open ? ' tf-opt--open' : '' ) . '"' . $attrs . '><input type="checkbox" name="' . esc_attr( $key ) . '[]" value="' . esc_attr( $value ) . '"> <span class="tf-opt-text">' . esc_html( $text ) . '</span></label>';
+		};
+		$open_pills = function ( $group ) use ( $pill ) {
+			$out = '';
+			foreach ( tbl_destinations_open_pills() as $p ) {
+				$out .= $pill( $group ? $group . ': ' . $p['value'] : $p['value'], $p['value'], $group, $p );
+			}
+			return $out;
+		};
+		$html = '';
+		foreach ( $names as $name ) {
+			if ( empty( $data['countries'][ $name ] ) ) { continue; }
+			if ( $multi ) { $html .= '<div class="tf-dest-group">' . esc_html( $name ) . '</div>'; }
+			foreach ( $data['countries'][ $name ]['regions'] as $region ) {
+				$html .= $pill( $region, $region, $multi ? $name : '', null );
+			}
+			if ( $multi ) { $html .= $open_pills( $name ); }
+		}
+		if ( ! $multi ) { $html .= $open_pills( '' ); }
+		return $html;
+	}
+
 	/**
 	 * Render a single field by type. All output escaped.
 	 */
@@ -234,7 +304,13 @@ class TF_Render {
 		$opts = array();
 		foreach ( (array) ( isset( $f['options'] ) ? $f['options'] : array() ) as $o ) {
 			if ( is_array( $o ) ) {
-				$opts[] = array( 'label' => isset( $o['label'] ) ? $o['label'] : '', 'value' => isset( $o['value'] ) ? $o['value'] : '' );
+				$opts[] = array(
+					'label'       => isset( $o['label'] ) ? $o['label'] : '',
+					'value'       => isset( $o['value'] ) ? $o['value'] : '',
+					'description' => isset( $o['description'] ) ? $o['description'] : '',
+					'exclusive'   => ! empty( $o['exclusive'] ),
+					'reveals'     => ! empty( $o['reveals'] ),
+				);
 			} else {
 				$opts[] = array( 'label' => $o, 'value' => $o );
 			}
@@ -271,8 +347,10 @@ class TF_Render {
 		ob_start();
 		echo '<div class="tf-field tf-field-' . esc_attr( $type ) . ' tf-w-' . esc_attr( $width ) . '">';
 
-		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html' ), true ) && ! $slider_inline ) {
-			echo '<label class="tf-label" for="' . esc_attr( $id ) . '">' . esc_html( $label ) . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</label>';
+		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html', 'consent', 'budget' ), true ) && ! $slider_inline ) {
+			// "{country}" in a label follows the chosen countries (tbl-fields.js rewrites the span).
+			$tpl = false !== strpos( $label, '{country}' ) ? ' data-template="' . esc_attr( $label ) . '"' : '';
+			echo '<label class="tf-label" for="' . esc_attr( $id ) . '"><span' . $tpl . '>' . esc_html( tbl_template( $label, self::$preset ) ) . '</span>' . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</label>';
 		}
 
 		switch ( $type ) {
@@ -306,7 +384,8 @@ class TF_Render {
 				echo '<div class="tf-slider">';
 				echo '<input type="range" class="tf-input tf-range" ' . $attrs // phpcs:ignore
 					. ' min="' . esc_attr( $smin ) . '" max="' . esc_attr( $smax ) . '" step="' . esc_attr( $sstep ) . '" value="' . esc_attr( $sval ) . '"'
-					. ' data-prefix="' . esc_attr( $pfx ) . '" data-suffix="' . esc_attr( $sfx ) . '">';
+					. ' data-prefix="' . esc_attr( $pfx ) . '" data-suffix="' . esc_attr( $sfx ) . '"'
+					. ( ! empty( $f['max_label'] ) ? ' data-max-label="' . esc_attr( $f['max_label'] ) . '"' : '' ) . '>';
 				// Default: value shown in a bubble beside the slider.
 				if ( ! $slider_inline ) {
 					echo '<output class="tf-range-val">' . esc_html( $fmt( $sval ) ) . '</output>';
@@ -317,7 +396,15 @@ class TF_Render {
 				}
 				break;
 			case 'textarea':
-				echo '<textarea class="tf-input" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '" rows="4"></textarea>'; // phpcs:ignore
+				if ( ! empty( $f['collapsed'] ) ) {
+					// Opens on demand ("Click here to write something for us") — tbl-fields.js.
+					echo '<button type="button" class="tf-collapsed-trigger" aria-expanded="false" aria-controls="' . esc_attr( $id ) . '">'
+						. '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20h9" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg>'
+						. '<span>' . esc_html( ! empty( $f['trigger_text'] ) ? $f['trigger_text'] : 'Add a note' ) . '</span></button>';
+					echo '<textarea class="tf-input tf-collapsed" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '" rows="2" hidden></textarea>'; // phpcs:ignore
+				} else {
+					echo '<textarea class="tf-input" ' . $attrs . $extra . ' placeholder="' . esc_attr( $ph ) . '" rows="4"></textarea>'; // phpcs:ignore
+				}
 				break;
 			case 'tel':
 				$with_cc   = ! isset( $f['country_code'] ) || ! empty( $f['country_code'] ); // default on
@@ -325,7 +412,8 @@ class TF_Render {
 				if ( $with_cc ) {
 					echo '<div class="tf-phone" data-tf-phone>';
 					echo '<select class="tf-phone-cc' . ( $show_name ? ' tf-phone-cc-named' : '' ) . '" aria-label="Country dial code">';
-					foreach ( tf_countries() as $c ) {
+					$cc_list = ( isset( $f['countries'] ) && 'curated' === $f['countries'] ) ? tbl_curated_phone_countries() : tf_countries();
+					foreach ( $cc_list as $c ) {
 						$opt_label = tf_flag( $c[0] ) . ' ' . ( $show_name ? esc_html( $c[2] ) . ' ' : '' ) . esc_html( $c[1] );
 						echo '<option value="' . esc_attr( $c[1] ) . '" data-cc="' . esc_attr( $c[0] ) . '" data-name="' . esc_attr( $c[2] ) . '">' . $opt_label . '</option>';
 					}
@@ -351,10 +439,75 @@ class TF_Render {
 			case 'radio':
 			case 'checkbox':
 				$input_type = 'radio' === $type ? 'radio' : 'checkbox';
-				echo '<div class="tf-options" data-key="' . esc_attr( $key ) . '"' . ( $req ? ' data-required="1"' : '' ) . '>';
+				$style      = ( isset( $f['style'] ) && in_array( $f['style'], array( 'list', 'pills', 'cards' ), true ) ) ? $f['style'] : 'list';
+				$has_reveal = false;
+				echo '<div class="tf-options tf-style-' . esc_attr( $style ) . '" data-key="' . esc_attr( $key ) . '"' . ( $req ? ' data-required="1"' : '' ) . '>';
 				foreach ( $opts as $oi => $opt ) {
-					$oid = $id . '-' . $oi;
-					echo '<label class="tf-opt"><input type="' . esc_attr( $input_type ) . '" name="' . esc_attr( $key ) . ( 'checkbox' === $type ? '[]' : '' ) . '" id="' . esc_attr( $oid ) . '" value="' . esc_attr( $opt['value'] ) . '"> <span>' . esc_html( '' !== $opt['label'] ? $opt['label'] : $opt['value'] ) . '</span></label>';
+					$oid   = $id . '-' . $oi;
+					$open  = ! empty( $opt['exclusive'] ) || ! empty( $opt['reveals'] );
+					$flags = ( ! empty( $opt['exclusive'] ) ? ' data-exclusive="1"' : '' ) . ( ! empty( $opt['reveals'] ) ? ' data-reveals="1"' : '' );
+					if ( ! empty( $opt['reveals'] ) ) { $has_reveal = true; }
+					$text  = '' !== $opt['label'] ? $opt['label'] : $opt['value'];
+					$inner = ( 'cards' === $style )
+						? '<span class="tf-card-dot"></span><span class="tf-opt-text"><strong>' . esc_html( $text ) . '</strong>' . ( ! empty( $opt['description'] ) ? ' <span class="tf-opt-desc">— ' . esc_html( $opt['description'] ) . '</span>' : '' ) . '</span>'
+						: ' <span class="tf-opt-text">' . esc_html( $text ) . '</span>';
+					echo '<label class="tf-opt' . ( $open ? ' tf-opt--open' : '' ) . '"' . $flags . '><input type="' . esc_attr( $input_type ) . '" name="' . esc_attr( $key ) . ( 'checkbox' === $type ? '[]' : '' ) . '" id="' . esc_attr( $oid ) . '" value="' . esc_attr( $opt['value'] ) . '">' . $inner . '</label>'; // phpcs:ignore
+				}
+				echo '</div>';
+				if ( $has_reveal ) {
+					// Shown while a "reveals" option is ticked; submitted as <key>_other.
+					echo '<input type="text" class="tf-input tf-reveal" id="' . esc_attr( $id ) . '-other" name="' . esc_attr( $key ) . '_other" data-key="' . esc_attr( $key ) . '_other" placeholder="' . esc_attr( $ph ) . '" autocomplete="off" hidden>';
+				}
+				break;
+			case 'consent':
+				echo '<label class="tf-consent"><input type="checkbox" class="tf-consent-input" ' . $attrs . ' value="yes"><span>' // phpcs:ignore
+					. wp_kses( $label, tbl_consent_allowed_html() ) . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</span></label>';
+				break;
+			case 'countries':
+				$data   = tbl_destinations();
+				$preset = self::$preset;
+				$max    = ( isset( $f['max_countries'] ) && '' !== $f['max_countries'] ) ? (int) $f['max_countries'] : 0; // 0 = no limit
+				$codes  = array();
+				foreach ( $preset as $name ) { $codes[] = $data['countries'][ $name ]['code']; }
+				echo '<div class="tf-countries" data-max="' . (int) $max . '">';
+				echo '<div class="tf-countries-chips" hidden></div>';
+				echo '<div class="tf-countries-control">';
+				echo '<button type="button" class="tf-input tf-countries-trigger is-placeholder" aria-haspopup="listbox" aria-expanded="false">' . esc_html( $ph ? $ph : 'Select countries' ) . '</button>';
+				echo '<div class="tf-countries-panel" role="listbox" aria-multiselectable="true" hidden>';
+				foreach ( $data['order'] as $name ) {
+					$on = in_array( $name, $preset, true );
+					echo '<label class="tf-countries-option' . ( $on ? ' is-selected' : '' ) . '" role="option" aria-selected="' . ( $on ? 'true' : 'false' ) . '"><input type="checkbox" value="' . esc_attr( $name ) . '"' . ( $on ? ' checked' : '' ) . '> ' . esc_html( $name ) . '</label>';
+				}
+				echo '</div></div>';
+				echo '<div class="tf-countries-hint"></div>';
+				echo '<input type="hidden" class="tf-countries-value" ' . $attrs . ' value="' . esc_attr( implode( ', ', $preset ) ) . '">'; // phpcs:ignore
+				echo '<input type="hidden" class="tf-countries-codes" id="' . esc_attr( $id ) . '-code" name="' . esc_attr( $key ) . '_code" data-key="' . esc_attr( $key ) . '_code" value="' . esc_attr( implode( ', ', $codes ) ) . '">';
+				echo '</div>';
+				break;
+			case 'destinations':
+				$ckey = ! empty( $f['countries_key'] ) ? $f['countries_key'] : 'trip_country';
+				echo '<div class="tf-dest" data-key-base="' . esc_attr( $key ) . '" data-countries-key="' . esc_attr( $ckey ) . '" data-rendered-for="' . esc_attr( implode( ',', self::$preset ) ) . '">';
+				echo '<div class="tf-options tf-style-pills tf-dest-pills" data-key="' . esc_attr( $key ) . '"' . ( $req ? ' data-required="1"' : '' ) . '>' . self::destination_pills_html( self::$preset, $key ) . '</div>'; // phpcs:ignore
+				echo '<input type="text" class="tf-input tf-reveal tf-dest-other" id="' . esc_attr( $id ) . '-other" name="' . esc_attr( $key ) . '_other" data-key="' . esc_attr( $key ) . '_other" placeholder="' . esc_attr( $ph ? $ph : 'Tell us where…' ) . '" autocomplete="off" hidden>';
+				echo '</div>';
+				break;
+			case 'budget':
+				$b     = tbl_budget_settings( $f );
+				$rates = array( 'adult' => $b['rate_adult'], 'child' => $b['rate_child'], 'adult_day' => $b['rate_adult_day'], 'child_day' => $b['rate_child_day'] );
+				$start = 2 * $b['rate_adult']; // 2 adults, a week: the page's first paint before tbl-fields.js recomputes
+				$fmt_b = function ( $n ) use ( $b ) { return $b['currency'] . number_format_i18n( (float) $n ); };
+				echo '<div class="tf-budget" data-currency="' . esc_attr( $b['currency'] ) . '" data-rates="' . esc_attr( wp_json_encode( $rates ) ) . '" data-country-rates="' . esc_attr( wp_json_encode( tbl_parse_country_rates( $b['country_rates'] ) ) ) . '"'
+					. ' data-included-days="' . esc_attr( $b['included_days'] ) . '" data-range-mult="' . esc_attr( $b['range_mult'] ) . '"'
+					. ' data-adults-key="' . esc_attr( $b['adults_key'] ) . '" data-children-key="' . esc_attr( $b['children_key'] ) . '" data-days-key="' . esc_attr( $b['days_key'] ) . '" data-country-key="' . esc_attr( $b['country_key'] ) . '">';
+				if ( $label && $show_label ) {
+					echo '<label class="tf-label" for="' . esc_attr( $id ) . '">' . esc_html( $label ) . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</label>';
+				}
+				echo '<div class="tf-budget-note"></div>';
+				echo '<div class="tf-slider"><input type="range" class="tf-input tf-range tf-budget-range" ' . $attrs . ' min="' . esc_attr( $start ) . '" max="' . esc_attr( $start * $b['range_mult'] ) . '" step="' . esc_attr( $b['step'] ) . '" value="' . esc_attr( $start ) . '" data-prefix="' . esc_attr( $b['currency'] ) . '" data-suffix=""><output class="tf-range-val">' . esc_html( $fmt_b( $start ) ) . '</output></div>'; // phpcs:ignore
+				echo '<div class="tf-range-scale tf-budget-scale"><span>' . esc_html( $b['currency'] . round( $start / 1000 ) . 'k' ) . '</span><span></span><span>' . esc_html( $b['currency'] . round( $start * $b['range_mult'] / 1000 ) . 'k+' ) . '</span></div>';
+				echo '<div class="tf-budget-min">' . esc_html( 'Minimum ' . $fmt_b( $start ) ) . '</div>';
+				foreach ( array( 'label', 'min', 'at_min' ) as $extra_key ) {
+					echo '<input type="hidden" id="' . esc_attr( $id . '-' . $extra_key ) . '" name="' . esc_attr( $key . '_' . $extra_key ) . '" data-key="' . esc_attr( $key . '_' . $extra_key ) . '" value="">';
 				}
 				echo '</div>';
 				break;

@@ -67,13 +67,17 @@
 			'<p class="description" style="margin:6px 0 0">Pushed to the dataLayer after <code>form_submission</code> and the form intent event, carrying the same parameters as the intent event.</p>';
 	}
 
-	var TITLES = { webhook: '🔗 Webhook', redirect: '↪️ Redirect', datalayer: '📊 DataLayer Event' };
+	function handoffBody() {
+		return '<p class="description" style="margin:0">Before the redirect, keeps the answers in the browser (<code>sessionStorage.tblThankYou</code>) so the thank-you page can greet the guest by name and show what they asked for. Nothing is sent anywhere.</p>';
+	}
+
+	var TITLES = { webhook: '🔗 Webhook', redirect: '↪️ Redirect', datalayer: '📊 DataLayer Event', handoff: '🎁 Thank-you summary' };
 
 	function card( a, i ) {
 		var el = document.createElement( 'div' );
 		el.className = 'tf-action-card' + ( a.enabled ? '' : ' is-off' );
 		var title = TITLES[ a.type ] || a.type;
-		var body = a.type === 'webhook' ? webhookBody( a, i ) : ( a.type === 'redirect' ? redirectBody( a, i ) : datalayerBody( a, i ) );
+		var body = a.type === 'webhook' ? webhookBody( a, i ) : ( a.type === 'redirect' ? redirectBody( a, i ) : ( a.type === 'handoff' ? handoffBody() : datalayerBody( a, i ) ) );
 		el.innerHTML =
 			'<div class="tf-action-head">' +
 				'<span class="tf-action-title">' + title + '</span>' +
@@ -126,6 +130,8 @@
 			actions.push( { type: 'webhook', enabled: true, config: { source: data.globalWebhook ? 'global' : 'custom', url: '', trigger: 'final' } } );
 		} else if ( type === 'redirect' ) {
 			actions.push( { type: 'redirect', enabled: true, config: { mode: 'url', url: '', page_id: 0 } } );
+		} else if ( type === 'handoff' ) {
+			actions.push( { type: 'handoff', enabled: true, config: {} } );
 		} else {
 			actions.push( { type: 'datalayer', enabled: true, config: { event: '' } } );
 		}
@@ -150,7 +156,8 @@
 			'<span class="tf-add-label">Add action:</span> ' +
 			'<button type="button" class="button tf-add" data-type="webhook"' + ( hasWebhook ? ' disabled title="Already added"' : '' ) + '>＋ Webhook</button> ' +
 			'<button type="button" class="button tf-add" data-type="redirect"' + ( hasRedirect ? ' disabled title="Already added"' : '' ) + '>＋ Redirect</button> ' +
-			'<button type="button" class="button tf-add" data-type="datalayer">＋ DataLayer Event</button>';
+			'<button type="button" class="button tf-add" data-type="datalayer">＋ DataLayer Event</button> ' +
+			'<button type="button" class="button tf-add" data-type="handoff"' + ( hasType( 'handoff' ) ? ' disabled title="Already added"' : '' ) + '>＋ Thank-you summary</button>';
 		add.querySelectorAll( '.tf-add' ).forEach( function ( b ) {
 			b.addEventListener( 'click', function () { addAction( b.getAttribute( 'data-type' ) ); } );
 		} );

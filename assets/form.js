@@ -25,6 +25,10 @@
 
 	// Read a field's submitted value (handles phone composites + multi-select).
 	function readValue(el) {
+		// A lone checkbox (consent): its value only when ticked.
+		if (el.type === 'checkbox') { return el.checked ? (el.value || 'yes') : ''; }
+		// A count slider at its top reads as its max label ("10+", "8+").
+		if (el.type === 'range' && el.getAttribute('data-max-label') && el.max !== '' && el.value === el.max) { return el.getAttribute('data-max-label'); }
 		if (el.classList.contains('tf-phone-num')) {
 			var wrap = el.closest('.tf-phone');
 			var cc = wrap ? wrap.querySelector('.tf-phone-cc') : null;
@@ -42,6 +46,21 @@
 		var m = d.getMonth() + 1, day = d.getDate();
 		return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day);
 	}
+	// "Thank-you summary" action: hand the answers to the next page through
+	// sessionStorage (the site's thank-you page reads `tblThankYou` to greet the
+	// guest by name and list what they asked for). Nothing leaves the browser.
+	function handoff(form, fields) {
+		try {
+			var intent = form.getAttribute('data-form-intent') || '';
+			sessionStorage.setItem('tblThankYou', JSON.stringify({
+				type: intent === 'partnership_request' ? 'partner' : 'inquiry',
+				form_id: form.getAttribute('data-form-id'),
+				data: fields,
+				ts: Date.now()
+			}));
+		} catch (e) {}
+	}
+
 	// Honeypot value (a hidden field only bots fill).
 	function honeypot(form) {
 		var h = form.querySelector('.tf-hp input');
@@ -274,10 +293,12 @@
 			if (el.classList.contains('tf-options')) { return; }
 			var raw = (el.value || '');
 			var has = (el.tagName === 'SELECT' && el.multiple) ? el.selectedOptions.length > 0 : raw.trim() !== '';
+			if (el.type === 'checkbox') { has = el.checked; } // consent box
 			var req = el.getAttribute('data-required') === '1';
 			var msg = '';
 			if (req && !has) {
-				msg = 'This field is required.';
+				msg = el.classList.contains('tf-consent-input') ? 'Please tick this box to continue.'
+					: (el.classList.contains('tf-countries-value') ? 'Please select at least one country.' : 'This field is required.');
 			} else if (has) {
 				if (el.type === 'email' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(raw)) { msg = 'Enter a valid email address.'; }
 					else if (el.type === 'email' && el.getAttribute('data-block-free') === '1' && isFreeEmail(raw)) { msg = 'Please enter your work email address.'; }
@@ -449,6 +470,7 @@
 		if (fill) { fill.style.width = pct + '%'; }
 		if (lbl) { lbl.textContent = 'Step ' + n + ' of ' + total; }
 		if (pl) { pl.textContent = pct + '%'; }
+		try { form.dispatchEvent(new CustomEvent('tf:step', { detail: { step: n } })); } catch (e) {} // tbl-fields.js listens
 		try { form.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
 	}
 
@@ -471,7 +493,8 @@
 			var sfx = r.getAttribute('data-suffix') || '';
 			function fmt() {
 				var n = Number(r.value);
-				out.textContent = pfx + (isNaN(n) ? r.value : n.toLocaleString()) + sfx;
+				var maxLabel = r.getAttribute('data-max-label'); // "10+" at the top of a count slider
+				out.textContent = (maxLabel && r.max !== '' && r.value === r.max) ? maxLabel : pfx + (isNaN(n) ? r.value : n.toLocaleString('en-US')) + sfx;
 			}
 			fmt();
 			r.addEventListener('input', fmt);
@@ -603,6 +626,7 @@
 							pushDlActions(form, fields);
 							form.__tfSubFired = true;
 						}
+						if (form.getAttribute('data-handoff') === '1') { handoff(form, fields); }
 						var redirect = res && res.data && res.data.redirect;
 						if (redirect) { setTimeout(function () { window.location.href = redirect; }, 250); return; }
 						form.querySelectorAll('.tf-step, .tf-progress').forEach(function (s) { s.style.display = 'none'; });

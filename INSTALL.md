@@ -1,53 +1,42 @@
-# Installing Terrific Digital on a new WordPress site
+# Installing and releasing the Travel by Luxe plugin
 
-The plugin lives in a **public** GitHub repo
-(`terrific-digital/wordpress-plugin`) and updates itself on each WordPress
-site via the standard WP "Update available" flow — **no token, no
-configuration required.**
+## Install on a WordPress site
 
-## Install the plugin
+1. Download `travelbyluxe.zip` from the
+   [Releases page](https://github.com/terrific-digital/travelbyluxe-plugin/releases).
+2. **Plugins → Add New → Upload Plugin → Activate.**
+3. If **Terrific Digital** or **TBL Lead Routing** are active on the site, deactivate them
+   (this plugin replaces both; forms, submissions, settings and routing options are kept
+   because the data lives in the same tables and options). Do not delete them until the
+   new plugin has been checked.
 
-Grab the latest ZIP from the [Releases page](https://github.com/terrific-digital/wordpress-plugin/releases)
-(`terrific-digital.zip`) and upload it on the site:
+From then on the site shows "Update available for Travel by Luxe" within ~12 hours of each
+release (or straight away after **Dashboard → Updates → Check again**). The repo is public,
+so the updater runs anonymously — no `wp-config.php` token.
 
-**Plugins → Add New → Upload Plugin → Activate.**
+From the Travel by Luxe site repo, `node cloudways-staging/install-travelbyluxe-plugin.mjs`
+does the same against the **staging** app (never production).
 
-That's it. From this point the site will show "Update available for Terrific
-Digital" within ~12 hours of every new release (or instantly if you hit
-**Dashboard → Updates → Check again** in WP admin). Turn on **Enable
-auto-updates** on the Plugins row and the site upgrades itself overnight.
+## Cutting a release
 
-## Optional: a GitHub token (rate-limit only)
-
-You do **not** need a token — the repo is public and the updater runs
-anonymously. GitHub allows 60 unauthenticated API requests per hour per
-outbound IP; the updater checks about twice a day, so this is essentially
-never a factor. Only if you host many sites behind one shared IP and hit the
-limit would you add:
-
-```php
-define( 'TERRIFIC_DIGITAL_GH_TOKEN', 'github_pat_…' );
-```
-
-above the `/* That's all, stop editing! */` line in `wp-config.php`, using
-any fine-grained PAT with public-repo read access. It just raises the rate
-limit; nothing else depends on it.
-
-> **Migrating from the private-repo era:** older sites carry a
-> `TERRIFIC_DIGITAL_GH_TOKEN` constant that was mandatory when the repo was
-> private. It's now harmless but unnecessary — you can leave it or delete it.
-> If the token was ever leaked, delete it; the plugin updates fine without it.
-
-## Cutting a release (for maintainers)
-
-1. Bump `TD_VERSION` in `terrific-digital.php` and commit.
-2. Tag and push:
+1. Bump the version in **both** places in `travelbyluxe.php`: the `Version:` header and
+   `define( 'TD_VERSION', … )`. `TD_VERSION` is also the asset cache-buster, so bump it on
+   every change that touches `assets/`.
+2. Commit and push to `main`.
+3. Either push a tag:
    ```bash
-   git tag v2.50.0
+   git tag v3.0.1
    git push origin main --tags
    ```
-3. The `release.yml` workflow builds `terrific-digital.zip` and attaches it
-   to a GitHub release. Every site sees the update within hours.
+   or open **Actions → Release → Run workflow** and enter the version.
 
-The workflow verifies that the tag matches `TD_VERSION` — if they disagree
-the release fails, so you can't ship a mismatched version by accident.
+The `release.yml` workflow checks the version matches the plugin file, lints every PHP and
+JS file, builds `travelbyluxe.zip` (top-level folder `travelbyluxe/`) and attaches it to
+the GitHub release. A mismatched version fails the release.
+
+## Keeping up with the upstream plugin
+
+The `upstream` remote points at `terrific-digital/wordpress-plugin`. Cherry-pick fixes from
+there by hand (`git fetch upstream && git cherry-pick <sha>`); never merge wholesale —
+the file names, menu labels and shortcodes differ, and this plugin carries modules the
+upstream does not have.

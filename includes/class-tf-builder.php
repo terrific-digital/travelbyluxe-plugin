@@ -270,7 +270,7 @@ class TF_Builder {
 		if ( ! is_array( $actions ) ) { return $out; }
 		foreach ( $actions as $a ) {
 			$type = isset( $a['type'] ) ? sanitize_key( $a['type'] ) : '';
-			if ( ! in_array( $type, array( 'webhook', 'redirect', 'datalayer' ), true ) ) { continue; }
+			if ( ! in_array( $type, array( 'webhook', 'redirect', 'datalayer', 'handoff' ), true ) ) { continue; }
 			// webhook & redirect are singletons; datalayer events can repeat (fire many per form).
 			if ( 'datalayer' !== $type ) {
 				if ( isset( $seen[ $type ] ) ) { continue; } // only one of each singleton action type
@@ -290,6 +290,8 @@ class TF_Builder {
 					'url'     => isset( $cfg['url'] ) ? esc_url_raw( $cfg['url'] ) : '',
 					'page_id' => isset( $cfg['page_id'] ) ? (int) $cfg['page_id'] : 0,
 				);
+			} elseif ( 'handoff' === $type ) { // thank-you summary: no settings, see form.js handoff().
+				$clean = array();
 			} else { // datalayer — a single custom dataLayer event name.
 				$clean = array(
 					'event' => isset( $cfg['event'] ) ? sanitize_text_field( $cfg['event'] ) : '',
@@ -340,6 +342,10 @@ class TF_Builder {
 				if ( 'custom_html' === $type && '' !== $html && ! current_user_can( 'unfiltered_html' ) ) {
 					$html = wp_kses_post( $html );
 				}
+				// A consent label carries links (Terms / Privacy); every other label stays plain text.
+				if ( 'consent' === $type ) {
+					$label = wp_kses( isset( $f['label'] ) ? (string) $f['label'] : '', tbl_consent_allowed_html() );
+				}
 				$field = array(
 					'id'          => isset( $f['id'] ) ? sanitize_text_field( $f['id'] ) : ( 'f_' . wp_generate_password( 6, false ) ),
 					'type'        => $type,
@@ -376,6 +382,26 @@ class TF_Builder {
 					'value_inline' => ! empty( $f['value_inline'] ),
 					// Custom HTML content.
 					'html'        => $html,
+					// Travel by Luxe field types + options (includes/tbl-fields.php, assets/tbl-fields.js).
+					'style'          => ( isset( $f['style'] ) && in_array( $f['style'], array( 'list', 'pills', 'cards' ), true ) ) ? $f['style'] : 'list', // radio / checkbox
+					'collapsed'      => ! empty( $f['collapsed'] ),                                                        // textarea: opens on demand
+					'trigger_text'   => isset( $f['trigger_text'] ) ? sanitize_text_field( $f['trigger_text'] ) : '',
+					'max_label'      => isset( $f['max_label'] ) ? sanitize_text_field( $f['max_label'] ) : '',          // slider: "10+" at the top
+					'countries'      => ( isset( $f['countries'] ) && 'curated' === $f['countries'] ) ? 'curated' : 'all', // tel: dial-code list
+					'max_countries'  => $int_or_blank( isset( $f['max_countries'] ) ? $f['max_countries'] : '' ),          // countries: blank/0 = no limit
+					'countries_key'  => isset( $f['countries_key'] ) ? sanitize_key( $f['countries_key'] ) : '',          // destinations: which field holds the countries
+					'currency'       => isset( $f['currency'] ) ? sanitize_text_field( $f['currency'] ) : '',             // budget …
+					'rate_adult'     => $num_or_blank( isset( $f['rate_adult'] ) ? $f['rate_adult'] : '' ),
+					'rate_child'     => $num_or_blank( isset( $f['rate_child'] ) ? $f['rate_child'] : '' ),
+					'rate_adult_day' => $num_or_blank( isset( $f['rate_adult_day'] ) ? $f['rate_adult_day'] : '' ),
+					'rate_child_day' => $num_or_blank( isset( $f['rate_child_day'] ) ? $f['rate_child_day'] : '' ),
+					'included_days'  => $num_or_blank( isset( $f['included_days'] ) ? $f['included_days'] : '' ),
+					'range_mult'     => $num_or_blank( isset( $f['range_mult'] ) ? $f['range_mult'] : '' ),
+					'country_rates'  => isset( $f['country_rates'] ) ? sanitize_textarea_field( $f['country_rates'] ) : '',
+					'adults_key'     => isset( $f['adults_key'] ) ? sanitize_key( $f['adults_key'] ) : '',
+					'children_key'   => isset( $f['children_key'] ) ? sanitize_key( $f['children_key'] ) : '',
+					'days_key'       => isset( $f['days_key'] ) ? sanitize_key( $f['days_key'] ) : '',
+					'country_key'    => isset( $f['country_key'] ) ? sanitize_key( $f['country_key'] ) : '',
 					'options'     => array(),
 				);
 				if ( in_array( $type, array( 'select', 'radio', 'checkbox' ), true ) && ! empty( $f['options'] ) && is_array( $f['options'] ) ) {
@@ -388,10 +414,18 @@ class TF_Builder {
 							$value = $label;
 						}
 						if ( '' !== $label || '' !== $value ) {
-							$field['options'][] = array( 'label' => $label, 'value' => $value );
+							$o = array( 'label' => $label, 'value' => $value );
+							if ( is_array( $opt ) ) {
+								// Cards show a description; "open" answers clear the rest or reveal a text box.
+								if ( ! empty( $opt['description'] ) ) { $o['description'] = sanitize_text_field( $opt['description'] ); }
+								if ( ! empty( $opt['exclusive'] ) ) { $o['exclusive'] = true; }
+								if ( ! empty( $opt['reveals'] ) ) { $o['reveals'] = true; }
+							}
+							$field['options'][] = $o;
 						}
 					}
 				}
+				if ( 'consent' === $type && empty( $field['key'] ) ) { $field['key'] = 'consent'; } // the label is HTML — never slug it
 				if ( ! $is_static && empty( $field['key'] ) ) {
 					$field['key'] = sanitize_key( $field['label'] ?: $field['type'] . '_' . substr( $field['id'], 2 ) );
 				}

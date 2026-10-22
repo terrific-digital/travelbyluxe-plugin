@@ -53,6 +53,7 @@ require_once TF_DIR . 'includes/class-tf-forms.php';
 require_once TF_DIR . 'includes/class-td-faq-store.php';
 require_once TF_DIR . 'includes/class-td-snippet-store.php';
 require_once TF_DIR . 'includes/class-td-settings-store.php';
+require_once TF_DIR . 'includes/tbl-fields.php'; // Travel by Luxe field types: data + helpers
 require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-settings.php';
 require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-forms.php';
 require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-client.php';
