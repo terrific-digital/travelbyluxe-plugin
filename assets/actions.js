@@ -1,4 +1,4 @@
-/* Terrific Forms — Actions builder (add/remove/toggle webhook & redirect actions) */
+/* TBL Forms — Actions builder (add/remove/toggle webhook & redirect actions) */
 ( function () {
 	'use strict';
 	var root = document.getElementById( 'tf-actions' );

@@ -1,4 +1,4 @@
-/* Terrific Forms — frontend behaviour: steps, validation, dataLayer, submit */
+/* TBL Forms — frontend behaviour: steps, validation, dataLayer, submit */
 (function () {
 	'use strict';
 	window.dataLayer = window.dataLayer || [];

@@ -1,4 +1,4 @@
-/* Terrific FAQ — admin builder */
+/* TBL FAQ — admin builder */
 #td-faq-builder .td-faq-list { display: flex; flex-direction: column; gap: 8px; }
 .td-faq-card { border: 1px solid #dcdcde; border-radius: 6px; background: #fff; }
 .td-faq-card.is-open { border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; }

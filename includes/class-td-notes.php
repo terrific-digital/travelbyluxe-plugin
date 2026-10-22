@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /**
- * Notes — a read-only reference page under the Terrific Digital menu that
+ * Notes — a read-only reference page under the Travel by Luxe menu that
  * summarizes, in short, every feature the plugin provides. Kept current by hand
  * as features land (see PROJECT.md §5 for the long-form history).
  */
@@ -38,8 +38,8 @@ class TD_Notes {
 				'Per-form Wrapper CSS class + Custom CSS (output in a scoped style tag) for one-off styling.',
 			) ),
 			array( '📍', 'Placement', array(
-				'Shortcode <code>[terrific_form id="N"]</code>.',
-				'Gutenberg block “Terrific Form” (live preview + form switcher).',
+				'Shortcode <code>[tbl_form id="N"]</code>.',
+				'Gutenberg block “TBL Form” (live preview + form switcher).',
 				'Front-end “Edit form” pill for logged-in editors.',
 			) ),
 			array( '🎯', 'Intent &amp; actions', array(
@@ -76,20 +76,28 @@ class TD_Notes {
 				'Normalized (lowercase names/email, digits-only phone, 2-letter uppercase country); accumulates across steps.',
 				'Stored in localStorage or a long-lived cookie; pushes a <code>upd</code> dataLayer event before each form event. On by default.',
 			) ),
+			array( '🧭', 'Lead Routing', array(
+				'Per form (the <strong>Lead Routing</strong> box on the form edit screen): send each submission to the Travel by Luxe leads app, which picks the travel designer and creates the Zendesk ticket.',
+				'After submit — <strong>redirect</strong> (the thank-you page shows the travel designer\'s Calendly via <code>[tbl_calendly]</code>), <strong>popup</strong> (calendar opens on the page), or <strong>just send it</strong> (no calendar — partner forms).',
+				'Every step of a multi-step form is forwarded too, so abandoned forms still reach the leads app. The payload is the same JSON as the Webhook action.',
+				'Settings (Travel by Luxe → Lead Routing): leads app address + API key, longest wait, fallback Calendly link, calendar colours, the booking-calendar budget rule.',
+				'Admin REST API <code>tbl-lead-routing/v1</code> (status, settings, forms, actions, snippets, log, cache, update) for scripts with an Application Password.',
+				'Submissions from routed forms get an <strong>Open in Leads App</strong> button.',
+			) ),
 			array( '✂️', 'Code Snippets', array(
 				'Inject custom HTML or JS into pages at a chosen location (after/before head, after body open, before body close).',
 				'Per-snippet conditions (all pages, specific pages, URL contains / does not contain) + enable toggle.',
 			) ),
 			array( '❓', 'FAQ', array(
 				'Build reusable FAQ lists (question + answer items, drag to reorder).',
-				'Place any list with <code>[terrific_faq id="N"]</code> or the “Terrific FAQ” block.',
+				'Place any list with <code>[tbl_faq id="N"]</code> or the “TBL FAQ” block.',
 				'See every page a list is used on, from the list’s edit screen.',
 				'Front-end accordion (animated open/close); optional “open one at a time” mode; opening an item fires <code>faq_item_click</code> (with the question, lowercased) once per item.',
 			) ),
 			array( '⚙️', 'Settings &amp; dashboard', array(
 				'Settings: global webhook URL, reCAPTCHA v3, Store Session Data, User-Provided Data.',
 				'Dashboard with feature cards (Forms, Code Snippets, FAQ Lists), live counts, version &amp; last-updated date.',
-				'Top-level Terrific Digital menu (brand “t” icon); admin features gated on <code>edit_pages</code>.',
+				'Top-level Travel by Luxe menu (brand “t” icon); admin features gated on <code>edit_pages</code>.',
 				'Adds a sortable “Slug” column to the Pages list, so you can tell which page is which at a glance.',
 			) ),
 		);

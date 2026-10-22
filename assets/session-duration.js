@@ -1,4 +1,4 @@
-/* Terrific Digital — Session Duration tracking.
+/* Travel by Luxe — Session Duration tracking.
  * Counts seconds the visitor has spent in the current tab (sessionStorage,
  * survives same-tab navigation) and pushes `session_duration_<n>` to the
  * dataLayer when each configured milestone is first reached.

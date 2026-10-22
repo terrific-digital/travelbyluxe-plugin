@@ -1,4 +1,4 @@
-/* Terrific FAQ — front-end accordion (inherits the theme's font/colours). */
+/* TBL FAQ — front-end accordion (inherits the theme's font/colours). */
 .td-faq { width: 100%; }
 .td-faq-item { border-top: 1px solid rgba(0, 0, 0, .12); }
 .td-faq-item:last-child { border-bottom: 1px solid rgba(0, 0, 0, .12); }

@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 /**
  * User-Provided Data ("upd") — a plugin-wide (forms) feature, ON by default.
  *
- * Whenever a visitor provides personal data through a Terrific Form — on any
+ * Whenever a visitor provides personal data through a TBL Form — on any
  * step or on the final submit — the front-end captures it into a single,
  * persisted `upd` object:
  *

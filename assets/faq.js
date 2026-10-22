@@ -1,4 +1,4 @@
-/* Terrific FAQ — front-end accordion. Opening an item fires a dataLayer event
+/* TBL FAQ — front-end accordion. Opening an item fires a dataLayer event
  * { event:'faq_item_click', faq_title:'<question lowercased>' } once per item. */
 (function () {
 	'use strict';

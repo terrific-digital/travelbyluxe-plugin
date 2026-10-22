@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /**
- * Top-level "Terrific Digital" admin menu. Forms is the first feature nested
+ * Top-level "Travel by Luxe" admin menu. Forms is the first feature nested
  * beneath it; future features can register their own submenus under TD_MENU.
  */
 class TD_Menu {
@@ -15,7 +15,7 @@ class TD_Menu {
 		add_filter( 'submenu_file', array( __CLASS__, 'submenu_file' ) );
 	}
 
-	/** Is the current admin screen part of the Terrific Digital plugin? */
+	/** Is the current admin screen part of the Travel by Luxe plugin? */
 	protected static function is_td_screen() {
 		if ( ! function_exists( 'get_current_screen' ) ) { return false; }
 		$screen = get_current_screen();
@@ -34,10 +34,10 @@ class TD_Menu {
 	 */
 	public static function brand_bar() {
 		if ( ! self::is_td_screen() ) { return; }
-		$logo    = TF_URL . 'assets/td-logo.svg';
+		$logo    = TF_URL . 'assets/tbl-logo.svg';
 		$updated = self::last_updated();
 		echo '<div class="td-brand-bar" style="display:flex;align-items:center;gap:12px;margin:12px 20px 4px 0;padding:9px 16px;background:#fff;border:1px solid #dcdcde;border-radius:8px">'
-			. '<img src="' . esc_url( $logo ) . '" alt="Terrific Digital" style="height:24px;width:auto;display:block">'
+			. '<img src="' . esc_url( $logo ) . '" alt="Travel by Luxe" style="height:24px;width:auto;display:block">'
 			. '<span style="width:1px;height:18px;background:#e0e0e2;display:inline-block"></span>'
 			. '<span style="background:#f0f0f1;color:#50575e;border-radius:12px;padding:3px 11px;font-size:12px;font-weight:600;line-height:1.4">v' . esc_html( TD_VERSION ) . '</span>';
 		if ( $updated ) {
@@ -46,16 +46,10 @@ class TD_Menu {
 		echo '</div>';
 	}
 
-	/** The Terrific Digital "t" brand mark (mosaic), single-colour so it can be masked white. */
+	/** The Travel by Luxe menu mark — an italic serif "L", single-colour so it can be masked white. */
 	public static function icon_svg() {
-		return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24.33 33.95" fill="#fff">'
-			. '<rect x="8.109" y="0.758" width="8.109" height="8.109"/>'
-			. '<rect x="0" y="8.867" width="8.109" height="8.109"/>'
-			. '<rect x="8.109" y="8.867" width="8.109" height="8.109"/>'
-			. '<rect x="16.217" y="8.867" width="8.109" height="8.109"/>'
-			. '<rect x="8.109" y="16.975" width="8.109" height="8.109"/>'
-			. '<rect x="8.109" y="25.084" width="8.109" height="8.109"/>'
-			. '<rect x="16.217" y="25.084" width="8.109" height="8.109"/>'
+		return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+			. '<text x="12" y="19" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-style="italic" fill="#fff">L</text>'
 			. '</svg>';
 	}
 
@@ -83,17 +77,17 @@ class TD_Menu {
 
 	public static function menu() {
 		add_menu_page(
-			'Terrific Digital', 'Terrific Digital', 'edit_pages',
+			'Travel by Luxe', 'Travel by Luxe', 'edit_pages',
 			TD_MENU, array( __CLASS__, 'dashboard' ), self::icon_data_uri(), 26
 		);
-		// Rename the auto-created first submenu (defaults to "Terrific Digital").
+		// Rename the auto-created first submenu (defaults to "Travel by Luxe").
 		add_submenu_page( TD_MENU, 'Dashboard', 'Dashboard', 'edit_pages', TD_MENU, array( __CLASS__, 'dashboard' ) );
 		// Forms feature. (No "Add New" link — create forms from the Forms list screen.)
 		add_submenu_page( TD_MENU, 'Forms', 'Forms', 'edit_pages', 'edit.php?post_type=' . TF_CPT );
 		// (TF_Submissions adds "Submissions" under TD_MENU at a later priority.)
 	}
 
-	/** Keep the Terrific Digital top-level highlighted on Forms CPT screens. */
+	/** Keep the Travel by Luxe top-level highlighted on Forms CPT screens. */
 	public static function parent_file( $parent_file ) {
 		global $typenow;
 		if ( TF_CPT === $typenow ) { return TD_MENU; }
@@ -135,10 +129,10 @@ class TD_Menu {
 		?>
 		<div class="wrap">
 			<h1 style="margin:8px 0 12px">Dashboard</h1>
-			<p style="font-size:14px;color:#555;max-width:720px">Terrific Digital toolkit for this site. More features will live here over time — currently <strong>Terrific Forms</strong>, <strong>Code Snippets</strong>, <strong>FAQ Lists</strong>, and <strong>Calendly Listener</strong>.</p>
+			<p style="font-size:14px;color:#555;max-width:720px">The Travel by Luxe site toolkit: <strong>TBL Forms</strong> with <strong>Lead Routing</strong> to the leads app, <strong>Code Snippets</strong>, <strong>FAQ Lists</strong>, and the <strong>Calendly Listener</strong>.</p>
 			<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:20px">
 				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
-					<h2 style="margin-top:0">📝 Terrific Forms</h2>
+					<h2 style="margin-top:0">📝 TBL Forms</h2>
 					<p>Drag-and-drop form builder — regular &amp; multi-step, static IDs, dataLayer events, submissions &amp; CSV export.</p>
 					<p><strong><?php echo esc_html( $total_forms ); ?></strong> forms · <strong><?php echo esc_html( $subs ); ?></strong> submissions</p>
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . TF_CPT ) ); ?>" class="button button-primary">Manage Forms</a>
@@ -153,7 +147,7 @@ class TD_Menu {
 				</div>
 				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
 					<h2 style="margin-top:0">❓ FAQ Lists</h2>
-					<p>Reusable Q&amp;A accordions — place any list on a page via a shortcode or the Terrific FAQ block.</p>
+					<p>Reusable Q&amp;A accordions — place any list on a page via a shortcode or the TBL FAQ block.</p>
 					<p><strong><?php echo esc_html( $total_faqs ); ?></strong> FAQ lists</p>
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . TD_FAQ::CPT ) ); ?>" class="button button-primary">Manage FAQ Lists</a>
 					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . TD_FAQ::CPT ) ); ?>" class="button">Add FAQ List</a>
@@ -173,9 +167,22 @@ class TD_Menu {
 					</a>
 				</div>
 
+				<div style="flex:1 1 260px;background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:20px">
+					<h2 style="margin-top:0">🧭 Lead Routing</h2>
+					<p>Sends each submission to the Travel by Luxe leads app, which picks the travel designer and creates the Zendesk ticket, then shows that designer's Calendly.</p>
+					<p>Status:
+						<?php if ( class_exists( 'TBL_LR_Settings' ) && TBL_LR_Settings::get( 'api_key' ) ) : ?>
+							<strong style="color:#1e7e34">● Connected</strong>
+						<?php else : ?>
+							<strong style="color:#b32d2e">● No API key</strong>
+						<?php endif; ?>
+					</p>
+					<a href="<?php echo esc_url( class_exists( 'TBL_LR_Settings' ) ? TBL_LR_Settings::url() : admin_url( 'admin.php?page=' . TD_MENU ) ); ?>" class="button button-primary">Settings</a>
+				</div>
+
 				<div style="flex:1 1 260px;background:#f6f7f7;border:1px dashed #c3c4c7;border-radius:8px;padding:20px;color:#777">
 					<h2 style="margin-top:0;color:#777">More coming soon</h2>
-					<p>This is where future Terrific Digital features will appear.</p>
+					<p>Travel by Luxe features land here as the site grows.</p>
 				</div>
 			</div>
 		</div>

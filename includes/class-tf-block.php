@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /**
- * Registers the "Terrific Form" Gutenberg block (dynamic / server-rendered).
+ * Registers the "TBL Form" Gutenberg block (dynamic / server-rendered).
  * Lets editors drop a form into any page and pick which form to show.
  */
 class TF_Block {
@@ -18,7 +18,7 @@ class TF_Block {
 		}
 		array_unshift( $categories, array(
 			'slug'  => 'terrific-digital',
-			'title' => 'Terrific Digital',
+			'title' => 'Travel by Luxe',
 			'icon'  => null,
 		) );
 		return $categories;
@@ -71,7 +71,7 @@ class TF_Block {
 	public static function render( $attributes ) {
 		$id = isset( $attributes['formId'] ) ? (int) $attributes['formId'] : 0;
 		if ( ! $id || get_post_type( $id ) !== TF_CPT ) {
-			return current_user_can( 'edit_posts' ) ? '<p><em>Terrific Form: please select a form.</em></p>' : '';
+			return current_user_can( 'edit_posts' ) ? '<p><em>TBL Form: please select a form.</em></p>' : '';
 		}
 		return TF_Render::shortcode( array( 'id' => $id ) );
 	}

@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /**
- * Registers the Terrific Form custom post type and ensures a static form ID on save.
+ * Registers the TBL Form custom post type and ensures a static form ID on save.
  */
 class TF_CPT_Manager {
 
@@ -33,7 +33,7 @@ class TF_CPT_Manager {
 			$actions['tf_subs'] = sprintf(
 				'<a href="%s">%s</a>',
 				esc_url( self::subs_url( $post->ID ) ),
-				esc_html( sprintf( __( 'Submissions (%s)', 'terrific-digital' ), number_format_i18n( $count ) ) )
+				esc_html( sprintf( __( 'Submissions (%s)', 'travelbyluxe' ), number_format_i18n( $count ) ) )
 			);
 		}
 		return $actions;
@@ -42,7 +42,7 @@ class TF_CPT_Manager {
 	public static function register() {
 		register_post_type( TF_CPT, array(
 			'labels' => array(
-				'name'               => 'Terrific Forms',
+				'name'               => 'TBL Forms',
 				'singular_name'      => 'Form',
 				'add_new'            => 'Add New Form',
 				'add_new_item'       => 'Add New Form',
@@ -51,11 +51,11 @@ class TF_CPT_Manager {
 				'view_item'          => 'View Form',
 				'search_items'       => 'Search Forms',
 				'not_found'          => 'No forms found',
-				'menu_name'          => 'Terrific Forms',
+				'menu_name'          => 'TBL Forms',
 			),
 			'public'              => false,
 			'show_ui'             => true,
-			'show_in_menu'        => false, // nested under the "Terrific Digital" menu by TD_Menu.
+			'show_in_menu'        => false, // nested under the "Travel by Luxe" menu by TD_Menu.
 			'supports'            => array( 'title' ),
 			'capability_type'     => 'page',
 			'map_meta_cap'        => true,
@@ -150,7 +150,7 @@ class TF_CPT_Manager {
 			printf(
 				'<a href="%s" class="button button-small" title="%s">%s %s</a>',
 				esc_url( self::subs_url( $post_id ) ),
-				esc_attr__( 'View submissions for this form', 'terrific-digital' ),
+				esc_attr__( 'View submissions for this form', 'travelbyluxe' ),
 				'<span class="dashicons dashicons-feedback" style="vertical-align:text-bottom;width:16px;height:16px;font-size:16px"></span>',
 				esc_html( number_format_i18n( $count ) )
 			);

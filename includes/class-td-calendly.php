@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * (form_type / form_name / form_id / form_intent), so Calendly bookings
  * surface in the same analytics funnel as regular form submissions.
  *
- * Its own submenu page under Terrific Digital — feature is on/off here
+ * Its own submenu page under Travel by Luxe — feature is on/off here
  * (separate from the global Settings tab) and the four form_* values are
  * editable in case different sites want to tag their Calendly bookings
  * differently.
@@ -76,7 +76,7 @@ class TD_Calendly {
 				Tracks <a href="https://calendly.com" target="_blank" rel="noopener">Calendly</a>'s embedded
 				scheduler widget by listening to its <code>postMessage</code> events and pushing matching
 				<code>dataLayer</code> events — so Calendly bookings flow through the same analytics funnel
-				as Terrific Forms submissions.
+				as TBL Forms submissions.
 			</p>
 
 			<form method="post" action="options.php">
@@ -139,7 +139,7 @@ class TD_Calendly {
 					<tr><td><code>profile_page_viewed</code></td><td><code>meeting_scheduler_loaded</code></td><td>Widget rendered.</td></tr>
 					<tr><td><code>event_type_viewed</code></td><td><code>meeting_type_selected</code></td><td>Visitor picked a meeting type.</td></tr>
 					<tr><td><code>date_and_time_selected</code></td><td><code>meeting_time_selected</code></td><td>Visitor picked a slot.</td></tr>
-					<tr><td><code>event_scheduled</code></td><td><code>form_submission</code>, then <code><?php echo esc_html( self::get( 'form_intent' ) ); ?></code></td><td>Booking confirmed. <code>entry_key</code> carries Calendly's scheduled-event UUID. The intent fires as its own event right after <code>form_submission</code> — same pattern as Terrific Forms (e.g. <code>generate_lead</code> after a lead form).</td></tr>
+					<tr><td><code>event_scheduled</code></td><td><code>form_submission</code>, then <code><?php echo esc_html( self::get( 'form_intent' ) ); ?></code></td><td>Booking confirmed. <code>entry_key</code> carries Calendly's scheduled-event UUID. The intent fires as its own event right after <code>form_submission</code> — same pattern as TBL Forms (e.g. <code>generate_lead</code> after a lead form).</td></tr>
 				</tbody>
 			</table>
 			<p class="description" style="max-width:760px;margin-top:8px">Each Calendly source-event fires at most once per page-load. All events are stamped <code>event_origin: "td_wp_plugin"</code> like the rest of the plugin.</p>

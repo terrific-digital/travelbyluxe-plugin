@@ -1,26 +1,35 @@
 <?php
 /**
- * Plugin Name:       Terrific Digital
- * Plugin URI:        https://terrific-digital.com
- * Description:       Terrific Digital toolkit for WordPress. Includes Terrific Forms — a drag-and-drop form builder (regular + multi-step) with static IDs, dataLayer events, auto-captured metadata, and submission storage/export. Built to grow with more features.
- * Version:           2.51.0
- * Author:            Terrific Digital
+ * Plugin Name:       Travel by Luxe
+ * Plugin URI:        https://github.com/terrific-digital/travelbyluxe-plugin
+ * Description:       Travel by Luxe site toolkit: TBL Forms (drag-and-drop regular + multi-step forms with dataLayer events, submissions and lead routing to the leads app), FAQ lists, code snippets, Calendly and link tracking. Fork of the Travel by Luxe plugin, merged with TBL Lead Routing.
+ * Version:           3.0.0
+ * Requires at least: 6.5
+ * Requires PHP:      7.4
+ * Author:            Travel by Luxe for Travel by Luxe
  * License:           GPL-2.0+
- * Text Domain:       terrific-digital
- * Update URI:        https://github.com/terrific-digital/wordpress-plugin
+ * Text Domain:       travelbyluxe
+ * Update URI:        https://github.com/terrific-digital/travelbyluxe-plugin
  */
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '2.51.0' );
-define( 'TD_MENU', 'terrific-digital' );      // top-level admin menu slug
+define( 'TD_VERSION', '3.0.0' );
+define( 'TD_MENU', 'travelbyluxe' );      // top-level admin menu slug
 
-// Terrific Forms feature constants (kept stable for back-compat with existing forms/data).
+// TBL Forms feature constants (kept stable for back-compat with existing forms/data).
 define( 'TF_VERSION', TD_VERSION );
 define( 'TF_FILE', __FILE__ );
 define( 'TF_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TF_URL', plugin_dir_url( __FILE__ ) );
 define( 'TF_CPT', 'terrific_form' );
+
+// Lead Routing module (merged from Travel-by-Luxe/wp-lead-routing-plugin 1.9.1). Its
+// TBL_LR_* classes still read these constants; they now point at this plugin.
+define( 'TBL_LR_VERSION', TD_VERSION );
+define( 'TBL_LR_FILE', __FILE__ );
+define( 'TBL_LR_DIR', TF_DIR );
+define( 'TBL_LR_URL', TF_URL );
 
 require_once TF_DIR . 'includes/class-td-menu.php';
 require_once TF_DIR . 'includes/class-td-session.php';
@@ -44,9 +53,20 @@ require_once TF_DIR . 'includes/class-tf-forms.php';
 require_once TF_DIR . 'includes/class-td-faq-store.php';
 require_once TF_DIR . 'includes/class-td-snippet-store.php';
 require_once TF_DIR . 'includes/class-td-settings-store.php';
+require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-settings.php';
+require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-forms.php';
+require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-client.php';
+require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-submit.php';
+require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-frontend.php';
+require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-rest.php';
+require_once TF_DIR . 'includes/lead-routing/class-tbl-lr-lead-links.php';
 
 /**
- * Auto-update from the public GitHub repo terrific-digital/wordpress-plugin.
+ * Auto-update from the public GitHub repo terrific-digital/travelbyluxe-plugin.
+ *
+ * (Forked from terrific-digital/wordpress-plugin at v2.51.0; the TD_*/TF_* symbols,
+ * hooks, CPTs, tables and options are kept on purpose — the lead-routing module and
+ * the leads app's payload mapping depend on them. See PROJECT.md.)
  *
  * The repo is public, so we NEVER send an authentication token. This is
  * deliberate: GitHub validates any credential you present and rejects a bad
@@ -59,19 +79,22 @@ require_once TF_DIR . 'includes/class-td-settings-store.php';
  * limit, but PUC checks ~twice a day, so it never matters in practice.)
  *
  * Releases are cut by pushing a `vX.Y.Z` git tag — the release.yml workflow
- * builds a clean terrific-digital.zip and attaches it to the GitHub release;
+ * builds a clean travelbyluxe.zip and attaches it to the GitHub release;
  * PUC picks that ZIP up automatically.
  */
 require_once TF_DIR . 'vendor/plugin-update-checker/plugin-update-checker.php';
 $td_updater = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-	'https://github.com/terrific-digital/wordpress-plugin/',
+	'https://github.com/terrific-digital/travelbyluxe-plugin/',
 	__FILE__,
-	'terrific-digital'
+	'travelbyluxe'
 );
 $td_updater->setBranch( 'main' );
 // Prefer the release-asset ZIP (clean, properly-named folder) over GitHub's
 // auto-generated source tarball (which has a hash-suffixed root folder name).
 $td_updater->getVcsApi()->enableReleaseAssets();
+// The Lead Routing REST API's /update route installs releases through the updater.
+$GLOBALS['td_updater']     = $td_updater;
+$GLOBALS['tbl_lr_updater'] = $td_updater;
 
 add_action( 'plugins_loaded', function () {
 	TD_Menu::init();
@@ -96,7 +119,27 @@ add_action( 'plugins_loaded', function () {
 	TD_FAQ_Store::init();
 	TD_Snippet_Store::init();
 	TD_Settings_Store::init();
+	// Lead Routing: hooks terrific_forms/submission + /step, so after TF_Submissions::init().
+	TBL_LR_Settings::init();
+	TBL_LR_Forms::init();
+	TBL_LR_Submit::init();
+	TBL_LR_Frontend::init();
+	TBL_LR_Rest::init();
+	TBL_LR_Lead_Links::init();
 } );
+
+/**
+ * Lead Routing used to be a separate add-on that checked whether the forms plugin
+ * was active; inside this plugin the answer is always yes. Kept as functions
+ * because the module's classes (and scripts written against the add-on) call them.
+ */
+function tbl_lr_forms_available() {
+	return true;
+}
+
+function tbl_lr_td_version() {
+	return TD_VERSION;
+}
 
 /**
  * Ensure window.dataLayer exists on every front-end page as early as possible,
@@ -118,7 +161,7 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), function ( $li
 add_filter( 'plugin_row_meta', function ( $meta, $file ) {
 	if ( plugin_basename( __FILE__ ) === $file ) {
 		foreach ( $meta as $i => $html ) {
-			if ( false !== strpos( $html, 'terrific-digital.com' ) ) {
+			if ( false !== strpos( $html, 'travelbyluxe-plugin' ) ) {
 				$meta[ $i ] = str_replace( '<a ', '<a target="_blank" rel="noopener noreferrer" ', $html );
 			}
 		}

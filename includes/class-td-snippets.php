@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 /**
  * Code Snippets — inject custom HTML/JS into the page at a chosen location,
  * gated by URL/page conditions. Restricted to users who can edit pages
- * (edit_pages — same model as the rest of the Terrific Digital plugin).
+ * (edit_pages — same model as the rest of the Travel by Luxe plugin).
  *
  * Each snippet is a `td_snippet` post:
  *   _td_snippet_code      raw HTML/JS
@@ -46,7 +46,7 @@ class TD_Snippets {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'meta_boxes' ) );
 		add_action( 'save_post_' . self::CPT, array( __CLASS__, 'save' ), 10, 1 );
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_buffer' ), 1 );
-		// Keep the Terrific Digital menu highlighted while editing a snippet.
+		// Keep the Travel by Luxe menu highlighted while editing a snippet.
 		add_filter( 'parent_file', array( __CLASS__, 'parent_file' ) );
 		add_filter( 'submenu_file', array( __CLASS__, 'submenu_file' ) );
 		// List-table columns.
@@ -68,7 +68,7 @@ class TD_Snippets {
 			),
 			'public'          => false,
 			'show_ui'         => true,
-			'show_in_menu'    => false, // nested under Terrific Digital.
+			'show_in_menu'    => false, // nested under Travel by Luxe.
 			'supports'        => array( 'title' ),
 			'capability_type' => 'page', // edit_pages-family caps — same model as the Forms CPT.
 			'map_meta_cap'    => true,

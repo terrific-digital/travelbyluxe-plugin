@@ -1,4 +1,4 @@
-/* Terrific FAQ — Gutenberg block (no build step; uses wp.element.createElement) */
+/* TBL FAQ — Gutenberg block (no build step; uses wp.element.createElement) */
 ( function ( blocks, element, components, blockEditor, i18n, serverSideRender ) {
 	'use strict';
 	var el = element.createElement;
@@ -24,8 +24,8 @@
 
 	registerBlockType( 'terrific-digital/faq', {
 		apiVersion: 2,
-		title: 'Terrific FAQ',
-		description: 'Display a FAQ list built with Terrific Digital.',
+		title: 'TBL FAQ',
+		description: 'Display a FAQ list built with Travel by Luxe.',
 		category: 'terrific-digital',
 		icon: 'editor-help',
 		keywords: [ 'faq', 'terrific', 'accordion', 'questions' ],
@@ -75,7 +75,7 @@
 			} else {
 				body = el( Placeholder, {
 					icon: 'editor-help',
-					label: 'Terrific FAQ',
+					label: 'TBL FAQ',
 					instructions: 'Choose which FAQ list to display on this page.'
 				},
 					el( SelectControl, { value: faqId, options: options, onChange: function ( v ) { props.setAttributes( { faqId: v } ); } } ),

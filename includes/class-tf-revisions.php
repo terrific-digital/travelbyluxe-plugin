@@ -129,7 +129,7 @@ class TF_Revisions {
 		// Identical to the most recent snapshot → nothing to record.
 		if ( $last && $last->hash === $hash ) { return false; }
 
-		if ( '' === $note ) { $note = $last ? __( 'Updated', 'terrific-digital' ) : __( 'Created', 'terrific-digital' ); }
+		if ( '' === $note ) { $note = $last ? __( 'Updated', 'travelbyluxe' ) : __( 'Created', 'travelbyluxe' ); }
 
 		$user = wp_get_current_user();
 		$wpdb->insert( self::table(), array(
@@ -138,7 +138,7 @@ class TF_Revisions {
 			'title'        => (string) $snap['title'],
 			'snapshot'     => $json,
 			'author_id'    => $user ? (int) $user->ID : 0,
-			'author_name'  => $user && $user->ID ? $user->display_name : __( 'System', 'terrific-digital' ),
+			'author_name'  => $user && $user->ID ? $user->display_name : __( 'System', 'travelbyluxe' ),
 			'note'         => $note,
 			'hash'         => $hash,
 			'created_at'   => current_time( 'mysql' ),
@@ -211,7 +211,7 @@ class TF_Revisions {
 		// Record the restore as its own revision so the timeline stays honest.
 		self::capture( $post_id, sprintf(
 			/* translators: 1: revision id, 2: human date */
-			__( 'Restored from #%1$d (%2$s)', 'terrific-digital' ),
+			__( 'Restored from #%1$d (%2$s)', 'travelbyluxe' ),
 			$rev_id,
 			mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $rev->created_at )
 		) );
@@ -226,14 +226,14 @@ class TF_Revisions {
 		if ( ! $screen || $screen->post_type !== TF_CPT ) { return; }
 		printf(
 			'<div class="notice notice-success is-dismissible"><p>%s</p></div>',
-			esc_html( sprintf( __( 'Form restored from revision #%d.', 'terrific-digital' ), (int) $_GET['tf_restored'] ) )
+			esc_html( sprintf( __( 'Form restored from revision #%d.', 'travelbyluxe' ), (int) $_GET['tf_restored'] ) )
 		);
 	}
 
 	/* ------------------------------------------------------------------ Meta box */
 
 	public static function meta_box() {
-		add_meta_box( 'tf-revisions-box', __( 'Revisions', 'terrific-digital' ), array( __CLASS__, 'render' ), TF_CPT, 'side', 'default' );
+		add_meta_box( 'tf-revisions-box', __( 'Revisions', 'travelbyluxe' ), array( __CLASS__, 'render' ), TF_CPT, 'side', 'default' );
 	}
 
 	/** Compact human summary of a snapshot: type · N steps · N fields · N actions. */
@@ -250,23 +250,23 @@ class TF_Revisions {
 		if ( is_array( $acts ) ) { foreach ( $acts as $a ) { if ( ! empty( $a['enabled'] ) ) { $enabled++; } } }
 
 		$parts = array( $type );
-		if ( 'Multi-step' === $type ) { $parts[] = sprintf( _n( '%d step', '%d steps', $steps, 'terrific-digital' ), $steps ); }
-		$parts[] = sprintf( _n( '%d field', '%d fields', $fields, 'terrific-digital' ), $fields );
-		if ( $enabled ) { $parts[] = sprintf( _n( '%d action', '%d actions', $enabled, 'terrific-digital' ), $enabled ); }
+		if ( 'Multi-step' === $type ) { $parts[] = sprintf( _n( '%d step', '%d steps', $steps, 'travelbyluxe' ), $steps ); }
+		$parts[] = sprintf( _n( '%d field', '%d fields', $fields, 'travelbyluxe' ), $fields );
+		if ( $enabled ) { $parts[] = sprintf( _n( '%d action', '%d actions', $enabled, 'travelbyluxe' ), $enabled ); }
 		return implode( ' · ', $parts );
 	}
 
 	public static function render( $post ) {
 		$revisions = self::for_form( $post->ID );
 		if ( empty( $revisions ) ) {
-			echo '<p style="color:#777;margin:0">' . esc_html__( 'No revisions yet. Each time you update this form, a restorable snapshot is saved here.', 'terrific-digital' ) . '</p>';
+			echo '<p style="color:#777;margin:0">' . esc_html__( 'No revisions yet. Each time you update this form, a restorable snapshot is saved here.', 'travelbyluxe' ) . '</p>';
 			return;
 		}
 		$current_hash = sha1( wp_json_encode( self::snapshot_of( $post->ID ) ) );
 		$fmt          = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
 
 		echo '<p style="margin:0 0 8px;color:#777">' . esc_html( sprintf(
-			_n( '%d saved version. Restore any of them below.', '%d saved versions. Restore any of them below.', count( $revisions ), 'terrific-digital' ),
+			_n( '%d saved version. Restore any of them below.', '%d saved versions. Restore any of them below.', count( $revisions ), 'travelbyluxe' ),
 			count( $revisions )
 		) ) . '</p>';
 
@@ -275,7 +275,7 @@ class TF_Revisions {
 			$is_current = ( $rev->hash === $current_hash && 0 === $i );
 			$ago        = human_time_diff( strtotime( $rev->created_at ), current_time( 'timestamp' ) );
 			$abs        = mysql2date( $fmt, $rev->created_at );
-			$confirm    = esc_js( __( 'Restore this version? Your current form will be saved as a new revision first.', 'terrific-digital' ) );
+			$confirm    = esc_js( __( 'Restore this version? Your current form will be saved as a new revision first.', 'travelbyluxe' ) );
 			$restore    = wp_nonce_url(
 				add_query_arg(
 					array( 'action' => 'tf_restore_revision', 'rev' => $rev->id, 'post' => $post->ID ),
@@ -285,15 +285,15 @@ class TF_Revisions {
 			);
 			echo '<li style="border-bottom:1px solid #f0f0f1;padding:8px 0">';
 			echo '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">';
-			echo '<strong title="' . esc_attr( $abs ) . '">' . esc_html( sprintf( __( '%s ago', 'terrific-digital' ), $ago ) ) . '</strong>';
+			echo '<strong title="' . esc_attr( $abs ) . '">' . esc_html( sprintf( __( '%s ago', 'travelbyluxe' ), $ago ) ) . '</strong>';
 			if ( $is_current ) {
-				echo '<span style="font-size:11px;background:#e6f4ea;color:#1e7e34;padding:1px 7px;border-radius:9px">' . esc_html__( 'Current', 'terrific-digital' ) . '</span>';
+				echo '<span style="font-size:11px;background:#e6f4ea;color:#1e7e34;padding:1px 7px;border-radius:9px">' . esc_html__( 'Current', 'travelbyluxe' ) . '</span>';
 			} else {
-				echo '<a href="' . esc_url( $restore ) . '" class="button button-small" onclick="return confirm(\'' . esc_attr( $confirm ) . '\')">' . esc_html__( 'Restore', 'terrific-digital' ) . '</a>';
+				echo '<a href="' . esc_url( $restore ) . '" class="button button-small" onclick="return confirm(\'' . esc_attr( $confirm ) . '\')">' . esc_html__( 'Restore', 'travelbyluxe' ) . '</a>';
 			}
 			echo '</div>';
 			echo '<div style="font-size:12px;color:#50575e;margin-top:2px">' . esc_html( $rev->note ) . ' · ' . esc_html( self::summary( json_decode( $rev->snapshot, true ) ) ) . '</div>';
-			echo '<div style="font-size:11px;color:#999">' . esc_html( sprintf( __( 'by %s', 'terrific-digital' ), $rev->author_name ) ) . ' · ' . esc_html( $abs ) . '</div>';
+			echo '<div style="font-size:11px;color:#999">' . esc_html( sprintf( __( 'by %s', 'travelbyluxe' ), $rev->author_name ) ) . ' · ' . esc_html( $abs ) . '</div>';
 			echo '</li>';
 		}
 		echo '</ul>';

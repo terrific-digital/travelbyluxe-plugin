@@ -1,4 +1,4 @@
-/* Terrific Forms — drag-and-drop admin builder */
+/* TBL Forms — drag-and-drop admin builder */
 (function () {
 	'use strict';
 

@@ -1,4 +1,4 @@
-/* Terrific Digital — Calendly scheduler-widget listener.
+/* Travel by Luxe — Calendly scheduler-widget listener.
  * Mirrors the GTM custom-HTML tag we used previously: listens to postMessage
  * events from Calendly's embedded widget and pushes dataLayer events that
  * align with our standard form-tracking taxonomy.
@@ -9,7 +9,7 @@
  *   date_and_time_selected  → meeting_time_selected
  *   event_scheduled         → form_submission, then a second event named
  *                             after the configured form_intent (default
- *                             `meeting_booked`) — mirrors how Terrific Forms
+ *                             `meeting_booked`) — mirrors how TBL Forms
  *                             fires the intent param right after submission.
  *
  * Each Calendly event fires at most once per page-load. */
@@ -81,7 +81,7 @@
 		});
 
 		// Fire the intent as its own event immediately after form_submission —
-		// matches Terrific Forms behaviour (e.g. generate_lead after a lead form).
+		// matches TBL Forms behaviour (e.g. generate_lead after a lead form).
 		if (eventName === 'form_submission' && meta.form_intent) {
 			tdPush({
 				event:       meta.form_intent,

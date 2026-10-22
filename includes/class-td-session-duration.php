@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * resets when the tab closes. Each milestone fires at most once per session
  * (even across multiple page loads in the same tab).
  *
- * Configurable on the Terrific Digital Settings screen:
+ * Configurable on the Travel by Luxe Settings screen:
  *   - Enable / disable
  *   - Milestones (comma-separated seconds)
  */

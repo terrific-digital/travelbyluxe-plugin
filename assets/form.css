@@ -1,4 +1,4 @@
-/* Terrific Forms — frontend (neutral base styling; themes/pages can override) */
+/* TBL Forms — frontend (neutral base styling; themes/pages can override) */
 /* Admin-only quick "Edit form" link (front-end, for users who can edit it).
    It's only emitted server-side for logged-in editors, so force it visible —
    themes / custom landing-page CSS must not be able to hide it (!important). */

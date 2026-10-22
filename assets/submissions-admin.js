@@ -1,4 +1,4 @@
-/* Terrific Digital — Submissions list-table flag icons.
+/* Travel by Luxe — Submissions list-table flag icons.
  * AJAX-toggles a row's flag (test / spam / none) when an icon in the Flag
  * column is clicked. Same-flag click clears; different-flag click switches. */
 (function () {

@@ -2,9 +2,9 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /**
- * Terrific FAQ — reusable FAQ lists (question/answer accordions) that can be placed
+ * TBL FAQ — reusable FAQ lists (question/answer accordions) that can be placed
  * on any page via a shortcode or a Gutenberg block. Restricted to users who can edit
- * pages (edit_pages — same model as the rest of the Terrific Digital plugin).
+ * pages (edit_pages — same model as the rest of the Travel by Luxe plugin).
  *
  * Each FAQ list is a `td_faq` post. Configuration lives in `{prefix}td_faq_lists`
  * (see TD_FAQ_Store): the stable faq_id (`faq_{postID}_{6hex}`), the items list
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * (`_td_faq_seen`) stays in postmeta — it's per-environment runtime data, not
  * configuration, and shouldn't travel with staging→prod table copies.
  *
- * Placement: [terrific_faq id="N"] and the "Terrific FAQ" block (server-rendered).
+ * Placement: [tbl_faq id="N"] and the "TBL FAQ" block (server-rendered).
  * Front-end: an accessible accordion; opening an item fires a dataLayer
  *   { event:'faq_item_click', faq_title:'<question lowercased>' } once per item.
  */
@@ -26,8 +26,9 @@ class TD_FAQ {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'meta_boxes' ) );
 		add_action( 'save_post_' . self::CPT, array( __CLASS__, 'save' ), 10, 1 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'admin_assets' ) );
-		add_shortcode( 'terrific_faq', array( __CLASS__, 'shortcode' ) );
-		// Keep the Terrific Digital menu highlighted while editing a FAQ list.
+		add_shortcode( 'tbl_faq', array( __CLASS__, 'shortcode' ) );
+		add_shortcode( 'terrific_faq', array( __CLASS__, 'shortcode' ) ); // alias
+		// Keep the Travel by Luxe menu highlighted while editing a FAQ list.
 		add_filter( 'parent_file', array( __CLASS__, 'parent_file' ) );
 		add_filter( 'submenu_file', array( __CLASS__, 'submenu_file' ) );
 		// List-table column (item count).
@@ -51,7 +52,7 @@ class TD_FAQ {
 			),
 			'public'          => false,
 			'show_ui'         => true,
-			'show_in_menu'    => false, // nested under Terrific Digital.
+			'show_in_menu'    => false, // nested under Travel by Luxe.
 			'supports'        => array( 'title' ), // classic meta-box editor (like the Forms/Snippets CPTs).
 			'capability_type' => 'page', // edit_pages-family caps — same model as the Forms CPT.
 			'map_meta_cap'    => true,
@@ -148,7 +149,7 @@ class TD_FAQ {
 			echo (int) count( self::get_items( $post_id ) );
 		}
 		if ( 'td_faq_sc' === $col ) {
-			echo '<code>[terrific_faq id="' . (int) $post_id . '"]</code>';
+			echo '<code>[tbl_faq id="' . (int) $post_id . '"]</code>';
 		}
 	}
 
@@ -187,8 +188,8 @@ class TD_FAQ {
 		<p><label><input type="checkbox" name="td_faq_single" value="1" <?php checked( $single, '1' ); ?>> Open one at a time <span class="description">(opening an item closes the others)</span></label></p>
 		<hr style="margin:14px 0">
 		<p><strong>Shortcode</strong><br>
-			<code>[terrific_faq id="<?php echo (int) $post->ID; ?>"]</code></p>
-		<p class="description">Or add the <strong>Terrific FAQ</strong> block to any page.</p>
+			<code>[tbl_faq id="<?php echo (int) $post->ID; ?>"]</code></p>
+		<p class="description">Or add the <strong>TBL FAQ</strong> block to any page.</p>
 		<hr style="margin:14px 0">
 		<p><strong>Used on these pages</strong></p>
 		<?php
@@ -228,19 +229,20 @@ class TD_FAQ {
 	public static function find_usages( $faq_post_id ) {
 		global $wpdb;
 		$faq_post_id = (int) $faq_post_id;
-		$sc = '%' . $wpdb->esc_like( '[terrific_faq id="' . $faq_post_id . '"' ) . '%';
-		$bl = '%' . $wpdb->esc_like( '"faqId":"' . $faq_post_id . '"' ) . '%';
+		$sc  = '%' . $wpdb->esc_like( '[tbl_faq id="' . $faq_post_id . '"' ) . '%';
+		$sc2 = '%' . $wpdb->esc_like( '[terrific_faq id="' . $faq_post_id . '"' ) . '%'; // legacy alias
+		$bl  = '%' . $wpdb->esc_like( '"faqId":"' . $faq_post_id . '"' ) . '%';
 
 		$ids = $wpdb->get_col( $wpdb->prepare(
 			"SELECT ID FROM {$wpdb->posts}
 			 WHERE post_type NOT IN ( 'revision', %s )
 			   AND post_status NOT IN ( 'trash', 'auto-draft', 'inherit' )
-			   AND ( post_content LIKE %s OR post_content LIKE %s )",
-			self::CPT, $sc, $bl
+			   AND ( post_content LIKE %s OR post_content LIKE %s OR post_content LIKE %s )",
+			self::CPT, $sc, $sc2, $bl
 		) );
 		$meta_ids = $wpdb->get_col( $wpdb->prepare(
-			"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_elementor_data' AND meta_value LIKE %s",
-			$sc
+			"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_elementor_data' AND ( meta_value LIKE %s OR meta_value LIKE %s )",
+			$sc, $sc2
 		) );
 
 		// Plus pages where the FAQ actually rendered (custom templates / do_shortcode /
@@ -328,14 +330,14 @@ class TD_FAQ {
 		foreach ( $categories as $c ) {
 			if ( isset( $c['slug'] ) && 'terrific-digital' === $c['slug'] ) { return $categories; }
 		}
-		array_unshift( $categories, array( 'slug' => 'terrific-digital', 'title' => 'Terrific Digital', 'icon' => null ) );
+		array_unshift( $categories, array( 'slug' => 'terrific-digital', 'title' => 'Travel by Luxe', 'icon' => null ) );
 		return $categories;
 	}
 
 	public static function render_block( $attributes ) {
 		$id = isset( $attributes['faqId'] ) ? (int) $attributes['faqId'] : 0;
 		if ( ! $id || get_post_type( $id ) !== self::CPT ) {
-			return current_user_can( 'edit_pages' ) ? '<p><em>Terrific FAQ: please select a FAQ list.</em></p>' : '';
+			return current_user_can( 'edit_pages' ) ? '<p><em>TBL FAQ: please select a FAQ list.</em></p>' : '';
 		}
 		return self::shortcode( array( 'id' => $id ) );
 	}
@@ -344,11 +346,11 @@ class TD_FAQ {
 		$atts    = shortcode_atts( array( 'id' => 0 ), $atts, 'terrific_faq' );
 		$post_id = (int) $atts['id'];
 		if ( ! $post_id || get_post_type( $post_id ) !== self::CPT ) {
-			return current_user_can( 'edit_pages' ) ? '<!-- Terrific FAQ: invalid id -->' : '';
+			return current_user_can( 'edit_pages' ) ? '<!-- TBL FAQ: invalid id -->' : '';
 		}
 		$items = self::get_items( $post_id );
 		if ( empty( $items ) ) {
-			return current_user_can( 'edit_pages' ) ? '<!-- Terrific FAQ: no items -->' : '';
+			return current_user_can( 'edit_pages' ) ? '<!-- TBL FAQ: no items -->' : '';
 		}
 		$faq_id = self::ensure_id( $post_id );
 		self::record_usage( $post_id ); // track where it actually renders (for the usage finder)

@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /**
- * Terrific Forms global settings (under the Terrific Digital menu).
+ * TBL Forms global settings (under the Travel by Luxe menu).
  * Currently: a global webhook URL that any form can opt into via its Actions.
  */
 class TF_Settings {
@@ -15,8 +15,8 @@ class TF_Settings {
 	}
 
 	public static function menu() {
-		// edit_pages (not manage_options) to match the rest of the Terrific Digital menu.
-		add_submenu_page( TD_MENU, 'Terrific Digital Settings', 'Settings', 'edit_pages', 'tf-settings', array( __CLASS__, 'screen' ) );
+		// edit_pages (not manage_options) to match the rest of the Travel by Luxe menu.
+		add_submenu_page( TD_MENU, 'Travel by Luxe Settings', 'Settings', 'edit_pages', 'tf-settings', array( __CLASS__, 'screen' ) );
 	}
 
 	public static function register() {
@@ -119,7 +119,7 @@ class TF_Settings {
 			<form method="post" action="options.php">
 				<?php settings_fields( 'tf_settings_group' ); ?>
 
-				<h2 class="title">Terrific Forms</h2>
+				<h2 class="title">TBL Forms</h2>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><label for="tf_global_webhook">Global webhook URL</label></th>
@@ -137,7 +137,7 @@ class TF_Settings {
 
 				<?php
 				/**
-				 * Other Terrific Digital features render their own settings sections here.
+				 * Other Travel by Luxe features render their own settings sections here.
 				 * Fields must belong to an option registered under the 'tf_settings_group'.
 				 */
 				do_action( 'terrific_digital/settings_fields' );

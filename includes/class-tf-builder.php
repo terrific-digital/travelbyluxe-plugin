@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /**
- * Admin builder UI for a Terrific Form (drag-and-drop fields + steps + settings).
+ * Admin builder UI for a TBL Form (drag-and-drop fields + steps + settings).
  */
 class TF_Builder {
 
@@ -65,21 +65,22 @@ class TF_Builder {
 	public static function find_usages( $form_post_id ) {
 		global $wpdb;
 		$form_post_id = (int) $form_post_id;
-		$sc = '%' . $wpdb->esc_like( '[terrific_form id="' . $form_post_id . '"' ) . '%';
-		$bl = '%' . $wpdb->esc_like( '"formId":"' . $form_post_id . '"' ) . '%';
+		$sc  = '%' . $wpdb->esc_like( '[tbl_form id="' . $form_post_id . '"' ) . '%';
+		$sc2 = '%' . $wpdb->esc_like( '[terrific_form id="' . $form_post_id . '"' ) . '%'; // legacy alias
+		$bl  = '%' . $wpdb->esc_like( '"formId":"' . $form_post_id . '"' ) . '%';
 
 		// Gutenberg block + classic shortcode live in post_content.
 		$ids = $wpdb->get_col( $wpdb->prepare(
 			"SELECT ID FROM {$wpdb->posts}
 			 WHERE post_type NOT IN ( 'revision', %s )
 			   AND post_status NOT IN ( 'trash', 'auto-draft', 'inherit' )
-			   AND ( post_content LIKE %s OR post_content LIKE %s )",
-			TF_CPT, $sc, $bl
+			   AND ( post_content LIKE %s OR post_content LIKE %s OR post_content LIKE %s )",
+			TF_CPT, $sc, $sc2, $bl
 		) );
 		// Shortcode embedded inside Elementor is stored in post meta.
 		$meta_ids = $wpdb->get_col( $wpdb->prepare(
-			"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_elementor_data' AND meta_value LIKE %s",
-			$sc
+			"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_elementor_data' AND ( meta_value LIKE %s OR meta_value LIKE %s )",
+			$sc, $sc2
 		) );
 
 		$all = array_unique( array_map( 'intval', array_merge( $ids, $meta_ids ) ) );
@@ -104,7 +105,7 @@ class TF_Builder {
 		<?php
 		$usages = self::find_usages( $post->ID );
 		if ( empty( $usages ) ) {
-			echo '<p style="color:#777">Not embedded anywhere yet. Add the <strong>Terrific Form</strong> block, or the shortcode <code>[terrific_form id="' . (int) $post->ID . '"]</code>.</p>';
+			echo '<p style="color:#777">Not embedded anywhere yet. Add the <strong>TBL Form</strong> block, or the shortcode <code>[tbl_form id="' . (int) $post->ID . '"]</code>.</p>';
 			return;
 		}
 		echo '<ul style="margin:0">';
@@ -146,7 +147,7 @@ class TF_Builder {
 		<p><strong>Form ID</strong><br>
 			<code><?php echo esc_html( $form_id ?: '(saved on first publish)' ); ?></code></p>
 		<p><strong>Shortcode</strong><br>
-			<code>[terrific_form id="<?php echo (int) $post->ID; ?>"]</code></p>
+			<code>[tbl_form id="<?php echo (int) $post->ID; ?>"]</code></p>
 		<hr>
 		<p>
 			<label for="tf_intent"><strong>Intent</strong></label><br>

@@ -1,4 +1,4 @@
-/* Terrific Digital — automatic link-click dataLayer events.
+/* Travel by Luxe — automatic link-click dataLayer events.
  * Pushes:
  *   email_link_click  — for href^="mailto:"
  *   phone_link_click  — for href^="tel:"

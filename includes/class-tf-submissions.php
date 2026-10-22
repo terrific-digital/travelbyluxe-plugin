@@ -457,7 +457,7 @@ class TF_Submissions {
 		) );
 	}
 
-	/** Base admin URL of the Submissions screen (now nested under Terrific Digital). */
+	/** Base admin URL of the Submissions screen (now nested under Travel by Luxe). */
 	public static function page_url( $args = array() ) {
 		return add_query_arg( array_merge( array( 'page' => 'tf-submissions' ), $args ), admin_url( 'admin.php' ) );
 	}

@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * either too coarse (wipes all postmeta on prod) or impossible (you can't copy
  * "just the form rows").
  *
- * Forms now live in their own table `{prefix}td_forms`. The Terrific Form CPT
+ * Forms now live in their own table `{prefix}td_forms`. The TBL Form CPT
  * post still exists in wp_posts (so the Edit screen, list table, capability
  * checks, trash/restore, etc. work as before) — this table holds everything
  * else, keyed by post_id (UNIQUE).

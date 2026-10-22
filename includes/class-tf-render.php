@@ -2,7 +2,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 /**
- * Front-end rendering: [terrific_form id="POST_ID"] shortcode + Gutenberg-friendly.
+ * Front-end rendering: [tbl_form id="POST_ID"] shortcode (alias [terrific_form]) + Gutenberg-friendly.
  */
 class TF_Render {
 
@@ -10,7 +10,8 @@ class TF_Render {
 	protected static $instances = 0;
 
 	public static function init() {
-		add_shortcode( 'terrific_form', array( __CLASS__, 'shortcode' ) );
+		add_shortcode( 'tbl_form', array( __CLASS__, 'shortcode' ) );
+		add_shortcode( 'terrific_form', array( __CLASS__, 'shortcode' ) ); // alias: content written for the Terrific Digital plugin keeps working
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_assets' ) );
 		add_action( 'wp_ajax_tf_preview', array( __CLASS__, 'ajax_preview' ) ); // admin-only live preview
 	}
@@ -67,16 +68,16 @@ class TF_Render {
 			// Front-end strings — translatable via the 'terrific_forms/i18n' filter or WP's
 			// i18n (so Hebrew/other LPs don't have to patch text with a MutationObserver).
 			'i18n'      => apply_filters( 'terrific_forms/i18n', array(
-				'submit_error' => __( 'Something went wrong. Please try again.', 'terrific-digital' ),
+				'submit_error' => __( 'Something went wrong. Please try again.', 'travelbyluxe' ),
 			) ),
 		) );
 	}
 
 	public static function shortcode( $atts ) {
-		$atts = shortcode_atts( array( 'id' => 0 ), $atts, 'terrific_form' );
+		$atts = shortcode_atts( array( 'id' => 0 ), $atts, 'tbl_form' );
 		$post_id = (int) $atts['id'];
 		if ( ! $post_id || get_post_type( $post_id ) !== TF_CPT ) {
-			return current_user_can( 'edit_posts' ) ? '<!-- Terrific Forms: invalid form id -->' : '';
+			return current_user_can( 'edit_posts' ) ? '<!-- TBL Forms: invalid form id -->' : '';
 		}
 		$def = tf_get_form( $post_id );
 		tf_ensure_form_id( $post_id );
@@ -132,7 +133,7 @@ class TF_Render {
 		if ( ! $preview && ! is_admin() && $post_id && current_user_can( 'edit_post', $post_id ) ) {
 			$edit_url = get_edit_post_link( $post_id );
 			if ( $edit_url ) {
-				// The Terrific Digital "t" brand mark (colour mosaic) so editors recognise it as a Terrific Form.
+				// The Travel by Luxe "t" brand mark (colour mosaic) so editors recognise it as a TBL Form.
 				$tmark = '<svg class="tf-edit-ico" width="11" height="15" viewBox="0 0 24.33 33.95" aria-hidden="true">'
 					. '<rect x="8.109" y="0.758" width="8.109" height="8.109" fill="#7249B8"/>'
 					. '<rect x="0" y="8.867" width="8.109" height="8.109" fill="#FE3F4F"/>'

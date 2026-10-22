@@ -1,4 +1,4 @@
-/* Terrific Form — Gutenberg block (no build step; uses wp.element.createElement) */
+/* TBL Form — Gutenberg block (no build step; uses wp.element.createElement) */
 ( function ( blocks, element, components, blockEditor, i18n, serverSideRender ) {
 	'use strict';
 	var el = element.createElement;
@@ -25,8 +25,8 @@
 
 	registerBlockType( 'terrific-digital/form', {
 		apiVersion: 2,
-		title: 'Terrific Form',
-		description: 'Display a form built with Terrific Forms.',
+		title: 'TBL Form',
+		description: 'Display a form built with TBL Forms.',
 		category: 'terrific-digital',
 		icon: 'feedback',
 		keywords: [ 'form', 'terrific', 'contact', 'lead' ],
@@ -80,7 +80,7 @@
 			} else {
 				body = el( Placeholder, {
 					icon: 'feedback',
-					label: 'Terrific Form',
+					label: 'TBL Form',
 					instructions: 'Choose which form to display on this page.'
 				},
 					el( SelectControl, { value: formId, options: options, onChange: function ( v ) { props.setAttributes( { formId: v } ); } } ),

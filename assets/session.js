@@ -1,4 +1,4 @@
-/* Terrific Digital — Store Session Data.
+/* Travel by Luxe — Store Session Data.
  * Records a `td_session_data` object once at the start of a browsing session:
  *   { timestamp, url, ref }
  * Persisted in sessionStorage or a session cookie (chosen in plugin Settings).

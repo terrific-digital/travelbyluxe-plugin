@@ -1,57 +1,96 @@
 name: Release
 
-# Triggered when a vX.Y.Z tag is pushed. Builds a clean terrific-digital.zip
-# (proper folder root, excludes dev/SCM files) and attaches it to a GitHub
-# release. The plugin's update checker (PUC) on each WordPress site reads
-# that ZIP as the update artifact.
+# Builds travelbyluxe.zip (with a top-level travelbyluxe/ folder) and attaches it
+# to a GitHub release. The plugin's update checker on each WordPress site reads
+# that ZIP as the update, so WordPress shows "Update available" in the admin.
+#
+# Start it either way:
+#  - Actions → Release → Run workflow, with the version (e.g. 3.0.1). The
+#    vX.Y.Z tag and the release are created from the chosen branch.
+#  - Push a vX.Y.Z tag.
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 3.0.1 (must match travelbyluxe.php)'
+        required: true
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    # Pinned: the build relies on php, rsync and zip being on the runner image.
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - name: Check out the tag
-        uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@v5
 
-      - name: Verify the tag matches TD_VERSION in the plugin
+      - name: Work out the version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          FILE_VERSION=$(grep -E "define\( 'TD_VERSION', '" terrific-digital.php | sed -E "s/.*'([0-9.]+)'.*/\1/")
-          echo "tag:  $TAG"
-          echo "file: $FILE_VERSION"
-          if [ "$TAG" != "$FILE_VERSION" ]; then
-            echo "::error::Tag v$TAG does not match TD_VERSION '$FILE_VERSION' in terrific-digital.php"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="${INPUT_VERSION#v}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::'$VERSION' is not a version like 3.0.1"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=v$VERSION" >> "$GITHUB_ENV"
+
+      - name: Verify the version matches the plugin
+        run: |
+          CONST=$(grep -E "define\( 'TD_VERSION', '" travelbyluxe.php | sed -E "s/.*'([0-9.]+)'.*/\1/")
+          HEADER=$(grep -E "^ \* Version:" travelbyluxe.php | sed -E "s/.*Version:[[:space:]]*([0-9.]+).*/\1/")
+          echo "release:        $VERSION"
+          echo "TD_VERSION:     $CONST"
+          echo "Version header: $HEADER"
+          if [ "$VERSION" != "$CONST" ] || [ "$VERSION" != "$HEADER" ]; then
+            echo "::error::Release $VERSION must match both TD_VERSION and the Version header in travelbyluxe.php"
             exit 1
           fi
 
-      - name: Build terrific-digital.zip
+      - name: Check PHP syntax
         run: |
-          # Stage the plugin under a top-level 'terrific-digital/' folder so the ZIP
-          # extracts to wp-content/plugins/terrific-digital/ on each site.
+          find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+
+      - name: Check JavaScript syntax
+        run: |
+          for f in assets/*.js; do node --check "$f"; done
+
+      - name: Build travelbyluxe.zip
+        run: |
           STAGE=$(mktemp -d)
           rsync -a --delete \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='.gitignore' \
             --exclude='.claude' \
+            --exclude='CLAUDE.md' \
             --exclude='PROJECT.md' \
-            --exclude='*@*' \
+            --exclude='PROJECT.local.md' \
             --exclude='*.zip' \
             --exclude='node_modules' \
-            ./ "$STAGE/terrific-digital/"
-          ( cd "$STAGE" && zip -rq "$GITHUB_WORKSPACE/terrific-digital.zip" terrific-digital )
-          unzip -l terrific-digital.zip | head -20
+            ./ "$STAGE/travelbyluxe/"
+          ( cd "$STAGE" && zip -rq "$GITHUB_WORKSPACE/travelbyluxe.zip" travelbyluxe )
+          unzip -l travelbyluxe.zip | head -30
 
-      - name: Create the GitHub release
+      - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            terrific-digital.zip \
-            --title "$GITHUB_REF_NAME" \
-            --generate-notes
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            # A release made by hand on GitHub: just attach the ZIP.
+            gh release upload "$TAG" travelbyluxe.zip --clobber
+          else
+            gh release create "$TAG" travelbyluxe.zip \
+              --target "$GITHUB_SHA" \
+              --title "$TAG" \
+              --generate-notes
+          fi

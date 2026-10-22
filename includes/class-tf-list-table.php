@@ -5,7 +5,7 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 }
 
 /**
- * Admin list table for Terrific Forms submissions.
+ * Admin list table for TBL Forms submissions.
  */
 class TF_List_Table extends WP_List_Table {
 

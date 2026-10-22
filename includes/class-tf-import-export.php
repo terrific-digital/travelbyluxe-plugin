@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  * full form definition (fields/steps), settings (intent, submit text, success
  * message, wrapper class, custom CSS), and actions (webhooks/redirects).
  *
- * Import: a submenu page under Terrific Digital accepts the JSON via file upload
+ * Import: a submenu page under Travel by Luxe accepts the JSON via file upload
  * or paste. Forms are matched on the stable `_tf_form_id` (e.g. "tf_77_c93888"):
  *   - Match found  → updates the existing form in place.
  *   - No match     → creates a fresh form, preserving the imported form_id so a
@@ -44,7 +44,7 @@ class TF_Import_Export {
 			add_query_arg( array( 'action' => 'tf_export_form', 'id' => $post->ID ), admin_url( 'admin-post.php' ) ),
 			'tf_export_form_' . $post->ID
 		);
-		$actions['tf_export'] = sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'Export JSON', 'terrific-digital' ) );
+		$actions['tf_export'] = sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'Export JSON', 'travelbyluxe' ) );
 		return $actions;
 	}
 
@@ -52,9 +52,9 @@ class TF_Import_Export {
 
 	public static function handle_export() {
 		$id = isset( $_GET['id'] ) ? (int) $_GET['id'] : 0;
-		if ( ! $id || get_post_type( $id ) !== TF_CPT ) { wp_die( esc_html__( 'Invalid form.', 'terrific-digital' ), 400 ); }
+		if ( ! $id || get_post_type( $id ) !== TF_CPT ) { wp_die( esc_html__( 'Invalid form.', 'travelbyluxe' ), 400 ); }
 		check_admin_referer( 'tf_export_form_' . $id );
-		if ( ! current_user_can( 'edit_post', $id ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'terrific-digital' ), 403 ); }
+		if ( ! current_user_can( 'edit_post', $id ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'travelbyluxe' ), 403 ); }
 
 		$payload = self::build_export( $id );
 		$slug    = sanitize_file_name( $payload['form_id'] ?: ( 'form-' . $id ) );
@@ -99,30 +99,30 @@ class TF_Import_Export {
 	public static function screen() {
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Import Form', 'terrific-digital' ); ?></h1>
+			<h1><?php esc_html_e( 'Import Form', 'travelbyluxe' ); ?></h1>
 			<p style="max-width:720px;color:#555">
-				<?php esc_html_e( 'Upload a JSON file (or paste the JSON contents) exported from another Terrific Digital site. Forms are matched on their stable form ID — a match updates the existing form in place, otherwise a new form is created.', 'terrific-digital' ); ?>
+				<?php esc_html_e( 'Upload a JSON file (or paste the JSON contents) exported from another Travel by Luxe site. Forms are matched on their stable form ID — a match updates the existing form in place, otherwise a new form is created.', 'travelbyluxe' ); ?>
 			</p>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
 				<input type="hidden" name="action" value="tf_import_form">
 				<?php wp_nonce_field( 'tf_import_form' ); ?>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><label for="tf_import_file"><?php esc_html_e( 'JSON file', 'terrific-digital' ); ?></label></th>
+						<th scope="row"><label for="tf_import_file"><?php esc_html_e( 'JSON file', 'travelbyluxe' ); ?></label></th>
 						<td>
 							<input type="file" name="tf_import_file" id="tf_import_file" accept="application/json,.json">
-							<p class="description"><?php esc_html_e( 'Pick a terrific-form-*.json file from your computer.', 'terrific-digital' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Pick a terrific-form-*.json file from your computer.', 'travelbyluxe' ); ?></p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="tf_import_json"><?php esc_html_e( '…or paste JSON', 'terrific-digital' ); ?></label></th>
+						<th scope="row"><label for="tf_import_json"><?php esc_html_e( '…or paste JSON', 'travelbyluxe' ); ?></label></th>
 						<td>
 							<textarea name="tf_import_json" id="tf_import_json" rows="10" class="large-text code" placeholder='{"tf_export_version":1, …}'></textarea>
-							<p class="description"><?php esc_html_e( 'Either field works — file takes precedence if both are provided.', 'terrific-digital' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Either field works — file takes precedence if both are provided.', 'travelbyluxe' ); ?></p>
 						</td>
 					</tr>
 				</table>
-				<?php submit_button( __( 'Import Form', 'terrific-digital' ) ); ?>
+				<?php submit_button( __( 'Import Form', 'travelbyluxe' ) ); ?>
 			</form>
 		</div>
 		<?php
@@ -130,7 +130,7 @@ class TF_Import_Export {
 
 	public static function handle_import() {
 		check_admin_referer( 'tf_import_form' );
-		if ( ! current_user_can( 'edit_pages' ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'terrific-digital' ), 403 ); }
+		if ( ! current_user_can( 'edit_pages' ) ) { wp_die( esc_html__( 'Insufficient permissions.', 'travelbyluxe' ), 403 ); }
 
 		$json = '';
 		if ( ! empty( $_FILES['tf_import_file']['tmp_name'] ) && empty( $_FILES['tf_import_file']['error'] ) ) {
@@ -164,7 +164,7 @@ class TF_Import_Export {
 	 */
 	protected static function apply_import( $data ) {
 		$form_id = sanitize_text_field( (string) $data['form_id'] );
-		if ( '' === $form_id ) { return new WP_Error( 'tf_import_bad_id', __( 'Missing form_id.', 'terrific-digital' ) ); }
+		if ( '' === $form_id ) { return new WP_Error( 'tf_import_bad_id', __( 'Missing form_id.', 'travelbyluxe' ) ); }
 
 		$existing = self::find_by_form_id( $form_id );
 		$is_new   = ! $existing;
@@ -212,7 +212,7 @@ class TF_Import_Export {
 		);
 	}
 
-	/** Look up a Terrific Form CPT post by its stable form_id. */
+	/** Look up a TBL Form CPT post by its stable form_id. */
 	protected static function find_by_form_id( $form_id ) {
 		return (int) TF_Forms::find_post_id_by_form_id( $form_id );
 	}
@@ -234,21 +234,21 @@ class TF_Import_Export {
 		$edit  = $id ? get_edit_post_link( $id ) : '';
 
 		if ( in_array( $state, array( 'created', 'updated' ), true ) && $edit ) {
-			$verb = 'created' === $state ? __( 'Created new form', 'terrific-digital' ) : __( 'Updated existing form', 'terrific-digital' );
+			$verb = 'created' === $state ? __( 'Created new form', 'travelbyluxe' ) : __( 'Updated existing form', 'travelbyluxe' );
 			printf(
 				'<div class="notice notice-success is-dismissible"><p>%s — <a href="%s">%s</a></p></div>',
 				esc_html( $verb ),
 				esc_url( $edit ),
-				esc_html__( 'open it', 'terrific-digital' )
+				esc_html__( 'open it', 'travelbyluxe' )
 			);
 			return;
 		}
 
 		$messages = array(
-			'no_input'      => __( 'Please upload a JSON file or paste the JSON.', 'terrific-digital' ),
-			'invalid'       => __( "That doesn't look like a Terrific Digital form export.", 'terrific-digital' ),
-			'newer_version' => __( 'This export was made with a newer plugin version. Upgrade the plugin and try again.', 'terrific-digital' ),
-			'failed'        => isset( $_GET['msg'] ) ? sanitize_text_field( wp_unslash( $_GET['msg'] ) ) : __( 'Import failed.', 'terrific-digital' ),
+			'no_input'      => __( 'Please upload a JSON file or paste the JSON.', 'travelbyluxe' ),
+			'invalid'       => __( "That doesn't look like a Travel by Luxe form export.", 'travelbyluxe' ),
+			'newer_version' => __( 'This export was made with a newer plugin version. Upgrade the plugin and try again.', 'travelbyluxe' ),
+			'failed'        => isset( $_GET['msg'] ) ? sanitize_text_field( wp_unslash( $_GET['msg'] ) ) : __( 'Import failed.', 'travelbyluxe' ),
 		);
 		if ( isset( $messages[ $state ] ) ) {
 			printf( '<div class="notice notice-error is-dismissible"><p>%s</p></div>', esc_html( $messages[ $state ] ) );

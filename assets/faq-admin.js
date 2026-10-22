@@ -1,4 +1,4 @@
-/* Terrific FAQ — admin builder: add / reorder (drag) / duplicate / remove Q&A items.
+/* TBL FAQ — admin builder: add / reorder (drag) / duplicate / remove Q&A items.
  * Each item is a card: the question is editable inline in the header; the answer lives
  * in a collapsible body so a long list stays scannable and easy to reorder. */
 (function () {
