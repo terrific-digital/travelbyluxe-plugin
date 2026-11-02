@@ -170,17 +170,15 @@ class TF_Render {
 		if ( ! $preview && ! is_admin() && $post_id && current_user_can( 'edit_post', $post_id ) ) {
 			$edit_url = get_edit_post_link( $post_id );
 			if ( $edit_url ) {
-				// The Travel by Luxe "t" brand mark (colour mosaic) so editors recognise it as a TBL Form.
-				$tmark = '<svg class="tf-edit-ico" width="11" height="15" viewBox="0 0 24.33 33.95" aria-hidden="true">'
-					. '<rect x="8.109" y="0.758" width="8.109" height="8.109" fill="#7249B8"/>'
-					. '<rect x="0" y="8.867" width="8.109" height="8.109" fill="#FE3F4F"/>'
-					. '<rect x="8.109" y="8.867" width="8.109" height="8.109" fill="#FD8602"/>'
-					. '<rect x="16.217" y="8.867" width="8.109" height="8.109" fill="#C0DD32"/>'
-					. '<rect x="8.109" y="16.975" width="8.109" height="8.109" fill="#3DD2CB"/>'
-					. '<rect x="8.109" y="25.084" width="8.109" height="8.109" fill="#363C9F"/>'
-					. '<rect x="16.217" y="25.084" width="8.109" height="8.109" fill="#F5417F"/>'
-					. '</svg>';
-				echo '<div class="tf-admin-edit"><a class="tf-edit-link" href="' . esc_url( $edit_url ) . '" target="_blank" rel="noopener">' . $tmark . '<span>Edit form</span></a></div>'; // phpcs:ignore
+				// The Travel by Luxe "Luxe" mark so editors recognise it as a TBL Form.
+				$tmark = '<img class="tf-edit-ico" src="' . esc_url( TF_URL . 'assets/tbl-mark.png' ) . '" width="18" height="18" alt="">';
+				// One modifier per wrapper class (e.g. tf-admin-edit--tbl-lux) so a theme can size the
+				// pill's row to its form and seat it directly above it (see tbl-theme.css).
+				$edit_cls = 'tf-admin-edit';
+				foreach ( preg_split( '/\s+/', (string) $wrapper_class, -1, PREG_SPLIT_NO_EMPTY ) as $wc ) {
+					$edit_cls .= ' tf-admin-edit--' . sanitize_html_class( $wc );
+				}
+				echo '<div class="' . esc_attr( $edit_cls ) . '"><a class="tf-edit-link" href="' . esc_url( $edit_url ) . '" target="_blank" rel="noopener">' . $tmark . '<span>Edit form</span></a></div>'; // phpcs:ignore
 			}
 		}
 		?>

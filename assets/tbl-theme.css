@@ -165,7 +165,8 @@
 .tf-form.tbl-lux .tf-check { background: var(--tbl-gold); color: var(--tbl-green); }
 
 /* Editors' "Edit form" pill stays readable on the dark band */
-.tf-form.tbl-lux .tf-admin-edit, .tbl-lux .tf-admin-edit { text-align: left; }
+/* …and sits directly above the form: same 520px column, left edge aligned with the steps */
+.tf-admin-edit.tf-admin-edit--tbl-lux { max-width: 520px; margin: 0 auto 12px; text-align: left; }
 
 @media (max-width: 600px) {
 	.tf-form.tbl-lux .tf-field.tf-w-half { flex: 0 0 100%; }
