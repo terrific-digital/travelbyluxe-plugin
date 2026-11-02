@@ -16,6 +16,8 @@
  * "Thank-you page built by the site"). When a form's budget is below the
  * booking rule (Settings → Booking calendar), the booking button and calendar
  * are left out instead, on any thank-you page and in the popup.
+ * A page carrying [data-tbl-lr-no-booking] never gets a calendar (e.g. a partner
+ * thank-you page), whatever this tab routed before.
  */
 (function () {
 	'use strict';
@@ -351,6 +353,12 @@
 	}
 
 	function thankYou() {
+		// A page that says it never takes bookings (e.g. the partner thank-you page) gets no
+		// calendar, even when this tab still holds a routing result from an earlier enquiry.
+		if (document.querySelector('[data-tbl-lr-no-booking]')) {
+			removeBooking();
+			return;
+		}
 		var qs   = new URLSearchParams(window.location.search);
 		var last = stored();
 		var fromUrl = qs.get('tbl_cal');
