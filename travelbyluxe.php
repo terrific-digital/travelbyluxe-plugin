@@ -3,7 +3,7 @@
  * Plugin Name:       Travel by Luxe
  * Plugin URI:        https://github.com/terrific-digital/travelbyluxe-plugin
  * Description:       Travel by Luxe site toolkit: TBL Forms (drag-and-drop regular + multi-step forms with dataLayer events, submissions and lead routing to the leads app), FAQ lists, code snippets, Calendly and link tracking. Fork of the Travel by Luxe plugin, merged with TBL Lead Routing.
- * Version:           3.0.0
+ * Version:           3.0.1
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Travel by Luxe for Travel by Luxe
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '3.0.0' );
+define( 'TD_VERSION', '3.0.1' );
 define( 'TD_MENU', 'travelbyluxe' );      // top-level admin menu slug
 
 // TBL Forms feature constants (kept stable for back-compat with existing forms/data).
