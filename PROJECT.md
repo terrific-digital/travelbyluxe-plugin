@@ -9,7 +9,7 @@ working rules are CLAUDE.md. This file is left out of the release ZIP.
 > 🔒 **This repo is public: never commit hostnames, IPs, usernames, paths to credential
 > files, or credentials. Keep them in `PROJECT.local.md`** (gitignored).
 
-**Current version:** 3.0.4
+**Current version:** 3.0.5
 
 For the long-form history of every upstream feature (2.x), read the upstream
 [PROJECT.md](https://github.com/terrific-digital/wordpress-plugin/blob/main/PROJECT.md) —
@@ -122,7 +122,8 @@ submits `yes`), `countries` (submits names under its key and ISO codes under `<k
 
 **dataLayer events, webhook payload, AJAX endpoints** — exactly as upstream §4
 (`form_visible`, `form_started`, `upd`, `form_step`, `form_complete` (after the final `form_step`
-of a multi-step form, same parameters — moved here from GTM in 3.0.4), `form_submission` + the intent event,
+of a multi-step form, same parameters — moved here from GTM in 3.0.4), `relevant_lead` (after it, when the
+budget meets Settings → Relevant lead; + `currency`, `est_budget` — 3.0.5), `form_submission` + the intent event,
 custom DataLayer Event actions; payload `{ event, data, form, submission, device, cookies,
 session }`; `tf_submit` / `tf_step` / `tf_geo` / `tf_nonce`).
 

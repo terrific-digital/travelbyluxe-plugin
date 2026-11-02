@@ -382,8 +382,23 @@
 			for (var k in ev) { if (Object.prototype.hasOwnProperty.call(ev, k)) { complete[k] = ev[k]; } }
 			complete.event = 'form_complete';
 		}
+		// A budget-qualified lead fires one more event (Settings → Relevant lead), the same
+		// parameters plus currency and est_budget. Was the GTM tag "[Script] relevant_lead".
+		var rl = (window.TF_FORM && TF_FORM.relevant_lead) || null, relevant = null;
+		if (ev.final_step && rl && rl.enabled && ev.form_fields) {
+			var raw = ev.form_fields[rl.field || 'budget'];
+			var amount = parseFloat(String(raw == null ? '' : raw).replace(/[^0-9.]/g, ''));
+			if (!isNaN(amount) && amount >= (Number(rl.min) || 0)) {
+				relevant = {};
+				for (var r in ev) { if (Object.prototype.hasOwnProperty.call(ev, r)) { relevant[r] = ev[r]; } }
+				relevant.event = rl.event || 'relevant_lead';
+				relevant.currency = rl.currency || 'USD';
+				relevant.est_budget = String(raw);
+			}
+		}
 		tdPush(ev);
 		if (complete) { tdPush(complete); }
+		if (relevant) { tdPush(relevant); }
 	}
 
 	// Fire any custom "DataLayer Event" actions configured on the form. Each is pushed

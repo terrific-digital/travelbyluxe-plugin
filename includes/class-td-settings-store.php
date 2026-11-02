@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
  *   tf_settings           Forms settings + reCAPTCHA keys/threshold
  *   td_session            "Store Session Data" feature
  *   td_upd                "User-Provided Data" feature
+ *   td_relevant_lead      "Relevant lead" dataLayer event
  *   td_session_duration   "Session Duration events" milestones
  *   td_calendly           Calendly listener config
  *
@@ -36,6 +37,7 @@ class TD_Settings_Store {
 		'tf_settings',
 		'td_session',
 		'td_upd',
+		'td_relevant_lead',
 		'td_session_duration',
 		'td_calendly',
 	);

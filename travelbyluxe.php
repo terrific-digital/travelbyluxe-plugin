@@ -3,7 +3,7 @@
  * Plugin Name:       Travel by Luxe
  * Plugin URI:        https://github.com/terrific-digital/travelbyluxe-plugin
  * Description:       Travel by Luxe site toolkit: TBL Forms (drag-and-drop regular + multi-step forms with dataLayer events, submissions and lead routing to the leads app), FAQ lists, code snippets, Calendly and link tracking. Fork of the Travel by Luxe plugin, merged with TBL Lead Routing.
- * Version:           3.0.4
+ * Version:           3.0.5
  * Requires at least: 6.5
  * Requires PHP:      7.4
  * Author:            Travel by Luxe for Travel by Luxe
@@ -14,7 +14,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
-define( 'TD_VERSION', '3.0.4' );
+define( 'TD_VERSION', '3.0.5' );
 define( 'TD_MENU', 'travelbyluxe' );      // top-level admin menu slug
 
 // TBL Forms feature constants (kept stable for back-compat with existing forms/data).
@@ -36,6 +36,7 @@ require_once TF_DIR . 'includes/class-td-session.php';
 require_once TF_DIR . 'includes/class-td-session-duration.php';
 require_once TF_DIR . 'includes/class-td-calendly.php';
 require_once TF_DIR . 'includes/class-td-upd.php';
+require_once TF_DIR . 'includes/class-td-relevant-lead.php';
 require_once TF_DIR . 'includes/class-td-snippets.php';
 require_once TF_DIR . 'includes/class-td-notes.php';
 require_once TF_DIR . 'includes/class-td-faq.php';
@@ -103,6 +104,7 @@ add_action( 'plugins_loaded', function () {
 	TD_Session_Duration::init();
 	TD_Calendly::init();
 	TD_Upd::init();
+	TD_Relevant_Lead::init();
 	TD_Snippets::init();
 	TD_FAQ::init();
 	TD_Link_Tracking::init();

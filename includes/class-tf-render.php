@@ -76,6 +76,7 @@ class TF_Render {
 			'ajax'      => admin_url( 'admin-ajax.php' ),
 			'nonce'     => wp_create_nonce( 'tf_submit' ),
 			'upd'       => TD_Upd::config(), // User-Provided Data capture (front-end identity object)
+			'relevant_lead' => TD_Relevant_Lead::config(), // budget-qualified lead event (Settings → Relevant lead)
 			'recaptcha' => tf_recaptcha_enabled() ? array( 'site_key' => tf_recaptcha_site_key() ) : null,
 			// Front-end strings — translatable via the 'terrific_forms/i18n' filter or WP's
 			// i18n (so Hebrew/other LPs don't have to patch text with a MutationObserver).
