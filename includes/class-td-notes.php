@@ -50,7 +50,7 @@ class TD_Notes {
 				'Redirect action — to a URL or a WordPress page. Each action toggleable.',
 			) ),
 			array( '📊', 'Tracking', array(
-				'dataLayer events: <code>form_visible</code> (scrolled into view), <code>form_started</code> (first field interaction), <code>upd</code>, <code>form_step</code> (each Next), <code>form_submission</code>, then the intent as its own event (e.g. <code>generate_lead</code>).',
+				'dataLayer events: <code>form_visible</code> (scrolled into view), <code>form_started</code> (first field interaction), <code>upd</code>, <code>form_step</code> (each Next), <code>form_complete</code> (right after the final <code>form_step</code> of a multi-step form, same parameters), <code>form_submission</code>, then the intent as its own event (e.g. <code>generate_lead</code>).',
 				'<code>window.dataLayer</code> is initialized early in the &lt;head&gt; on every front-end page.',
 				'Webhook JSON payload: data, form, submission, device, cookies, session.',
 			) ),

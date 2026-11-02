@@ -373,7 +373,17 @@
 		};
 		var intent = form.getAttribute('data-form-intent');
 		if (intent) { ev.form_intent = intent; }
+		// Finishing a multi-step form also fires form_complete: the same parameters, right
+		// after this form_step. (Was a GTM Custom HTML tag on final_step = true.) Copied
+		// BEFORE the push, because GTM stamps gtm.uniqueEventId onto the pushed object.
+		var complete = null;
+		if (ev.final_step) {
+			complete = {};
+			for (var k in ev) { if (Object.prototype.hasOwnProperty.call(ev, k)) { complete[k] = ev[k]; } }
+			complete.event = 'form_complete';
+		}
 		tdPush(ev);
+		if (complete) { tdPush(complete); }
 	}
 
 	// Fire any custom "DataLayer Event" actions configured on the form. Each is pushed
