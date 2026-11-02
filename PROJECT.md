@@ -9,7 +9,7 @@ working rules are CLAUDE.md. This file is left out of the release ZIP.
 > 🔒 **This repo is public: never commit hostnames, IPs, usernames, paths to credential
 > files, or credentials. Keep them in `PROJECT.local.md`** (gitignored).
 
-**Current version:** 3.0.1
+**Current version:** 3.0.2
 
 For the long-form history of every upstream feature (2.x), read the upstream
 [PROJECT.md](https://github.com/terrific-digital/wordpress-plugin/blob/main/PROJECT.md) —
@@ -28,7 +28,7 @@ it still describes this code base accurately wherever this file does not say oth
 `terrific_forms/*` and `terrific_digital/settings_fields`, the JS global `TF_FORM`, the `tf-*`
 CSS classes, block names `terrific-digital/form|faq`, the REST namespace `tbl-lead-routing/v1`,
 and the dataLayer values `form_type: 'TBL WP Form'` / `event_origin: 'tbl_wp_plugin'` (renamed
-from `'Terrific Form'` / `'td_wp_plugin'` after 3.0.0; the GTM triggers must accept the new values). The lead-routing module, the leads app's
+from `'Terrific Form'` / `'td_wp_plugin'` in 3.0.2; the GTM triggers must accept the new values). The lead-routing module, the leads app's
 payload mapping and the GTM container key on them. A site that had Terrific Digital installed
 upgrades in place — same tables, same options.
 

@@ -17,7 +17,7 @@ locally: `node --check assets/*.js` for JavaScript; PHP is linted by the Release
    `td_*`, AJAX actions `tf_submit` / `tf_step` / `tf_geo` / `tf_nonce`, hooks
    `terrific_forms/*`, the JS global `TF_FORM`, the `tf-*` CSS classes, and the dataLayer
    values `form_type: 'TBL WP Form'` and `event_origin: 'tbl_wp_plugin'` (renamed from
-   `'Terrific Form'` / `'td_wp_plugin'` after 3.0.0; GTM triggers must accept the new values).
+   `'Terrific Form'` / `'td_wp_plugin'` in 3.0.2; GTM triggers must accept the new values).
    The lead-routing module, the leads app's payload mapping and the GTM container depend
    on them. Rename user-facing labels only; changing a dataLayer value needs GTM first.
 2. **Field keys the leads app reads are fixed:** `full_name, email, phone,
