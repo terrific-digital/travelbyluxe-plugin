@@ -5,7 +5,7 @@
 
 	// Push to the dataLayer, stamping every plugin event with its origin.
 	function tdPush(obj) {
-		if (obj && typeof obj === 'object' && obj.event_origin === undefined) { obj.event_origin = 'td_wp_plugin'; }
+		if (obj && typeof obj === 'object' && obj.event_origin === undefined) { obj.event_origin = 'tbl_wp_plugin'; }
 		window.dataLayer.push(obj);
 	}
 
@@ -332,7 +332,7 @@
 			event: 'form_visible',
 			form_id: form.getAttribute('data-form-id'),
 			form_name: form.getAttribute('data-form-name'),
-			form_type: 'Terrific Form'
+			form_type: 'TBL WP Form'
 		};
 		var intent = form.getAttribute('data-form-intent');
 		if (intent) { ev.form_intent = intent; }
@@ -347,7 +347,7 @@
 			event: 'form_started',
 			form_id: form.getAttribute('data-form-id'),
 			form_name: form.getAttribute('data-form-name'),
-			form_type: 'Terrific Form'
+			form_type: 'TBL WP Form'
 		};
 		var intent = form.getAttribute('data-form-intent');
 		if (intent) { ev.form_intent = intent; }
@@ -361,7 +361,7 @@
 			event: 'form_step',
 			form_id: form.getAttribute('data-form-id'),
 			form_name: form.getAttribute('data-form-name'),
-			form_type: 'Terrific Form',
+			form_type: 'TBL WP Form',
 			form_step: stepNum,
 			// True only on the form_step event that's fired after the visitor completes
 			// the FINAL step (i.e. on form submission). Lets analytics distinguish
@@ -392,7 +392,7 @@
 				event: name,
 				form_id: form.getAttribute('data-form-id'),
 				form_name: form.getAttribute('data-form-name'),
-				form_type: 'Terrific Form',
+				form_type: 'TBL WP Form',
 				form_fields: fields
 			};
 			if (intent) { ev.form_intent = intent; }
@@ -415,7 +415,7 @@
 		updateUpd(form); // upd precedes form_submission, same ordering as the submit handler
 		var fields = collect(form, stepNum);
 		var intent = form.getAttribute('data-form-intent');
-		var ev = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'Terrific Form', form_fields: fields };
+		var ev = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'TBL WP Form', form_fields: fields };
 		if (intent) { ev.form_intent = intent; }
 		tdPush(ev);
 		if (intent) {
@@ -423,7 +423,7 @@
 				event: intent,
 				form_id: form.getAttribute('data-form-id'),
 				form_name: form.getAttribute('data-form-name'),
-				form_type: 'Terrific Form',
+				form_type: 'TBL WP Form',
 				form_intent: intent,
 				form_fields: fields
 			});
@@ -609,7 +609,7 @@
 						// runs (this is just event de-duping for analytics).
 						if (!form.__tfSubFired) {
 							var subIntent = form.getAttribute('data-form-intent');
-							var subEv = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'Terrific Form', form_fields: fields };
+							var subEv = { event: 'form_submission', form_id: form.getAttribute('data-form-id'), form_name: form.getAttribute('data-form-name'), form_type: 'TBL WP Form', form_fields: fields };
 							if (subIntent) { subEv.form_intent = subIntent; }
 							tdPush(subEv);
 							// Fire the form's intent as its own event right after (e.g. generate_lead).
@@ -618,7 +618,7 @@
 									event: subIntent,
 									form_id: form.getAttribute('data-form-id'),
 									form_name: form.getAttribute('data-form-name'),
-									form_type: 'Terrific Form',
+									form_type: 'TBL WP Form',
 									form_intent: subIntent,
 									form_fields: fields
 								});

@@ -142,7 +142,7 @@ class TD_Calendly {
 					<tr><td><code>event_scheduled</code></td><td><code>form_submission</code>, then <code><?php echo esc_html( self::get( 'form_intent' ) ); ?></code></td><td>Booking confirmed. <code>entry_key</code> carries Calendly's scheduled-event UUID. The intent fires as its own event right after <code>form_submission</code> — same pattern as TBL Forms (e.g. <code>generate_lead</code> after a lead form).</td></tr>
 				</tbody>
 			</table>
-			<p class="description" style="max-width:760px;margin-top:8px">Each Calendly source-event fires at most once per page-load. All events are stamped <code>event_origin: "td_wp_plugin"</code> like the rest of the plugin.</p>
+			<p class="description" style="max-width:760px;margin-top:8px">Each Calendly source-event fires at most once per page-load. All events are stamped <code>event_origin: "tbl_wp_plugin"</code> like the rest of the plugin.</p>
 		</div>
 		<?php
 	}

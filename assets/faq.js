@@ -6,7 +6,7 @@
 
 	// Push to the dataLayer, stamping every plugin event with its origin.
 	function tdPush(obj) {
-		if (obj && typeof obj === 'object' && obj.event_origin === undefined) { obj.event_origin = 'td_wp_plugin'; }
+		if (obj && typeof obj === 'object' && obj.event_origin === undefined) { obj.event_origin = 'tbl_wp_plugin'; }
 		window.dataLayer.push(obj);
 	}
 

@@ -27,7 +27,8 @@ it still describes this code base accurately wherever this file does not say oth
 `tf_submit` / `tf_step` / `tf_geo` / `tf_nonce` / `tf_preview` / `tf_flag`, hooks
 `terrific_forms/*` and `terrific_digital/settings_fields`, the JS global `TF_FORM`, the `tf-*`
 CSS classes, block names `terrific-digital/form|faq`, the REST namespace `tbl-lead-routing/v1`,
-and the dataLayer value `form_type: 'Terrific Form'`. The lead-routing module, the leads app's
+and the dataLayer values `form_type: 'TBL WP Form'` / `event_origin: 'tbl_wp_plugin'` (renamed
+from `'Terrific Form'` / `'td_wp_plugin'` after 3.0.0; the GTM triggers must accept the new values). The lead-routing module, the leads app's
 payload mapping and the GTM container key on them. A site that had Terrific Digital installed
 upgrades in place — same tables, same options.
 
