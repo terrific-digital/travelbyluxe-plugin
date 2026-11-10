@@ -9,7 +9,7 @@ working rules are CLAUDE.md. This file is left out of the release ZIP.
 > 🔒 **This repo is public: never commit hostnames, IPs, usernames, paths to credential
 > files, or credentials. Keep them in `PROJECT.local.md`** (gitignored).
 
-**Current version:** 3.0.5
+**Current version:** 3.0.6
 
 For the long-form history of every upstream feature (2.x), read the upstream
 [PROJECT.md](https://github.com/terrific-digital/wordpress-plugin/blob/main/PROJECT.md) —
@@ -134,7 +134,8 @@ lead id, and rewrites the JSON reply through an output buffer (`data.tbl_routing
 / `tbl_td` on the redirect). `tbl-lead-routing.js` wraps `fetch` to catch the `tf_submit`
 reply, shows the overlay/popup and, on a thank-you page, mounts the designer's Calendly into
 `#calendly_widget` or after the `thanks_after` selector. A page with a `[data-tbl-lr-no-booking]` element (the
-site's partner thank-you page) opts out: no calendar, booking UI removed. Only `https://calendly.com` links
+site's partner thank-you page) opts out: no calendar, booking UI removed. A page with a
+`[data-tbl-lr-own-booking]` element embeds the routed calendar itself, so none is added (3.0.6). Only `https://calendly.com` links
 reach visitors.
 
 **Field keys the leads app reads** (`Travel-by-Luxe/leads`, `src/lib/terrific-forms.ts`):

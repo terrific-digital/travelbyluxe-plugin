@@ -17,7 +17,9 @@
  * booking rule (Settings → Booking calendar), the booking button and calendar
  * are left out instead, on any thank-you page and in the popup.
  * A page carrying [data-tbl-lr-no-booking] never gets a calendar (e.g. a partner
- * thank-you page), whatever this tab routed before.
+ * thank-you page), whatever this tab routed before. A page carrying
+ * [data-tbl-lr-own-booking] has its own booking calendar, so none is added to it;
+ * the Travel Designer's name is still filled in.
  */
 (function () {
 	'use strict';
@@ -306,7 +308,10 @@
 	 * Settings name. Everyone else sees the page exactly as before.
 	 */
 	function addCalendarSpot(td) {
-		if (!cfg.thanksAfter || document.querySelector('.tbl-calendly')) { return; }
+		// [data-tbl-lr-own-booking]: the page embeds the routed calendar itself (the site's
+		// thank-you page opens it from its "Pick a time" button). Adding ours under it put a
+		// second, already-open calendar on the page.
+		if (!cfg.thanksAfter || document.querySelector('.tbl-calendly, [data-tbl-lr-own-booking]')) { return; }
 		var own = document.getElementById('calendly_widget');
 		if (own) {
 			// A new element, so the site's own script finds no spot to fill with the team
