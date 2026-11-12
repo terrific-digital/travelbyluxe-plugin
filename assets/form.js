@@ -530,6 +530,14 @@
 			var mx = parseInt(d.getAttribute('data-max-from-today'), 10);
 			if (!isNaN(mn)) { d.min = startMinDate(mn); }
 			if (!isNaN(mx)) { d.max = startMinDate(mx); }
+			// Open the calendar from a click anywhere in the field. Natively only the
+			// small icon at the right edge opens it; the rest of the box just focuses
+			// the mm/dd/yyyy segments, which reads as a field that does nothing.
+			d.addEventListener('click', function () {
+				if (typeof d.showPicker === 'function') {
+					try { d.showPicker(); } catch (e) { /* not user-activated, or disabled */ }
+				}
+			});
 		});
 		// Stable token for this fill — links every step + the final submit to one row.
 		form.__tfToken = 'tfs_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
