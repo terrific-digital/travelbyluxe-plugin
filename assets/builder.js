@@ -20,6 +20,7 @@
 		{ type: 'hidden', label: 'Hidden', icon: 'dashicons-hidden' },
 		// Travel by Luxe field types (includes/tbl-fields.php, assets/tbl-fields.js).
 		{ type: 'consent', label: 'Consent', icon: 'dashicons-privacy' },
+		{ type: 'call_consent', label: 'Call consent (TBL)', icon: 'dashicons-phone' },
 		{ type: 'countries', label: 'Countries (TBL)', icon: 'dashicons-admin-site-alt3' },
 		{ type: 'destinations', label: 'Destinations (TBL)', icon: 'dashicons-location-alt' },
 		{ type: 'budget', label: 'Budget (TBL)', icon: 'dashicons-money-alt' }
@@ -86,7 +87,7 @@
 			min_from_today: '', max_from_today: '',
 			step: '', default: '', prefix: '', suffix: '', show_scale: false, value_inline: false, html: '', country_code: true, cc_show_name: false, block_free: false,
 			// Travel by Luxe settings (blank = the defaults in includes/tbl-fields.php).
-			style: 'list', collapsed: false, trigger_text: '', max_label: '', countries: 'all', max_countries: '', countries_key: '',
+			style: 'list', collapsed: false, trigger_text: '', max_label: '', countries: 'all', max_countries: '', countries_key: '', phone_key: '', consent_version: '',
 			currency: '', rate_adult: '', rate_child: '', rate_adult_day: '', rate_child_day: '', included_days: '', range_mult: '', country_rates: '',
 			adults_key: '', children_key: '', days_key: '', country_key: '',
 			options: HAS_OPTIONS[type] ? [{ label: 'Option 1', value: 'Option 1' }, { label: 'Option 2', value: 'Option 2' }] : []
@@ -94,6 +95,7 @@
 		f.key = slug(f.label);
 		// The TBL types have fixed keys the leads app and the booking rule read.
 		if (type === 'consent') { f.key = 'consent'; f.required = true; }
+		if (type === 'call_consent') { f.key = 'call_consent'; f.required = false; }
 		if (type === 'countries') { f.key = 'trip_country'; f.required = true; f.placeholder = 'Select countries'; }
 		if (type === 'destinations') { f.key = 'destinations'; f.placeholder = 'Tell us where — e.g. Verona, Lake Garda…'; }
 		if (type === 'budget') { f.key = 'budget'; }
@@ -330,6 +332,10 @@
 				'<div class="tf-b-row2"><label class="tf-b-row">Trip length field key<input type="text" class="tf-b-prop" data-prop="days_key" value="' + esc(f.days_key) + '" placeholder="trip_length"></label>' +
 				'<label class="tf-b-row">Countries field key<input type="text" class="tf-b-prop" data-prop="country_key" value="' + esc(f.country_key) + '" placeholder="trip_country"></label></div>' +
 				'<p class="tf-b-hint" style="margin-top:-6px">The slider\'s floor is adults × rate + children × rate, plus every day beyond the included days; a dearer country in the trip raises every rate. Also submits <code>key_label</code>, <code>key_min</code> and <code>key_at_min</code>.</p>';
+		} else if (f.type === 'call_consent') {
+			tblRow = '<div class="tf-b-row2"><label class="tf-b-row">Phone field key<input type="text" class="tf-b-prop" data-prop="phone_key" value="' + esc(f.phone_key) + '" placeholder="phone"></label>' +
+				'<label class="tf-b-row">Wording version<input type="text" class="tf-b-prop" data-prop="consent_version" value="' + esc(f.consent_version) + '" placeholder="tbl-call-consent-v1-20261106"></label></div>' +
+				'<p class="tf-b-hint" style="margin-top:-6px">An optional tick box that appears once the phone field holds a number. Submits <code>call_consent</code> (yes / no), <code>call_consent_at</code>, <code>call_consent_version</code> and <code>call_consent_text</code>. Change the version whenever the wording changes.</p>';
 		} else if (f.type === 'consent') {
 			tblRow = '<p class="tf-b-hint">A single tick box. Links in the text are kept (Terms &amp; Conditions, Privacy Policy). Submits <code>yes</code>.</p>';
 		}
@@ -340,10 +346,10 @@
 			'<div class="tf-b-row2"><label class="tf-b-row">Earliest (days from today)<input type="number" class="tf-b-minfromtoday" value="' + esc(f.min_from_today) + '" placeholder="(no limit)"></label>' +
 			'<label class="tf-b-row">Latest (days from today)<input type="number" class="tf-b-maxfromtoday" value="' + esc(f.max_from_today) + '" placeholder="(no limit)"></label></div>' +
 			'<p class="tf-b-hint" style="margin-top:-6px"><strong>0</strong> = today. Blank = no limit. E.g. earliest 0 blocks past dates; latest 90 caps at 90 days out.</p>' : '';
-		var noPlace = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, slider: 1, budget: 1, consent: 1 };
+		var noPlace = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, slider: 1, budget: 1, consent: 1, call_consent: 1 };
 		var placeRow = noPlace[f.type] ? '' :
 			'<label class="tf-b-row">Placeholder<input type="text" class="tf-b-ph" value="' + esc(f.placeholder) + '"></label>';
-		var noReq = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, slider: 1, budget: 1 };
+		var noReq = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, slider: 1, budget: 1, call_consent: 1 };
 		var reqRow = noReq[f.type] ? '' :
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-req"' + (f.required ? ' checked' : '') + '> Required</label>';
 		var widthRow = (f.type === 'hidden') ? '' :
@@ -352,20 +358,20 @@
 				'<option value="half"' + ('half' === f.width ? ' selected' : '') + '>Half (1/2)</option>' +
 				'<option value="third"' + ('third' === f.width ? ' selected' : '') + '>Third (1/3)</option>' +
 			'</select></label>';
-		var noShowLabel = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, consent: 1 };
+		var noShowLabel = { heading: 1, paragraph: 1, separator: 1, custom_html: 1, hidden: 1, consent: 1, call_consent: 1 };
 		var showLabelRow = noShowLabel[f.type] ? '' :
 			'<label class="tf-b-row tf-b-inline"><input type="checkbox" class="tf-b-showlabel"' + ((f.show_label !== false) ? ' checked' : '') + '> Show label</label>';
 		// Label/Key rows: static fields have no key; paragraph edits multi-line text; html/separator have no label.
 		var labelRow;
-		if (f.type === 'paragraph' || f.type === 'consent') {
-			labelRow = '<label class="tf-b-row">' + (f.type === 'consent' ? 'Text (links allowed)' : 'Text') + '<textarea class="tf-b-label" rows="3">' + escArea(f.label) + '</textarea></label>';
+		if (f.type === 'paragraph' || f.type === 'consent' || f.type === 'call_consent') {
+			labelRow = '<label class="tf-b-row">' + (f.type !== 'paragraph' ? 'Text (links allowed)' : 'Text') + '<textarea class="tf-b-label" rows="3">' + escArea(f.label) + '</textarea></label>';
 		} else if (f.type === 'custom_html' || f.type === 'separator') {
 			labelRow = '';
 		} else {
 			labelRow = '<label class="tf-b-row">Label<input type="text" class="tf-b-label" value="' + esc(f.label) + '"></label>';
 		}
 		var keyRow = STATIC_TYPES[f.type] ? '' :
-			'<label class="tf-b-row">Key (data layer)<input type="text" class="tf-b-key" value="' + esc(f.key) + '"' + ({ consent: 1, countries: 1, destinations: 1, budget: 1 }[f.type] ? ' data-auto="0"' : '') + '></label>';
+			'<label class="tf-b-row">Key (data layer)<input type="text" class="tf-b-key" value="' + esc(f.key) + '"' + ({ consent: 1, call_consent: 1, countries: 1, destinations: 1, budget: 1 }[f.type] ? ' data-auto="0"' : '') + '></label>';
 		card.innerHTML =
 			'<div class="tf-b-field-head">' +
 				'<span class="tf-b-handle dashicons dashicons-move"></span>' +
@@ -574,6 +580,7 @@
 	function defaultLabel(t) {
 		var m = { text: 'Text', email: 'Email Address', tel: 'Phone', number: 'Number', slider: 'Slider', date: 'Date', textarea: 'Message', select: 'Select', radio: 'Choose one', checkbox: 'Select all that apply', heading: 'Section heading', paragraph: 'Your paragraph text…', separator: 'Separator', custom_html: 'Custom HTML', hidden: 'Hidden value',
 			consent: 'I agree to the <a href="/terms-conditions/" target="_blank" rel="noopener noreferrer">Terms &amp; Conditions</a> and <a href="/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.',
+			call_consent: 'I agree that Travel by Luxe may contact me about my travel enquiry by phone call and text message at the number I provided, including calls made with an AI voice assistant and automated technology, and that calls may be recorded. Consent is not a condition of purchase. Message and data rates may apply. Reply STOP to opt out of texts. <a href="https://travelbyluxe.com/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>',
 			countries: 'Where would you like to travel?', destinations: 'Where in {country} calls to you?', budget: 'Your investment' };
 		return m[t] || 'Field';
 	}

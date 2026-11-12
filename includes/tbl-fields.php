@@ -128,6 +128,21 @@ function tbl_consent_allowed_html() {
 	);
 }
 
+/** Version stamp sent with a call-consent tick when the field sets none (matches the LP site). */
+function tbl_call_consent_default_version() {
+	return 'tbl-call-consent-v1-20261106';
+}
+
+/**
+ * The call-consent wording as plain text, for the record sent with the lead:
+ * tags dropped, each link kept as "Text: URL".
+ */
+function tbl_call_consent_plain_text( $html ) {
+	$text = preg_replace( '~<a\b[^>]*\bhref="([^"]*)"[^>]*>(.*?)</a>~is', '$2: $1', (string) $html );
+	$text = html_entity_decode( wp_strip_all_tags( $text ), ENT_QUOTES, 'UTF-8' );
+	return trim( preg_replace( '/\s+/', ' ', $text ) );
+}
+
 /**
  * Budget field defaults — the static site's js/form-destinations.js numbers:
  * a 7-day trip for 2 adults starts at €10,000; France and Switzerland are

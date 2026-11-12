@@ -9,7 +9,7 @@ working rules are CLAUDE.md. This file is left out of the release ZIP.
 > 🔒 **This repo is public: never commit hostnames, IPs, usernames, paths to credential
 > files, or credentials. Keep them in `PROJECT.local.md`** (gitignored).
 
-**Current version:** 3.0.7
+**Current version:** 3.0.8
 
 For the long-form history of every upstream feature (2.x), read the upstream
 [PROJECT.md](https://github.com/terrific-digital/wordpress-plugin/blob/main/PROJECT.md) —
@@ -110,7 +110,10 @@ reCAPTCHA. Lead routing adds post meta `_tbl_lr` per form and options `tbl_lr_se
 | `currency`, `rate_adult`, `rate_child`, `rate_adult_day`, `rate_child_day`, `included_days`, `range_mult`, `step`, `country_rates`, `adults_key`, `children_key`, `days_key`, `country_key` | budget | see `tbl_budget_defaults()` |
 
 **New field types:** `consent` (one tick box, label HTML through `tbl_consent_allowed_html()`,
-submits `yes`), `countries` (submits names under its key and ISO codes under `<key>_code`),
+submits `yes`), `call_consent` (3.0.8 — an optional tick box for calls / texts, shown only while the
+phone field named by `phone_key` holds a number; submits `call_consent` `yes`/`no`,
+`call_consent_at`, `call_consent_version` and `call_consent_text`, the same four keys the LP
+site sends; change `consent_version` whenever the wording changes), `countries` (submits names under its key and ISO codes under `<key>_code`),
 `destinations` (array of regions + `<key>_other`), `budget` (number + `<key>_label`, `<key>_min`,
 `<key>_at_min`).
 
@@ -142,7 +145,8 @@ reach visitors.
 `full_name, email, phone, preferred_start_date, trip_length, adults, children, destinations,
 travel_style, pace, accommodation, budget`. The booking rule reads `budget`, `adults`,
 `children`. Additive keys from the site's form: `trip_country`, `trip_country_code`,
-`destinations_other`, `notes`, `consent`, `budget_label`, `budget_min`, `budget_at_min`.
+`destinations_other`, `notes`, `consent`, `budget_label`, `budget_min`, `budget_at_min`,
+`call_consent`, `call_consent_at`, `call_consent_version`, `call_consent_text`.
 
 **Thank-you summary** (`handoff` action): right before the redirect, `form.js` writes
 `sessionStorage.tblThankYou = { type: 'inquiry' | 'partner', form_id, data: <all fields>, ts }`

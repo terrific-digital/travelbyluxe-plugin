@@ -82,3 +82,6 @@ textarea.tf-input { resize: vertical; }
 .tf-preview .tf-back, .tf-preview .tf-next { display: none; }
 .tf-preview .tf-progress { display: none; }
 
+
+/* A field hidden by script (call consent until a phone number is given) stays out of the layout. */
+.tf-field[hidden] { display: none !important; }

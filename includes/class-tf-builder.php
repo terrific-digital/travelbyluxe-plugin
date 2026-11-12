@@ -343,7 +343,7 @@ class TF_Builder {
 					$html = wp_kses_post( $html );
 				}
 				// A consent label carries links (Terms / Privacy); every other label stays plain text.
-				if ( 'consent' === $type ) {
+				if ( 'consent' === $type || 'call_consent' === $type ) {
 					$label = wp_kses( isset( $f['label'] ) ? (string) $f['label'] : '', tbl_consent_allowed_html() );
 				}
 				$field = array(
@@ -390,6 +390,8 @@ class TF_Builder {
 					'countries'      => ( isset( $f['countries'] ) && 'curated' === $f['countries'] ) ? 'curated' : 'all', // tel: dial-code list
 					'max_countries'  => $int_or_blank( isset( $f['max_countries'] ) ? $f['max_countries'] : '' ),          // countries: blank/0 = no limit
 					'countries_key'  => isset( $f['countries_key'] ) ? sanitize_key( $f['countries_key'] ) : '',          // destinations: which field holds the countries
+					'phone_key'      => isset( $f['phone_key'] ) ? sanitize_key( $f['phone_key'] ) : '',                  // call_consent: shown once this field has a number
+					'consent_version' => isset( $f['consent_version'] ) ? sanitize_text_field( $f['consent_version'] ) : '', // call_consent: version of the wording
 					'currency'       => isset( $f['currency'] ) ? sanitize_text_field( $f['currency'] ) : '',             // budget …
 					'rate_adult'     => $num_or_blank( isset( $f['rate_adult'] ) ? $f['rate_adult'] : '' ),
 					'rate_child'     => $num_or_blank( isset( $f['rate_child'] ) ? $f['rate_child'] : '' ),
@@ -426,6 +428,7 @@ class TF_Builder {
 					}
 				}
 				if ( 'consent' === $type && empty( $field['key'] ) ) { $field['key'] = 'consent'; } // the label is HTML — never slug it
+				if ( 'call_consent' === $type ) { $field['key'] = 'call_consent'; $field['required'] = false; } // fixed key; never a condition of submitting
 				if ( ! $is_static && empty( $field['key'] ) ) {
 					$field['key'] = sanitize_key( $field['label'] ?: $field['type'] . '_' . substr( $field['id'], 2 ) );
 				}

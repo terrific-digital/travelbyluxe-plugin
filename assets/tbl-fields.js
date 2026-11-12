@@ -376,6 +376,40 @@
 	   "10+" / "8+" at the top of a count slider: shown in the readout (form.js
 	   handles data-max-label itself) — nothing to do here beyond the initial paint. */
 
+	/* ---------- call consent ----------
+	   Optional consent to calls / texts. The box appears only while the phone field
+	   holds a number; clearing the number unticks it. The hidden inputs carry what is
+	   submitted: yes|no and the ISO time of the tick (same contract as the LP site). */
+	function initCallConsent(form, wrap) {
+		var field = wrap.closest('.tf-field') || wrap;
+		var box = wrap.querySelector('.tf-call-consent-box');
+		var val = wrap.querySelector('.tf-call-consent-val');
+		var at = wrap.querySelector('.tf-call-consent-at');
+		var phone = form.querySelector('[data-key="' + (wrap.getAttribute('data-phone-key') || 'phone') + '"]');
+		if (!box || !val || !at) { return; }
+		function sync(stamp) {
+			if (box.checked) {
+				if (stamp || val.value !== 'yes' || !at.value) { at.value = new Date().toISOString(); }
+				val.value = 'yes';
+			} else { val.value = 'no'; at.value = ''; }
+		}
+		function toggle() {
+			var has = !!phone && (phone.value || '').replace(/\D/g, '').length > 0;
+			field.hidden = !has;
+			if (!has && box.checked) { box.checked = false; }
+			sync(false);
+		}
+		box.addEventListener('change', function () { sync(true); });
+		if (phone) {
+			phone.addEventListener('input', toggle);
+			phone.addEventListener('change', toggle);
+		}
+		toggle();
+		// Browsers restore a number (autofill, back/forward) without firing input.
+		window.addEventListener('pageshow', toggle);
+		setTimeout(toggle, 600);
+	}
+
 	function init(form) {
 		if (form.__tblInit) { return; }
 		form.__tblInit = true;
@@ -384,6 +418,7 @@
 		form.querySelectorAll('.tf-dest').forEach(function (w) { initDestinations(form, w); });
 		form.querySelectorAll('.tf-budget').forEach(function (w) { initBudget(form, w); });
 		form.querySelectorAll('.tf-collapsed-trigger').forEach(function (b) { initCollapsed(form, b); });
+		form.querySelectorAll('.tf-call-consent').forEach(function (w) { initCallConsent(form, w); });
 		if (!form.querySelector('.tf-dest')) { applyTemplates(form, activeCountries(form)); }
 	}
 

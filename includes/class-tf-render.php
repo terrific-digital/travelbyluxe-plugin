@@ -346,7 +346,7 @@ class TF_Render {
 		ob_start();
 		echo '<div class="tf-field tf-field-' . esc_attr( $type ) . ' tf-w-' . esc_attr( $width ) . '">';
 
-		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html', 'consent', 'budget' ), true ) && ! $slider_inline ) {
+		if ( $label && $show_label && ! in_array( $type, array( 'heading', 'paragraph', 'separator', 'custom_html', 'consent', 'call_consent', 'budget' ), true ) && ! $slider_inline ) {
 			// "{country}" in a label follows the chosen countries (tbl-fields.js rewrites the span).
 			$tpl = false !== strpos( $label, '{country}' ) ? ' data-template="' . esc_attr( $label ) . '"' : '';
 			echo '<label class="tf-label" for="' . esc_attr( $id ) . '"><span' . $tpl . '>' . esc_html( tbl_template( $label, self::$preset ) ) . '</span>' . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</label>';
@@ -461,6 +461,21 @@ class TF_Render {
 			case 'consent':
 				echo '<label class="tf-consent"><input type="checkbox" class="tf-consent-input" ' . $attrs . ' value="yes"><span>' // phpcs:ignore
 					. wp_kses( $label, tbl_consent_allowed_html() ) . ( $req ? ' <span class="tf-req">*</span>' : '' ) . '</span></label>';
+				break;
+			case 'call_consent':
+				// Optional consent to calls / texts at the phone number given. Hidden until
+				// that field holds a number (tbl-fields.js). Same four keys as the LP site:
+				// <key> yes|no, <key>_at (ISO time of the tick), <key>_version, <key>_text.
+				$cc_version = ! empty( $f['consent_version'] ) ? $f['consent_version'] : tbl_call_consent_default_version();
+				$cc_phone   = ! empty( $f['phone_key'] ) ? $f['phone_key'] : 'phone';
+				echo '<div class="tf-call-consent" data-phone-key="' . esc_attr( $cc_phone ) . '" data-tbl-call-consent="' . esc_attr( $cc_version ) . '">';
+				echo '<label class="tf-consent"><input type="checkbox" class="tf-call-consent-box" id="' . esc_attr( $id ) . '" value="yes"><span>' // phpcs:ignore
+					. wp_kses( $label, tbl_consent_allowed_html() ) . '</span></label>';
+				echo '<input type="hidden" class="tf-call-consent-val" name="' . esc_attr( $key ) . '" data-key="' . esc_attr( $key ) . '" value="no">';
+				echo '<input type="hidden" class="tf-call-consent-at" name="' . esc_attr( $key ) . '_at" data-key="' . esc_attr( $key ) . '_at" value="">';
+				echo '<input type="hidden" name="' . esc_attr( $key ) . '_version" data-key="' . esc_attr( $key ) . '_version" value="' . esc_attr( $cc_version ) . '">';
+				echo '<input type="hidden" name="' . esc_attr( $key ) . '_text" data-key="' . esc_attr( $key ) . '_text" value="' . esc_attr( tbl_call_consent_plain_text( $label ) ) . '">';
+				echo '</div>';
 				break;
 			case 'countries':
 				$data   = tbl_destinations();
