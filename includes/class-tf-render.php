@@ -205,7 +205,7 @@ class TF_Render {
 					<span class="tf-progress-step">Step 1 of <?php echo (int) $total; ?></span>
 					<span class="tf-progress-pct"><?php echo (int) round( 100 / $total ); ?>%</span>
 				</div>
-				<div class="tf-progress-bar"><span class="tf-progress-fill" style="width:<?php echo (int) round( 100 / $total ); ?>%"></span></div>
+				<div class="tf-progress-bar" style="--tf-steps:<?php echo (int) $total; ?>"><span class="tf-progress-fill" style="width:<?php echo (int) round( 100 / $total ); ?>%"></span></div>
 			</div>
 			<?php endif; ?>
 

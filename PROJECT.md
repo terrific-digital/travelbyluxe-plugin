@@ -9,7 +9,7 @@ working rules are CLAUDE.md. This file is left out of the release ZIP.
 > 🔒 **This repo is public: never commit hostnames, IPs, usernames, paths to credential
 > files, or credentials. Keep them in `PROJECT.local.md`** (gitignored).
 
-**Current version:** 3.0.8
+**Current version:** 3.0.9
 
 For the long-form history of every upstream feature (2.x), read the upstream
 [PROJECT.md](https://github.com/terrific-digital/wordpress-plugin/blob/main/PROJECT.md) —

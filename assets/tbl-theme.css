@@ -27,7 +27,17 @@
 .tf-form.tbl-lux .tf-progress-step { letter-spacing: .1em; text-transform: uppercase; font-weight: 600; color: rgba(255,255,255,.75); }
 .tf-form.tbl-lux .tf-progress-pct { color: rgba(255,255,255,.55); }
 .tf-form.tbl-lux .tf-progress-bar { height: 8px; border-radius: var(--tbl-pill); background: rgba(255,255,255,.22); }
-.tf-form.tbl-lux .tf-progress-fill { background: var(--tbl-gold); border-radius: var(--tbl-pill); }
+.tf-form.tbl-lux .tf-progress-fill { background: var(--tbl-gold); border-radius: 0; }
+/* One pill per step, with a gap between them (the static site's .msf-progress-seg look).
+   The bar stays one track + one fill; a mask cuts the gaps out of both, so the page
+   behind shows through. --tf-steps is set inline by the renderer; without it (an older
+   cached page) the mask is a single full-width segment, i.e. the plain bar. */
+.tf-form.tbl-lux .tf-progress-bar {
+	--tf-gap: 8px;
+	--tf-seg: calc((100% + var(--tf-gap)) / var(--tf-steps, 1));
+	-webkit-mask-image: repeating-linear-gradient(90deg, #000 0, #000 calc(var(--tf-seg) - var(--tf-gap)), transparent calc(var(--tf-seg) - var(--tf-gap)), transparent var(--tf-seg));
+	mask-image: repeating-linear-gradient(90deg, #000 0, #000 calc(var(--tf-seg) - var(--tf-gap)), transparent calc(var(--tf-seg) - var(--tf-gap)), transparent var(--tf-seg));
+}
 
 /* Step titles + static text */
 .tf-form.tbl-lux .tf-step-title { font-family: var(--tbl-serif); font-size: 22px; font-weight: 500; color: var(--tbl-white); margin: 0 0 4px; }
